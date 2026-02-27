@@ -1,11 +1,36 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
+let mensajeDelBackend = "Cargando...";
+let hayError = false;
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+try {
+  // Aquí Astro intenta llamar a tu Node.js
+  const respuesta = await fetch('http://localhost:3000/api/saludo');
+  const datos = await respuesta.json();
+  mensajeDelBackend = datos.mensaje; // "¡Hola desde tu primer microservicio..."
+} catch (error) {
+  hayError = true;
+  mensajeDelBackend = "No se pudo conectar con el backend.";
+}
 ---
 
-<Layout>
-	<Welcome />
-</Layout>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Prueba de Conexión</title>
+  </head>
+  <body style="font-family: sans-serif; padding: 2rem;">
+    <h1>Estado de la conexión:</h1>
+    
+    {hayError ? (
+      <div style="background: #ffcccc; padding: 1rem; border-radius: 8px;">
+        <p><strong>Error:</strong> {mensajeDelBackend}</p>
+        <p>Revisa que la terminal de Node.js esté encendida en el puerto 3000.</p>
+      </div>
+    ) : (
+      <div style="background: #ccffcc; padding: 1rem; border-radius: 8px;">
+        <p><strong>¡Conectado!</strong> El backend dice:</p>
+        <h2>"{mensajeDelBackend}"</h2>
+      </div>
+    )}
+  </body>
+</html>
