@@ -1,0 +1,222 @@
+---
+// src/pages/login.astro
+// Diseño exacto de login solicitado, 100% Tailwind CSS, sin etiqueta <style>
+import "../styles/global.css";
+import Icono from "../components/icono.jsx";
+---
+
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Iniciar Sesión - Kiora</title>
+    <Icono />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body
+    class="m-0 font-[Inter] bg-[#fafafc] text-[#334155] flex flex-col items-center justify-center min-h-screen relative overflow-x-hidden"
+  >
+    <!-- Abstract Background Detail -->
+    <div
+      class="absolute -top-50 -right-25 w-150 h-150 rounded-full bg-[radial-gradient(circle,rgba(237,27,36,0.06)_0%,rgba(250,250,252,0)_70%)] -z-10 pointer-events-none"
+    >
+    </div>
+
+    <!-- App Logo -->
+    <img
+      src="/img/logo-kiora-vectorizado.svg"
+      alt="Kiora Logo"
+      class="w-48 h-auto mt-4 mb-6 relative z-10 object-contain"
+    />
+
+    <p class="text-[0.95rem] text-[#64748b] m-0 mb-8 font-medium">
+      Bienvenido de nuevo. Por favor, ingresa tus datos.
+    </p>
+
+    <!-- Card -->
+    <!-- Agregamos la acción al formulario para que redirija a /panel -->
+    <form
+      id="loginForm"
+      class="bg-white w-full max-w-105 p-8 rounded-xl border border-gray-100 shadow-[0_4px_24px_rgba(0,0,0,0.04)]"
+    >
+      <!-- Correo electrónico -->
+      <div class="mb-5">
+        <label
+          for="email"
+          class="block font-semibold text-[0.85rem] text-[#374151] mb-2"
+          >Correo electrónico</label
+        >
+        <div
+          class="relative flex items-center border border-gray-300 rounded-lg bg-white overflow-hidden transition-all duration-200 focus-within:border-[#9ca3af] focus-within:ring-[3px] focus-within:ring-gray-400/10"
+        >
+          <div class="pl-3.5 pr-2 text-gray-400 flex items-center">
+            <!-- Outline Mail Icon -->
+            <svg
+              fill="none"
+              class="w-5 h-5"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+              ></path>
+            </svg>
+          </div>
+          <input
+            type="email"
+            id="email"
+            class="flex-1 border-none bg-transparent py-2.5 text-[0.95rem] text-[#334155] outline-none w-full placeholder-gray-400"
+            placeholder="ejemplo@kiora.com"
+            required
+          />
+        </div>
+      </div>
+
+      <!-- Contraseña -->
+      <div class="mb-7">
+        <div class="flex justify-between items-center mb-2">
+          <label
+            for="password"
+            class="block font-semibold text-[0.85rem] text-[#374151]"
+            aria-required="false">Contraseña</label
+          >
+          <a
+            href="#"
+            class="text-[#ec131e] font-semibold text-[0.8rem] no-underline hover:underline"
+            >¿Olvidaste tu contraseña?</a
+          >
+        </div>
+        <div
+          class="relative flex items-center border border-gray-300 rounded-lg bg-white overflow-hidden transition-all duration-200 focus-within:border-[#9ca3af] focus-within:ring-[3px] focus-within:ring-gray-400/10"
+        >
+          <div class="pl-3.5 pr-2 text-gray-400 flex items-center">
+            <!-- Outline Lock Icon -->
+            <svg
+              fill="none"
+              class="w-5 h-5"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.8"
+                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+              ></path>
+            </svg>
+          </div>
+          <input
+            type="password"
+            id="password"
+            class="flex-1 border-none bg-transparent py-2.5 text-[0.95rem] text-[#334155] outline-none w-full placeholder-gray-400"
+            placeholder="••••••••"
+            required
+          />
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <button
+        type="submit"
+        id="submitBtn"
+        class="w-full bg-[#ec131e] hover:bg-[#d0111a] text-white border-none rounded-lg py-2.5 text-[1rem] font-semibold cursor-pointer transition-colors duration-200 shadow-[0_2px_4px_rgba(237,19,30,0.15)] disabled:opacity-70 disabled:cursor-not-allowed"
+        >Iniciar sesión</button
+      >
+    </form>
+  </body><script>
+    import Swal from "sweetalert2";
+
+    const API_URL =
+      import.meta.env.PUBLIC_API_URL || "http://localhost:3001/api";
+
+    // Login form handling
+    const loginForm = document.getElementById("loginForm");
+    const emailInput = document.getElementById("email") as HTMLInputElement;
+    const passwordInput = document.getElementById(
+      "password",
+    ) as HTMLInputElement;
+    const submitBtn = document.getElementById("submitBtn") as HTMLButtonElement;
+
+    // Check if user is already logged in
+    document.addEventListener("DOMContentLoaded", () => {
+      const token = localStorage.getItem("kiora_token");
+      if (token) {
+        window.location.href = "/panel";
+      }
+    });
+
+    loginForm?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      if (!emailInput || !passwordInput || !submitBtn) return;
+
+      const email = emailInput.value;
+      const password = passwordInput.value;
+
+      // Show loading state
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Iniciando sesión...";
+
+      try {
+        const response = await fetch(`${API_URL}/auth/login`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include", // <--- Necesario para que lleguen las Cookies
+          body: JSON.stringify({ correo_usu: email, password }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Error al iniciar sesión");
+        }
+
+        // Save token and user data
+        localStorage.setItem("kiora_token", data.token);
+        localStorage.setItem("kiora_user", JSON.stringify(data.usuario));
+
+        // Redirect to panel
+        window.location.href = "/panel";
+      } catch (error: any) {
+        const errorMsg = error.message;
+
+        if (errorMsg.includes("bloqueada")) {
+          // Modal centrado para cuentas bloqueadas
+          Swal.fire({
+            icon: "error",
+            title: "Cuenta bloqueada",
+            text: errorMsg,
+            confirmButtonColor: "#ec131e",
+          });
+        } else {
+          // Toast en la esquina superior derecha para intentos fallidos
+          Swal.fire({
+            toast: true,
+            position: "top-end",
+            icon: "warning",
+            title: errorMsg,
+            showConfirmButton: false,
+            timer: 4000,
+            timerProgressBar: true,
+          });
+        }
+      } finally {
+        // Reset button state
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Iniciar sesión";
+      }
+    });
+  </script>
+</html>

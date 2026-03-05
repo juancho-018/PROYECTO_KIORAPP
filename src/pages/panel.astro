@@ -1,0 +1,477 @@
+---
+// src/pages/panel.astro
+import "../styles/global.css";
+import Icono from "../components/icono.jsx";
+---
+
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Panel Principal - Kiora</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <Icono />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head><body
+    class="m-0 font-[Inter] bg-[#fafafc] text-[#334155] min-h-screen"
+  >
+    <!-- Navbar sencilla -->
+    <nav
+      class="bg-[#3E2723] border-b border-gray-200 px-6 py-4 flex justify-between items-center shadow-sm"
+    >
+      <div class="flex items-center gap-3">
+        <img
+          src="/img/path1.png"
+          alt="Kiora Logo"
+          class="h-8 w-auto object-contain"
+        />
+        <span
+          id="userName"
+          class="flex-1 border-none bg-transparent py-2.5 text-[0.95rem] text-[#FFFFFF] outline-none w-full"
+          >Cargando...</span
+        >
+      </div>
+
+      <!-- Botón de Gestionar Usuarios -->
+      <div class="flex items-center">
+        <!-- Contenedor de botones -->
+        <a
+          href="#"
+          id="manageUsersBtn"
+          class="hidden items-center gap-2 px-4 py-2 text-sm font-medium text-gray-400 hover:text-[#3b82f6] hover:bg-blue-50/10 rounded-lg transition-colors border border-transparent hover:border-blue-100/20 no-underline mr-2"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+            ></path>
+          </svg>
+          Usuarios
+        </a>
+
+        <!-- Botón de Cerrar Sesión -->
+        <a
+          href="#"
+          id="logoutBtn"
+          class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-400 hover:text-[#ec131e] hover:bg-red-50/10 rounded-lg transition-colors border border-transparent hover:border-red-100/20 no-underline"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+            ></path>
+          </svg>
+          Cerrar sesión
+        </a>
+      </div>
+      <!-- Fin Contenedor -->
+    </nav>
+
+    <!-- Contenido Principal -->
+    <main class="max-w-7xl mx-auto px-6 py-12">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+        <h1 class="text-2xl font-bold text-[#1e293b] mb-4">
+          Bienvenido al Panel de Control
+        </h1>
+        <p class="text-gray-600 text-[0.95rem]">
+          Has iniciado sesión correctamente. Aquí podrás gestionar tu sistema
+          Kiora próximamente.
+        </p>
+      </div>
+    </main>
+
+    <!-- Modal Gestionar Usuarios -->
+    <div
+      id="usersModal"
+      class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50 backdrop-blur-sm transition-opacity"
+    >
+      <div
+        class="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden m-4 transform transition-all"
+      >
+        <div
+          class="p-6 border-b border-gray-100 flex justify-between items-center bg-[#fafafc]"
+        >
+          <h2 class="text-xl font-bold text-[#1e293b] flex items-center gap-2">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-6 w-6 text-[#ec131e]"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              ><path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+              ></path></svg
+            >
+            Gestión de Usuarios
+          </h2>
+          <button
+            id="closeUsersModal"
+            class="text-gray-400 hover:text-[#ec131e] bg-gray-100 hover:bg-red-50 p-2 rounded-full transition-colors"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+        <div class="p-6 overflow-y-auto flex-1 bg-white">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr
+                class="text-xs uppercase tracking-wider text-gray-500 border-b border-gray-100 bg-gray-50/50"
+              >
+                <th class="py-3 px-4 font-semibold rounded-tl-lg">Usuario</th>
+                <th class="py-3 px-4 font-semibold">Correo</th>
+                <th class="py-3 px-4 font-semibold">Estado</th>
+                <th class="py-3 px-4 font-semibold text-right rounded-tr-lg"
+                  >Acción</th
+                >
+              </tr>
+            </thead>
+            <tbody id="usersTableBody" class="divide-y divide-gray-50">
+              <!-- Users will be injected here -->
+            </tbody>
+          </table>
+          <div
+            id="usersLoading"
+            class="text-center py-10 hidden flex-col items-center justify-center gap-3"
+          >
+            <div
+              class="w-8 h-8 border-4 border-gray-200 border-t-[#ec131e] rounded-full animate-spin"
+            >
+            </div>
+            <p class="text-sm font-medium text-gray-500">
+              Cargando información de usuarios...
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body><script>
+    import Swal from "sweetalert2";
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const token = localStorage.getItem("kiora_token");
+      const userStr = localStorage.getItem("kiora_user");
+
+      if (!token) {
+        window.location.href = "/login";
+        return;
+      }
+
+      const API_URL = "http://localhost:3001/api";
+      let inactivityTime = 0; // Tiempo en segundos de inactividad
+      const MAX_INACTIVITY = 2 * 60; // 15 minutos en segundos
+      let warningShown = false; // Bandera para que no repita la alerta del minuto final
+
+      // Reiniciar contador al haber eventos de usuario
+      const resetInactivity = () => {
+        inactivityTime = 0;
+        warningShown = false;
+      };
+      window.onload = resetInactivity;
+      document.onmousemove = resetInactivity;
+      document.onkeypress = resetInactivity;
+      document.ontouchstart = resetInactivity;
+
+      // Validar expiración del Token JWT (Access)
+      const decodeJWT = (t: string) => {
+        try {
+          const base64Url = t.split(".")[1];
+          const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+          const jsonPayload = decodeURIComponent(
+            window
+              .atob(base64)
+              .split("")
+              .map(function (c) {
+                return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+              })
+              .join(""),
+          );
+          return JSON.parse(jsonPayload);
+        } catch (e) {
+          return null;
+        }
+      };
+
+      const checkTokenAndInactivity = async () => {
+        if (!token) return;
+
+        inactivityTime += 5;
+
+        // --- Alerta 1 minuto antes de expirar por inactividad ---
+        if (
+          inactivityTime >= MAX_INACTIVITY - 60 &&
+          inactivityTime < MAX_INACTIVITY &&
+          !warningShown
+        ) {
+          warningShown = true;
+          Swal.fire({
+            toast: true,
+            position: "top-end",
+            icon: "info",
+            title: "Atención",
+            text: "Por favor realice una acción dentro del sistema para evitar que su sesión expire.",
+            showConfirmButton: false,
+            timer: 10000, // Desaparece a los 10 segundos
+            timerProgressBar: true,
+          });
+        }
+
+        // Comprobar Inactividad del Usuario (expulsión final)
+        if (inactivityTime >= MAX_INACTIVITY) {
+          localStorage.removeItem("kiora_token");
+          localStorage.removeItem("kiora_user");
+          Swal.fire({
+            icon: "info",
+            title: "Sesión Finalizada por Inactividad",
+            text: "Has estado mucho tiempo inactivo. Vuelve a ingresar.",
+            confirmButtonColor: "#ec131e",
+            allowOutsideClick: false,
+          }).then(() => {
+            window.location.href = "/login";
+          });
+
+          return;
+        }
+
+        const decoded = decodeJWT(localStorage.getItem("kiora_token") || "");
+        if (decoded && decoded.exp) {
+          const currentTime = Math.floor(Date.now() / 1000);
+          const timeToLive = decoded.exp - currentTime;
+
+          // Si quedan menos de 10 segundos para que muera el token (pero el usuario sigue activo)
+          if (timeToLive > 0 && timeToLive <= 10) {
+            try {
+              const res = await fetch(`${API_URL}/auth/refresh`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include", // Importante: Envía la Cookie refreshToken
+              });
+              if (res.ok) {
+                const data = await res.json();
+                localStorage.setItem("kiora_token", data.token); // Nuevo min de vida
+              }
+            } catch (e) {
+              console.error("Error renovando sesión secreta", e);
+            }
+          }
+          // Si el token expiró (ej. cerró la laptop y volvió o el refresh falló)
+          else if (timeToLive <= 0) {
+            localStorage.removeItem("kiora_token");
+            localStorage.removeItem("kiora_user");
+            Swal.fire({
+              icon: "warning",
+              title: "Sesión Expirada",
+              text: "Tu sesión ha expirado por seguridad.",
+              confirmButtonColor: "#ec131e",
+              allowOutsideClick: false,
+            }).then(() => {
+              window.location.href = "/login";
+            });
+          }
+        }
+      };
+
+      // Validar inactividad y token cada 5 segundos
+      checkTokenAndInactivity();
+      setInterval(checkTokenAndInactivity, 5000);
+
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          const userNameEl = document.getElementById("userName");
+          if (userNameEl) {
+            userNameEl.textContent = user.nom_usu || user.correo_usu;
+          }
+
+          // Mostrar botón de usuarios si es admin
+          if (user.rol_usu === "admin") {
+            const manageBtn = document.getElementById("manageUsersBtn");
+            if (manageBtn) {
+              manageBtn.classList.remove("hidden");
+              manageBtn.classList.add("flex");
+            }
+          }
+        } catch (e) {}
+      }
+
+      const logoutBtn = document.getElementById("logoutBtn");
+      logoutBtn?.addEventListener("click", (e) => {
+        e.preventDefault();
+
+        Swal.fire({
+          title: "¿Estás seguro?",
+          text: "¿Deseas cerrar tu sesión actual?",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#ec131e",
+          cancelButtonColor: "#64748b",
+          confirmButtonText: "Sí, cerrar sesión",
+          cancelButtonText: "Cancelar",
+        }).then((result) => {
+          if (result.isConfirmed) {
+            localStorage.removeItem("kiora_token");
+            localStorage.removeItem("kiora_user");
+            window.location.href = "/login";
+          }
+        });
+      });
+
+      // --- LOGIN MODAL & ADMIN LOGIC ---
+      const usersModal = document.getElementById("usersModal");
+      const manageUsersBtn = document.getElementById("manageUsersBtn");
+      const closeUsersModal = document.getElementById("closeUsersModal");
+      const usersTableBody = document.getElementById("usersTableBody");
+      const usersLoading = document.getElementById("usersLoading");
+
+      const isUserBlocked = (u: any) => {
+        if (u.intentos_fallidos && u.intentos_fallidos >= 5) return true;
+        if (u.bloqueado_hasta && new Date(u.bloqueado_hasta) > new Date())
+          return true;
+        return false;
+      };
+
+      const fetchUsers = async () => {
+        if (!usersTableBody || !usersLoading) return;
+        usersTableBody.innerHTML = "";
+        usersLoading.classList.remove("hidden");
+        usersLoading.classList.add("flex");
+
+        try {
+          const currentToken = localStorage.getItem("kiora_token");
+          const response = await fetch(`${API_URL}/auth/users`, {
+            headers: {
+              Authorization: `Bearer ${currentToken}`,
+            },
+          });
+
+          if (!response.ok) throw new Error("Error al consultar usuarios");
+
+          const users = await response.json();
+
+          usersLoading.classList.add("hidden");
+          usersLoading.classList.remove("flex");
+
+          users.forEach((u: any) => {
+            const blocked = isUserBlocked(u);
+
+            const tr = document.createElement("tr");
+            tr.className = "hover:bg-gray-50/50 transition-colors group";
+
+            const statusBadge = blocked
+              ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-red-50 text-red-600 border border-red-100"><span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>Bloqueado</span>`
+              : `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-50 text-emerald-600 border border-emerald-100"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Activo</span>`;
+
+            const actionBtn = blocked
+              ? `<button data-id="${u.id_usu}" class="unlock-btn inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-[#1e293b] hover:bg-[#0f172a] rounded-lg transition-colors focus:ring-2 focus:ring-slate-400 focus:outline-none shadow-sm"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path></svg> Desbloquear</button>`
+              : `<span class="text-gray-400 text-xs">-</span>`;
+
+            tr.innerHTML = `
+                 <td class="py-4 px-4 whitespace-nowrap"><div class="font-medium text-[#334155]">${u.nom_usu || "Sin Nombre"}</div></td>
+                 <td class="py-4 px-4 whitespace-nowrap text-gray-500 text-sm">${u.correo_usu}</td>
+                 <td class="py-4 px-4 whitespace-nowrap">${statusBadge}</td>
+                 <td class="py-4 px-4 whitespace-nowrap text-right">${actionBtn}</td>
+               `;
+            usersTableBody.appendChild(tr);
+          });
+
+          // Asignar eventos de desbloqueo
+          document.querySelectorAll(".unlock-btn").forEach((btn) => {
+            btn.addEventListener("click", async (e) => {
+              const target = e.currentTarget as HTMLButtonElement;
+              const userId = target.getAttribute("data-id");
+              if (userId) await unlockUser(userId);
+            });
+          });
+        } catch (error) {
+          usersLoading.classList.add("hidden");
+          usersLoading.classList.remove("flex");
+          Swal.fire({
+            toast: true,
+            position: "top-end",
+            icon: "error",
+            title: "Error al cargar usuarios",
+            showConfirmButton: false,
+            timer: 3000,
+          });
+        }
+      };
+
+      const unlockUser = async (id: string) => {
+        try {
+          const currentToken = localStorage.getItem("kiora_token");
+          const response = await fetch(`${API_URL}/auth/users/${id}/unlock`, {
+            method: "PATCH",
+            headers: {
+              Authorization: `Bearer ${currentToken}`,
+            },
+          });
+          if (!response.ok) throw new Error("Error al desbloquear");
+
+          Swal.fire({
+            toast: true,
+            position: "top-end",
+            icon: "success",
+            title: "Cuentadesbloqueada",
+            showConfirmButton: false,
+            timer: 3000,
+          });
+          fetchUsers(); // Recargar lista
+        } catch (e) {
+          Swal.fire({
+            toast: true,
+            position: "top-end",
+            icon: "error",
+            title: "Restringido: Sólo Admins",
+            showConfirmButton: false,
+            timer: 3000,
+          });
+        }
+      };
+
+      manageUsersBtn?.addEventListener("click", (e) => {
+        e.preventDefault();
+        usersModal?.classList.remove("hidden");
+        usersModal?.classList.add("flex");
+        fetchUsers();
+      });
+
+      closeUsersModal?.addEventListener("click", () => {
+        usersModal?.classList.add("hidden");
+        usersModal?.classList.remove("flex");
+      });
+    });
+  </script>
+</html>
