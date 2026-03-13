@@ -1,8 +1,8 @@
 ---
 // src/pages/login.astro
-// Diseño exacto de login solicitado, 100% Tailwind CSS, sin etiqueta <style>
 import "../styles/global.css";
 import Icono from "../components/icono.jsx";
+import Loading from "../components/cargando.jsx";
 ---
 
 <html lang="es">
@@ -90,7 +90,7 @@ import Icono from "../components/icono.jsx";
             aria-required="false">Contraseña</label
           >
           <a
-            href="#"
+            href="/recuperarContraseña"
             class="text-[#ec131e] font-semibold text-[0.8rem] no-underline hover:underline"
             >¿Olvidaste tu contraseña?</a
           >
@@ -133,11 +133,24 @@ import Icono from "../components/icono.jsx";
         >Iniciar sesión</button
       >
     </form>
-  </body><script>
-    import Swal from "sweetalert2";
+    
+    <!-- Contenedor de Cargando (SRP: El DOM y Astro manejan cuándo se ve) -->
+    <div id="loadingOverlay" class="hidden">
+      <Loading />
+    </div>
+
+  </body>
+  <script>
+    import { FetchHttpClient } from "../core/http/HttpClient";
+    import { SweetAlertService } from "../core/ui/AlertService";
+    import { AuthService } from "../services/AuthService";
 
     const API_URL =
       import.meta.env.PUBLIC_API_URL || "http://localhost:3001/api";
+
+    const httpClient = new FetchHttpClient(API_URL);
+    const authService = new AuthService(httpClient);
+    const alertService = new SweetAlertService();
 
     // Login form handling
     const loginForm = document.getElementById("loginForm");
@@ -146,11 +159,11 @@ import Icono from "../components/icono.jsx";
       "password",
     ) as HTMLInputElement;
     const submitBtn = document.getElementById("submitBtn") as HTMLButtonElement;
+    const loadingOverlay = document.getElementById("loadingOverlay");
 
     // Check if user is already logged in
     document.addEventListener("DOMContentLoaded", () => {
-      const token = localStorage.getItem("kiora_token");
-      if (token) {
+      if (authService.isAuthenticated()) {
         window.location.href = "/panel";
       }
     });
@@ -166,56 +179,25 @@ import Icono from "../components/icono.jsx";
       // Show loading state
       submitBtn.disabled = true;
       submitBtn.textContent = "Iniciando sesión...";
+      loadingOverlay?.classList.remove("hidden");
 
       try {
-        const response = await fetch(`${API_URL}/auth/login`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include", // <--- Necesario para que lleguen las Cookies
-          body: JSON.stringify({ correo_usu: email, password }),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || "Error al iniciar sesión");
-        }
-
-        // Save token and user data
-        localStorage.setItem("kiora_token", data.token);
-        localStorage.setItem("kiora_user", JSON.stringify(data.usuario));
-
+        await authService.login({ correo_usu: email, password });
         // Redirect to panel
         window.location.href = "/panel";
       } catch (error: any) {
         const errorMsg = error.message;
 
         if (errorMsg.includes("bloqueada")) {
-          // Modal centrado para cuentas bloqueadas
-          Swal.fire({
-            icon: "error",
-            title: "Cuenta bloqueada",
-            text: errorMsg,
-            confirmButtonColor: "#ec131e",
-          });
+          alertService.showError("Cuenta bloqueada", errorMsg);
         } else {
-          // Toast en la esquina superior derecha para intentos fallidos
-          Swal.fire({
-            toast: true,
-            position: "top-end",
-            icon: "warning",
-            title: errorMsg,
-            showConfirmButton: false,
-            timer: 4000,
-            timerProgressBar: true,
-          });
+          alertService.showToast("warning", errorMsg, 4000);
         }
       } finally {
         // Reset button state
         submitBtn.disabled = false;
         submitBtn.textContent = "Iniciar sesión";
+        loadingOverlay?.classList.add("hidden");
       }
     });
   </script>

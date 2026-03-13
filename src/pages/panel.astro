@@ -178,300 +178,40 @@ import Icono from "../components/icono.jsx";
         </div>
       </div>
     </div>
-  </body><script>
-    import Swal from "sweetalert2";
+  </body>
+  <script>
+    import { FetchHttpClient } from "../core/http/HttpClient";
+    import { SweetAlertService } from "../core/ui/AlertService";
+    import { AuthService } from "../services/AuthService";
+    import { UserService } from "../services/UserService";
+    import { SessionManager } from "../services/SessionManager";
+    import { PanelView } from "../views/panel/PanelView";
+    import { PanelPresenter } from "../views/panel/PanelPresenter";
 
     document.addEventListener("DOMContentLoaded", () => {
-      const token = localStorage.getItem("kiora_token");
-      const userStr = localStorage.getItem("kiora_user");
+      const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:3002/api";
+      
+      // 1. Instanciar abstracciones e infraestructura
+      const httpClient = new FetchHttpClient(API_URL);
+      const alertService = new SweetAlertService();
 
-      if (!token) {
-        window.location.href = "/login";
-        return;
-      }
+      // 2. Instanciar servicios de dominio
+      const authService = new AuthService(httpClient);
+      const userService = new UserService(httpClient, authService);
+      const sessionManager = new SessionManager(authService, alertService);
 
-      const API_URL = "http://localhost:3001/api";
-      let inactivityTime = 0; // Tiempo en segundos de inactividad
-      const MAX_INACTIVITY = 2 * 60; // 15 minutos en segundos
-      let warningShown = false; // Bandera para que no repita la alerta del minuto final
+      // 3. Instanciar Vista y Presentador (MVP - SRP)
+      const view = new PanelView();
+      const presenter = new PanelPresenter(
+        view,
+        authService,
+        userService,
+        sessionManager,
+        alertService
+      );
 
-      // Reiniciar contador al haber eventos de usuario
-      const resetInactivity = () => {
-        inactivityTime = 0;
-        warningShown = false;
-      };
-      window.onload = resetInactivity;
-      document.onmousemove = resetInactivity;
-      document.onkeypress = resetInactivity;
-      document.ontouchstart = resetInactivity;
-
-      // Validar expiración del Token JWT (Access)
-      const decodeJWT = (t: string) => {
-        try {
-          const base64Url = t.split(".")[1];
-          const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-          const jsonPayload = decodeURIComponent(
-            window
-              .atob(base64)
-              .split("")
-              .map(function (c) {
-                return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
-              })
-              .join(""),
-          );
-          return JSON.parse(jsonPayload);
-        } catch (e) {
-          return null;
-        }
-      };
-
-      const checkTokenAndInactivity = async () => {
-        if (!token) return;
-
-        inactivityTime += 5;
-
-        // --- Alerta 1 minuto antes de expirar por inactividad ---
-        if (
-          inactivityTime >= MAX_INACTIVITY - 60 &&
-          inactivityTime < MAX_INACTIVITY &&
-          !warningShown
-        ) {
-          warningShown = true;
-          Swal.fire({
-            toast: true,
-            position: "top-end",
-            icon: "info",
-            title: "Atención",
-            text: "Por favor realice una acción dentro del sistema para evitar que su sesión expire.",
-            showConfirmButton: false,
-            timer: 10000, // Desaparece a los 10 segundos
-            timerProgressBar: true,
-          });
-        }
-
-        // Comprobar Inactividad del Usuario (expulsión final)
-        if (inactivityTime >= MAX_INACTIVITY) {
-          localStorage.removeItem("kiora_token");
-          localStorage.removeItem("kiora_user");
-          Swal.fire({
-            icon: "info",
-            title: "Sesión Finalizada por Inactividad",
-            text: "Has estado mucho tiempo inactivo. Vuelve a ingresar.",
-            confirmButtonColor: "#ec131e",
-            allowOutsideClick: false,
-          }).then(() => {
-            window.location.href = "/login";
-          });
-
-          return;
-        }
-
-        const decoded = decodeJWT(localStorage.getItem("kiora_token") || "");
-        if (decoded && decoded.exp) {
-          const currentTime = Math.floor(Date.now() / 1000);
-          const timeToLive = decoded.exp - currentTime;
-
-          // Si quedan menos de 10 segundos para que muera el token (pero el usuario sigue activo)
-          if (timeToLive > 0 && timeToLive <= 10) {
-            try {
-              const res = await fetch(`${API_URL}/auth/refresh`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include", // Importante: Envía la Cookie refreshToken
-              });
-              if (res.ok) {
-                const data = await res.json();
-                localStorage.setItem("kiora_token", data.token); // Nuevo min de vida
-              }
-            } catch (e) {
-              console.error("Error renovando sesión secreta", e);
-            }
-          }
-          // Si el token expiró (ej. cerró la laptop y volvió o el refresh falló)
-          else if (timeToLive <= 0) {
-            localStorage.removeItem("kiora_token");
-            localStorage.removeItem("kiora_user");
-            Swal.fire({
-              icon: "warning",
-              title: "Sesión Expirada",
-              text: "Tu sesión ha expirado por seguridad.",
-              confirmButtonColor: "#ec131e",
-              allowOutsideClick: false,
-            }).then(() => {
-              window.location.href = "/login";
-            });
-          }
-        }
-      };
-
-      // Validar inactividad y token cada 5 segundos
-      checkTokenAndInactivity();
-      setInterval(checkTokenAndInactivity, 5000);
-
-      if (userStr) {
-        try {
-          const user = JSON.parse(userStr);
-          const userNameEl = document.getElementById("userName");
-          if (userNameEl) {
-            userNameEl.textContent = user.nom_usu || user.correo_usu;
-          }
-
-          // Mostrar botón de usuarios si es admin
-          if (user.rol_usu === "admin") {
-            const manageBtn = document.getElementById("manageUsersBtn");
-            if (manageBtn) {
-              manageBtn.classList.remove("hidden");
-              manageBtn.classList.add("flex");
-            }
-          }
-        } catch (e) {}
-      }
-
-      const logoutBtn = document.getElementById("logoutBtn");
-      logoutBtn?.addEventListener("click", (e) => {
-        e.preventDefault();
-
-        Swal.fire({
-          title: "¿Estás seguro?",
-          text: "¿Deseas cerrar tu sesión actual?",
-          icon: "warning",
-          showCancelButton: true,
-          confirmButtonColor: "#ec131e",
-          cancelButtonColor: "#64748b",
-          confirmButtonText: "Sí, cerrar sesión",
-          cancelButtonText: "Cancelar",
-        }).then((result) => {
-          if (result.isConfirmed) {
-            localStorage.removeItem("kiora_token");
-            localStorage.removeItem("kiora_user");
-            window.location.href = "/login";
-          }
-        });
-      });
-
-      // --- LOGIN MODAL & ADMIN LOGIC ---
-      const usersModal = document.getElementById("usersModal");
-      const manageUsersBtn = document.getElementById("manageUsersBtn");
-      const closeUsersModal = document.getElementById("closeUsersModal");
-      const usersTableBody = document.getElementById("usersTableBody");
-      const usersLoading = document.getElementById("usersLoading");
-
-      const isUserBlocked = (u: any) => {
-        if (u.intentos_fallidos && u.intentos_fallidos >= 5) return true;
-        if (u.bloqueado_hasta && new Date(u.bloqueado_hasta) > new Date())
-          return true;
-        return false;
-      };
-
-      const fetchUsers = async () => {
-        if (!usersTableBody || !usersLoading) return;
-        usersTableBody.innerHTML = "";
-        usersLoading.classList.remove("hidden");
-        usersLoading.classList.add("flex");
-
-        try {
-          const currentToken = localStorage.getItem("kiora_token");
-          const response = await fetch(`${API_URL}/auth/users`, {
-            headers: {
-              Authorization: `Bearer ${currentToken}`,
-            },
-          });
-
-          if (!response.ok) throw new Error("Error al consultar usuarios");
-
-          const users = await response.json();
-
-          usersLoading.classList.add("hidden");
-          usersLoading.classList.remove("flex");
-
-          users.forEach((u: any) => {
-            const blocked = isUserBlocked(u);
-
-            const tr = document.createElement("tr");
-            tr.className = "hover:bg-gray-50/50 transition-colors group";
-
-            const statusBadge = blocked
-              ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-red-50 text-red-600 border border-red-100"><span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>Bloqueado</span>`
-              : `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-50 text-emerald-600 border border-emerald-100"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Activo</span>`;
-
-            const actionBtn = blocked
-              ? `<button data-id="${u.id_usu}" class="unlock-btn inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-[#1e293b] hover:bg-[#0f172a] rounded-lg transition-colors focus:ring-2 focus:ring-slate-400 focus:outline-none shadow-sm"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path></svg> Desbloquear</button>`
-              : `<span class="text-gray-400 text-xs">-</span>`;
-
-            tr.innerHTML = `
-                 <td class="py-4 px-4 whitespace-nowrap"><div class="font-medium text-[#334155]">${u.nom_usu || "Sin Nombre"}</div></td>
-                 <td class="py-4 px-4 whitespace-nowrap text-gray-500 text-sm">${u.correo_usu}</td>
-                 <td class="py-4 px-4 whitespace-nowrap">${statusBadge}</td>
-                 <td class="py-4 px-4 whitespace-nowrap text-right">${actionBtn}</td>
-               `;
-            usersTableBody.appendChild(tr);
-          });
-
-          // Asignar eventos de desbloqueo
-          document.querySelectorAll(".unlock-btn").forEach((btn) => {
-            btn.addEventListener("click", async (e) => {
-              const target = e.currentTarget as HTMLButtonElement;
-              const userId = target.getAttribute("data-id");
-              if (userId) await unlockUser(userId);
-            });
-          });
-        } catch (error) {
-          usersLoading.classList.add("hidden");
-          usersLoading.classList.remove("flex");
-          Swal.fire({
-            toast: true,
-            position: "top-end",
-            icon: "error",
-            title: "Error al cargar usuarios",
-            showConfirmButton: false,
-            timer: 3000,
-          });
-        }
-      };
-
-      const unlockUser = async (id: string) => {
-        try {
-          const currentToken = localStorage.getItem("kiora_token");
-          const response = await fetch(`${API_URL}/auth/users/${id}/unlock`, {
-            method: "PATCH",
-            headers: {
-              Authorization: `Bearer ${currentToken}`,
-            },
-          });
-          if (!response.ok) throw new Error("Error al desbloquear");
-
-          Swal.fire({
-            toast: true,
-            position: "top-end",
-            icon: "success",
-            title: "Cuentadesbloqueada",
-            showConfirmButton: false,
-            timer: 3000,
-          });
-          fetchUsers(); // Recargar lista
-        } catch (e) {
-          Swal.fire({
-            toast: true,
-            position: "top-end",
-            icon: "error",
-            title: "Restringido: Sólo Admins",
-            showConfirmButton: false,
-            timer: 3000,
-          });
-        }
-      };
-
-      manageUsersBtn?.addEventListener("click", (e) => {
-        e.preventDefault();
-        usersModal?.classList.remove("hidden");
-        usersModal?.classList.add("flex");
-        fetchUsers();
-      });
-
-      closeUsersModal?.addEventListener("click", () => {
-        usersModal?.classList.add("hidden");
-        usersModal?.classList.remove("flex");
-      });
+      // 4. Iniciar ciclo de vida del panel
+      presenter.initialize();
     });
   </script>
 </html>

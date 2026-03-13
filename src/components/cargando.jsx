@@ -1,0 +1,8 @@
+const Loading = () => (
+  <div className="absolute inset-0 z-50 overflow-hidden flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
+    <div className="w-10 h-10 border-4 border-gray-200 border-t-[#ec131e] rounded-full animate-spin mb-3"></div>
+    <p className="text-sm font-semibold text-[#334155]">Iniciando sesión...</p>
+  </div>
+);
+
+export default Loading;
