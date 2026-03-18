@@ -4,7 +4,6 @@
 export interface HttpRequestOptions {
   method?: string;
   headers?: Record<string, string>;
-  body?: any;
   credentials?: RequestCredentials;
 }
 
@@ -20,8 +19,8 @@ export interface HttpResponse<T> {
  */
 export interface IHttpClient {
   get<T>(url: string, headers?: Record<string, string>): Promise<HttpResponse<T>>;
-  post<T>(url: string, body?: any, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
-  patch<T>(url: string, body?: any, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
+  post<T>(url: string, body?: unknown, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
+  patch<T>(url: string, body?: unknown, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
 }
 
 /**
@@ -57,10 +56,11 @@ export class FetchHttpClient implements IHttpClient {
         status: response.status,
         ok: true,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as Error;
       return {
         data: null,
-        error: error.message || 'Error de conexión',
+        error: err.message || 'Error de conexión',
         status: 0,
         ok: false,
       };
@@ -77,7 +77,7 @@ export class FetchHttpClient implements IHttpClient {
     });
   }
 
-  async post<T>(url: string, body?: any, options: HttpRequestOptions = {}): Promise<HttpResponse<T>> {
+  async post<T>(url: string, body?: unknown, options: HttpRequestOptions = {}): Promise<HttpResponse<T>> {
     const { headers, ...rest } = options;
     return this.request<T>(url, {
       method: 'POST',
@@ -90,7 +90,7 @@ export class FetchHttpClient implements IHttpClient {
     });
   }
 
-  async patch<T>(url: string, body?: any, options: HttpRequestOptions = {}): Promise<HttpResponse<T>> {
+  async patch<T>(url: string, body?: unknown, options: HttpRequestOptions = {}): Promise<HttpResponse<T>> {
     const { headers, ...rest } = options;
     return this.request<T>(url, {
       method: 'PATCH',

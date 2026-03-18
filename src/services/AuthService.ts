@@ -1,4 +1,5 @@
 import { type IHttpClient } from '../core/http/HttpClient';
+import type { User } from '../models/User';
 
 export interface LoginCredentials {
   correo_usu: string;
@@ -7,7 +8,7 @@ export interface LoginCredentials {
 
 export interface AuthData {
   token: string;
-  usuario: any;
+  usuario: User;
 }
 
 /**
@@ -46,7 +47,7 @@ export class AuthService {
     window.location.href = '/login';
   }
 
-  saveSession(token: string, user: any) {
+  saveSession(token: string, user: User | null) {
     if (user) {
       localStorage.setItem('kiora_token', token);
       localStorage.setItem('kiora_user', typeof user === 'string' ? user : JSON.stringify(user));
@@ -62,9 +63,9 @@ export class AuthService {
     return localStorage.getItem('kiora_token');
   }
 
-  getUser(): any | null {
+  getUser(): User | null {
     const userStr = localStorage.getItem('kiora_user');
-    return userStr ? JSON.parse(userStr) : null;
+    return userStr ? (JSON.parse(userStr) as User) : null;
   }
 
   isAuthenticated(): boolean {
