@@ -178,8 +178,7 @@ import Icono from "../components/icono.jsx";
         </div>
       </div>
     </div>
-  </body>
-  <script>
+  </body><script>
     import { FetchHttpClient } from "../core/http/HttpClient";
     import { SweetAlertService } from "../core/ui/AlertService";
     import { AuthService } from "../services/AuthService";
@@ -189,8 +188,9 @@ import Icono from "../components/icono.jsx";
     import { PanelPresenter } from "../views/panel/PanelPresenter";
 
     document.addEventListener("DOMContentLoaded", () => {
-      const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:3002/api";
-      
+      const API_URL =
+        import.meta.env.PUBLIC_API_URL || "http://localhost:3001/api";
+
       // 1. Instanciar abstracciones e infraestructura
       const httpClient = new FetchHttpClient(API_URL);
       const alertService = new SweetAlertService();
@@ -207,7 +207,7 @@ import Icono from "../components/icono.jsx";
         authService,
         userService,
         sessionManager,
-        alertService
+        alertService,
       );
 
       // 4. Iniciar ciclo de vida del panel

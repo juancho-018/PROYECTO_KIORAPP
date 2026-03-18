@@ -1,87 +1,96 @@
-# Kiora - Frontend Panel
+# Kiora - Frontend Panel (Enterprise Edition)
 
-Kiora es una aplicación desarrollada con **Astro**, utilizando **React** para la renderización de micro-componentes de recambio, **Tailwind CSS** para los estilos globales y estructurada empleando de forma estricta los principios de **Arquitectura Limpia y Principios SOLID**.
+**Kiora** es el panel de control central para la gestión del ecosistema Kiora. Esta aplicación ha sido diseñada bajo estándares de ingeniería de software de alto nivel, utilizando **Astro v5**, **React v19**, y **Tailwind CSS v4**.
 
-## 🛠️ Stack Tecnológico
+La arquitectura no es solo funcional; es una declaración de principios. Implementamos de forma estricta los principios de **Arquitectura Limpia (Clean Architecture)** y **Principios SOLID** para garantizar que el código sea un activo de larga duración, no una deuda técnica.
 
-- **Framework principal:** [Astro](https://astro.build/) v5
-- **Renderizado UI:** [React](https://react.dev/) v19
-- **Estilado:** [Tailwind CSS](https://tailwindcss.com/) v4
-- **Feedback UI Alerts:** [SweetAlert2](https://sweetalert2.github.io/)
-- **Lenguaje:** TypeScript estricto.
+---
 
-## 🏗️ Arquitectura y Principios SOLID
-
-Este proyecto está construido para ser escalable, testeable e independiente de librerías concretas. No toleramos la lógica espagueti dentro de las plantillas (Views). 
-
-### Estructura de Directorios Clave
+## Arquitectura del proyecto
 
 ```text
-/src
-├── core/         # Abstracciones de infraestructura (HttpClient.ts, AlertService.ts) [Principios DIP/SRP]
-├── services/     # Casos de uso de negocio y reglas (AuthService.ts, UserService.ts) [Principio SRP]
-├── views/        # Patrón Model-View-Presenter (MVP). Presentadores (Orquestadores) y Vistas puras (manipulación aislada del DOM)
-├── pages/        # Rutas de Astro (.astro). Actúan simplemente como inicializadoras del MVP y plantillas maestras.
-├── components/   # Componentes puros de React (ej: cargando.jsx)
-└── hooks/        # Hooks reactivos (React) para componentes
+src/
+├── components/             # Componentes de UI (React)
+│   ├── cargando.jsx        # Overlay de carga reutilizable (con props)
+│   └── icono.jsx           # Favicon y recursos visuales base
+├── core/                   # Abstracciones de infraestructura (DIP)
+│   ├── http/
+│   │   └── HttpClient.ts   # Cliente base para peticiones Fetch (Generic)
+│   └── ui/
+│       └── AlertService.ts # Servicio de notificaciones (SweetAlert2)
+├── services/               # Lógica de negocio y Casos de Uso (SRP)
+│   ├── AuthService.ts      # Autenticación, Login y manejo de JWT
+│   ├── SessionManager.ts   # Control de inactividad (15m) y expiración
+│   └── UserService.ts      # Gestión de datos de usuarios y desbloqueos
+├── views/                  # Patrón MVP (Model-View-Presenter)
+│   └── panel/
+│       ├── PanelPresenter.ts # Orquestador de lógica (Sin interactuar con DOM)
+│       └── PanelView.ts      # Manipulación directa del DOM y eventos
+├── pages/                  # Rutas de Astro e Inicialización de MVP
+│   ├── index.astro         # Router de entrada (Redirección a login)
+│   ├── login.astro         # Vista de Login e inyección de dependencias
+│   ├── panel.astro         # Dashboard principal y gestión de usuarios
+│   └── recuperarContraseña.astro # Flujo de recuperación de credenciales
+├── styles/
+│   └── global.css          # Estilos base y configuración de Tailwind v4
+└── assets/                 # Assets procesados por Astro durante el build
 ```
 
-- **(S) Responsabilidad Única:** Toda clase cumple un único fin. Una vista (ej. `PanelView.ts`) jamás procesa pagos o valida tokens. Un servicio (ej. `SessionManager.ts`) jamás manipula clases CSS (`.classList`).
-- **(D) Inversión de Dependencias:** El código vital no depende del navegador, depende de abstracciones (interfaces como `IHttpClient`), lo que permite el día de mañana cambiar `Fetch` por `Axios` sin tocar `AuthService.ts`.
+### Capas de la Aplicación
+
+- **`src/core/`**: Abstracciones base. Aquí vive la infraestructura que se comunica con el "mundo exterior" (APIs, Alertas).
+- **`src/services/`**: La inteligencia del sistema. Las reglas de negocio (Login, Gestión de Sesión, Validaciones) se definen aquí de forma agnóstica al framework.
+- **`src/views/`**: El contrato visual. Los `Presenters` coordinan, las `Views` ejecutan la manipulación del DOM. **Prohibido poner `fetch` aquí.**
+- **`src/pages/`**: Solo inicialización. Son el pegamento que une las piezas de MVP cuando el usuario entra en una ruta.
+- **`src/components/`**: Componentes de React puros. UI de alta calidad sin lógica pesada.
 
 ---
 
-## 🚀 Guía de Inicio y Despliegue
+## Docker & Despliegue de Producción
 
-### Requisitos Previos (Para Entorno de Desarrollo)
-- **Node.js** v20 o superior.
-- Crear un archivo `.env` en la raíz (usa `.env.example` como plantilla).
+El despliegue está automatizado mediante un **Multistage Dockerfile** que garantiza una imagen final mínima y segura.
 
-### Ejecución Local
+### Requisitos
+- [Docker](https://www.docker.com/) & [Docker Compose](https://docs.docker.com/compose/)
 
-1. **Instalar Dependencias:**
-   ```bash
-   npm install
-   ```
+### Comandos Rápidos
 
-2. **Levantar el Servidor de Desarrollo:**
-   ```bash
-   npm run dev
-   ```
-   *La aplicación estará disponible en [http://localhost:4321](http://localhost:4321).*
+```bash
+# 1. Preparar variables (Asegúrate de editar .env antes)
+cp .env.example .env
 
-3. **Construir para Producción (Check Tipos TS):**
-   ```bash
-   npm run build
-   ```
+# 2. Levantar en producción (Usa el puerto 3000 por defecto)
+docker-compose up -d --build
 
-### 🐳 Despliegue con Docker (Producción)
+# 3. Detener los servicios
+docker-compose down
+```
 
-El proyecto viene con un `Dockerfile` optimizado en 2 etapas (Multistage) que compila el portal con Node y luego sirve los estáticos mediante un contenedor ligero **Nginx**.
-
-1. **Construir la imagen de Docker:**
-   ```bash
-   docker build -t kiora-frontend .
-   ```
-
-2. **Ejecutar el contenedor web:**
-   ```bash
-   docker run -p 3000:80 -d kiora-frontend
-   ```
-   *El panel público estará servido mediante Nginx en [http://localhost:3000](http://localhost:3000).*
+> [!IMPORTANT]
+> Astro hornea las variables `PUBLIC_` durante el tiempo de **build**. Por eso, el `docker-compose.yml` pasa la `PUBLIC_API_URL` como un `build-arg` al `Dockerfile`. Si cambias la URL de la API, necesitas hacer un `--build`.
 
 ---
 
-## 🔐 Variables de Entorno
+## 🛠️ Guía de Desarrollo Local
 
-Tus variables de entorno para Astro que sean legibles por el cliente deben empezar por el prefijo `PUBLIC_`. Asegúrate de generar un archivo `.env` localmente o en tu entorno CI/CD. Ej:
-```env
-PUBLIC_API_URL=http://tu-backend-api.com/api
-```
+Si prefieres trabajar fuera de un contenedor:
 
-## 👥 Guía para Nuevos Programadores
-Si necesitas extender este repositorio:
-1. **Regla de Oro:** Si añades una página nueva (ej `src/pages/dashboard.astro`), NO pongas todo el código JavaScript dentro el tab `<script>`.
-2. Crea una clase `<Nombre>View.ts` para capturar botones y manipular el DOM.
-3. Crea un `<Nombre>Presenter.ts` que escuche clics de la View e invoque un `Service`.
-4. En el `<script>` de `.astro`, simplemente inicializa ambas cosas e inyéctale dependencias.
+1. **Instalación:** `npm install`
+2. **Ejecución:** `npm run dev` (Accede en `http://localhost:4321`)
+3. **Build local:** `npm run build` (Genera la carpeta `dist/`)
+
+### Reglas de Oro para Desarrolladores
+
+1. **No Logic in Scripts:** El tag `<script>` en los archivos `.astro` debe tener máximo 10-15 líneas. Solo debe servir para instanciar clases e inicializarlas.
+2. **SOLID for life:** Si una función hace más de una cosa, divídela. Si un archivo tiene más de 300 líneas, analízalo.
+3. **Typography & UI:** Usamos **Inter** como tipografía principal. Mantén la consistencia visual usando los tokens de Tailwind definidos en el proyecto.
+
+---
+
+## 📝 Troubleshooting
+
+- **¿El backend me da 401/403?:** Verifica que `SessionManager.ts` esté enviando correctamente el token desde el `localStorage`.
+- **¿Nginx no carga las rutas secundarias?:** El archivo `nginx.conf` ya está configurado para manejar el ruteo de Astro (SPA-like) mediante `try_files`. No lo modifiques a menos que sepas qué haces.
+- **¿Variables de entorno vacías?:** Asegúrate de reiniciar el servidor de Astro (`npm run dev`) cada vez que toques el archivo `.env`.
+
+---

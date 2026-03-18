@@ -3,7 +3,7 @@ export default function Icono() {
     <>
       <link
         rel="shortcut icon"
-        href="/img/Logo-kiora-vectorizado.png"
+        href="/img/logo-kiora-vectorizado.png"
         type="image/x-icon"
       />
     </>

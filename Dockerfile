@@ -1,6 +1,10 @@
 # Etapa 1: Construcción (Build) usando Node.js
 FROM node:20-alpine AS build
 
+# Recibir variables de entorno durante el build (necesario para Astro)
+ARG PUBLIC_API_URL
+ENV PUBLIC_API_URL=$PUBLIC_API_URL
+
 # Desactivar la telemetría de Astro por privacidad y velocidad
 ENV ASTRO_TELEMETRY_DISABLED=1
 
@@ -23,6 +27,9 @@ FROM nginx:alpine
 
 # Copiar los assets generados de la Etapa 1 a la carpeta public de nginx
 COPY --from=build /app/dist /usr/share/nginx/html
+
+# Copiar configuración personalizada de Nginx
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Exponer el puerto estándar HTTP
 EXPOSE 80

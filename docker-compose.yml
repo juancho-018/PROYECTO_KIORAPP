@@ -1,0 +1,13 @@
+version: '3.9'
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - PUBLIC_API_URL=${PUBLIC_API_URL:-http://localhost:3001/api}
+    container_name: kiora_frontend_app
+    restart: unless-stopped
+    ports:
+      - "3000:80"

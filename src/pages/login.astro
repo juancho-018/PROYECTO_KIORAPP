@@ -133,14 +133,12 @@ import Loading from "../components/cargando.jsx";
         >Iniciar sesión</button
       >
     </form>
-    
+
     <!-- Contenedor de Cargando (SRP: El DOM y Astro manejan cuándo se ve) -->
     <div id="loadingOverlay" class="hidden">
-      <Loading />
+      <Loading message="Iniciando sesión..." />
     </div>
-
-  </body>
-  <script>
+  </body><script>
     import { FetchHttpClient } from "../core/http/HttpClient";
     import { SweetAlertService } from "../core/ui/AlertService";
     import { AuthService } from "../services/AuthService";

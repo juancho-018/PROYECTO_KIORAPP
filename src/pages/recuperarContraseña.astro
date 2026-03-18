@@ -1,6 +1,7 @@
 ---
 import "../styles/global.css";
 import Icono from "../components/icono.jsx";
+import Loading from "../components/cargando.jsx";
 ---
 
 <html lang="es">
@@ -99,15 +100,23 @@ import Icono from "../components/icono.jsx";
         </a>
       </div>
     </form>
+    <div id="loadingOverlay" class="hidden">
+      <Loading message="Enviando..." />
+    </div>
   </body><script>
-    import Swal from "sweetalert2";
+    import { FetchHttpClient } from "../core/http/HttpClient";
+    import { SweetAlertService } from "../core/ui/AlertService";
 
     const API_URL =
-      import.meta.env.PUBLIC_API_URL || "http://localhost:3002/api";
+      import.meta.env.PUBLIC_API_URL || "http://localhost:3001/api";
+
+    const httpClient = new FetchHttpClient(API_URL);
+    const alertService = new SweetAlertService();
 
     const recoverForm = document.getElementById("recoverForm");
     const emailInput = document.getElementById("email") as HTMLInputElement;
     const submitBtn = document.getElementById("submitBtn") as HTMLButtonElement;
+    const loadingOverlay = document.getElementById("loadingOverlay");
 
     recoverForm?.addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -119,48 +128,31 @@ import Icono from "../components/icono.jsx";
       // Show loading state
       submitBtn.disabled = true;
       submitBtn.textContent = "Enviando...";
+      loadingOverlay?.classList.remove("hidden");
 
       try {
-        // NOTA: Ajusta el endpoint "/auth/recuperar-password" al que uses en el backend
-        const response = await fetch(`${API_URL}/auth/recuperar-password`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ correo_usu: email }),
+        const response = await httpClient.post<any>("/auth/recuperar-password", {
+          correo_usu: email,
         });
 
-        const data = await response.json();
-
-        // Si la petición falla, muestra el error del backend o uno genérico
         if (!response.ok) {
-          throw new Error(
-            data.error || data.message || "Error al procesar la solicitud",
-          );
+          throw new Error(response.error || "Error al procesar la solicitud");
         }
 
         // Show success message
-        Swal.fire({
-          icon: "success",
-          title: "Correo enviado",
-          text:
-            data.message ||
-            "Si el correo está registrado, recibira un enlace para restablecer tu contraseña.",
-          confirmButtonColor: "#ec131e",
-        }).then(() => {
-          // Opcional: Redigir al login después de un envío exitoso
-          window.location.href = "/login";
-        });
+        await alertService.showSuccess(
+          "Correo enviado",
+          response.data?.message ||
+            "Si el correo está registrado, recibirá un enlace para restablecer tu contraseña.",
+        );
+        
+        window.location.href = "/login";
       } catch (error: any) {
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: error.message,
-          confirmButtonColor: "#ec131e",
-        });
+        alertService.showError("Error", error.message);
       } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = "Enviar instrucciones";
+        loadingOverlay?.classList.add("hidden");
       }
     });
   </script>
