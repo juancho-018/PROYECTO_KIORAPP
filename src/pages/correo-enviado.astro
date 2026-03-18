@@ -1,0 +1,57 @@
+---
+import "../styles/global.css";
+import Icono from "../components/icono.jsx";
+---
+
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Correo Enviado - Kiora</title>
+    <Icono />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body
+    class="m-0 font-[Inter] bg-[#fafafc] text-[#334155] flex flex-col items-center justify-center min-h-screen relative overflow-x-hidden"
+  >
+    <!-- Abstract Background Detail -->
+    <div
+      class="absolute -top-50 -left-25 w-150 h-150 rounded-full bg-[radial-gradient(circle,rgba(237,27,36,0.06)_0%,rgba(250,250,252,0)_70%)] -z-10 pointer-events-none"
+    >
+    </div>
+
+    <!-- App Logo -->
+    <img
+      src="/img/logo-kiora-vectorizado.svg"
+      alt="Kiora Logo"
+      class="w-48 h-auto mt-4 mb-6 relative z-10 object-contain"
+    />
+
+    <div class="bg-white w-full max-w-105 p-8 rounded-xl border border-gray-100 shadow-[0_4px_24px_rgba(0,0,0,0.04)] text-center">
+      <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-6">
+        <svg class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        </svg>
+      </div>
+      
+      <h2 class="text-2xl font-bold text-[#1e293b] mb-4">¡Correo enviado!</h2>
+      <p class="text-[0.95rem] text-[#64748b] mb-8 leading-relaxed">
+        Si el correo electrónico está registrado en nuestro sistema, te
+        hemos enviado un enlace para restablecer tu contraseña. Revisa
+        tu bandeja de entrada (y la carpeta de spam o correo no deseado).
+      </p>
+
+      <a
+        href="/login"
+        class="inline-block w-full bg-[#ec131e] hover:bg-[#d0111a] text-white border-none rounded-lg py-2.5 text-[1rem] font-semibold transition-colors duration-200 shadow-[0_2px_4px_rgba(237,19,30,0.15)] text-center no-underline"
+      >
+        Volver a Iniciar Sesión
+      </a>
+    </div>
+  </body>
+</html>

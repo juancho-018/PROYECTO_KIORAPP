@@ -1,6 +1,6 @@
 # Kiora - Frontend Panel (Enterprise Edition)
 
-**Kiora** es el panel de control central para la gestión del ecosistema Kiora. Esta aplicación ha sido diseñada bajo estándares de ingeniería de software de alto nivel, utilizando **Astro v5**, **React v19**, y **Tailwind CSS v4**.
+**Kiora** es el panel de control central para la gestión de sistema de microservicios para el kiosko inteligente Kiora. Esta aplicación ha sido diseñada bajo estándares de ingeniería de software de alto nivel, utilizando **Astro v5**, **React v19**, y **Tailwind CSS v4**.
 
 La arquitectura no es solo funcional; es una declaración de principios. Implementamos de forma estricta los principios de **Arquitectura Limpia (Clean Architecture)** y **Principios SOLID** para garantizar que el código sea un activo de larga duración, no una deuda técnica.
 

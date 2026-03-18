@@ -1,15 +1,14 @@
 ---
-// src/pages/login.astro
 import "../styles/global.css";
 import Icono from "../components/icono.jsx";
-import LoginForm from "../components/auth/LoginForm";
+import HelpCenter from "../components/help/HelpCenter";
 ---
 
 <html lang="es">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Iniciar Sesión - Kiora</title>
+    <title>Centro de Ayuda - Kiora</title>
     <Icono />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -34,6 +33,7 @@ import LoginForm from "../components/auth/LoginForm";
       class="w-48 h-auto mt-4 mb-6 relative z-10 object-contain"
     />
 
-    <LoginForm client:load />
+    <HelpCenter client:load />
+
   </body>
 </html>

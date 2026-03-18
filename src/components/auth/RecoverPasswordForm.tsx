@@ -13,7 +13,7 @@ export default function RecoverPasswordForm() {
     setIsLoading(true);
 
     try {
-      const response = await httpClient.post<{ message?: string }>('/auth/recuperar-password', {
+      const response = await httpClient.post<{ message?: string }>('/auth/forgot-password', {
         correo_usu: email,
       });
 
@@ -21,12 +21,8 @@ export default function RecoverPasswordForm() {
         throw new Error(response.error || 'Error al procesar la solicitud');
       }
 
-      await alertService.showSuccess(
-        'Correo enviado',
-        response.data?.message || 'Si el correo está registrado, recibirá un enlace para restablecer tu contraseña.'
-      );
-
-      window.location.href = '/login';
+      // Redirigir directamente a la página de confirmación
+      window.location.href = '/correo-enviado';
     } catch (error: unknown) {
       const err = error as Error;
       alertService.showError('Error', err.message || 'Error desconocido');

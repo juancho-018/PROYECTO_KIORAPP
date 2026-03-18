@@ -98,7 +98,7 @@ export default function PanelApp() {
             className="h-8 w-auto object-contain"
           />
           <span className="flex-1 border-none bg-transparent py-2.5 text-[0.95rem] text-[#FFFFFF] outline-none w-full">
-            {user.nombres_usu || user.correo_usu}
+            {user.nom_usu || user.correo_usu}
           </span>
         </div>
 
@@ -164,6 +164,7 @@ export default function PanelApp() {
                   <tr className="text-xs uppercase tracking-wider text-gray-500 border-b border-gray-100 bg-gray-50/50">
                     <th className="py-3 px-4 font-semibold rounded-tl-lg">Usuario</th>
                     <th className="py-3 px-4 font-semibold">Correo</th>
+                    <th className="py-3 px-4 font-semibold">Rol</th>
                     <th className="py-3 px-4 font-semibold">Estado</th>
                     <th className="py-3 px-4 font-semibold text-right rounded-tr-lg">Acción</th>
                   </tr>
@@ -172,9 +173,14 @@ export default function PanelApp() {
                   {!isLoadingUsers && usersList.map(u => (
                     <tr key={u.id_usu || u.correo_usu} className="hover:bg-gray-50/50 transition-colors group">
                       <td className="py-4 px-4 whitespace-nowrap">
-                        <div className="font-medium text-[#334155]">{u.nombres_usu || 'Sin Nombre'}</div>
+                        <div className="font-medium text-[#334155]">{u.nom_usu || 'Sin Nombre'}</div>
                       </td>
                       <td className="py-4 px-4 whitespace-nowrap text-gray-500 text-sm">{u.correo_usu}</td>
+                      <td className="py-4 px-4 whitespace-nowrap">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-600 border border-blue-100 capitalize">
+                          {u.rol_usu || 'N/A'}
+                        </span>
+                      </td>
                       <td className="py-4 px-4 whitespace-nowrap">
                         {u.isBlocked ? (
                           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-red-50 text-red-600 border border-red-100">

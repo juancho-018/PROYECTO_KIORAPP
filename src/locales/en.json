@@ -1,0 +1,24 @@
+{
+  "login": {
+    "title": "Welcome back. Please enter your details.",
+    "emailLabel": "Email address",
+    "emailPlaceholder": "example@kiora.com",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "forgotPassword": "Forgot your password?",
+    "submit": "Sign in",
+    "loading": "Signing in...",
+    "help": "Help Center"
+  },
+  "help": {
+    "title": "Help Center & FAQs",
+    "subtitle": "Find quick answers to your questions",
+    "back": "Back to Login",
+    "q1": "What happens if I forget my password?",
+    "a1": "Go to the login screen, click on 'Forgot your password?' and follow the instructions sent to your registered email.",
+    "q2": "Why is my account blocked?",
+    "a2": "After 5 failed login attempts, your account is temporarily blocked. An administrator can unlock it from the control panel.",
+    "q3": "How can I change the language?",
+    "a3": "You can use the language selector at the bottom left of the screen at any time to switch between English and Spanish."
+  }
+}
