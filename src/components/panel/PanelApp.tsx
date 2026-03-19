@@ -41,9 +41,9 @@ export default function PanelApp() {
   const handleLogout = async (e: React.MouseEvent) => {
     e.preventDefault();
     const confirmed = await alertService.showConfirm(
-      '¿Estás seguro?',
-      '¿Deseas cerrar tu sesión actual?',
-      'Sí, cerrar sesión',
+      'Cerrar Sesión',
+      '¿Estás seguro que deseas cerrar tu sesión en Kiora?',
+      'Cerrar sesión',
       'Cancelar'
     );
 
@@ -63,7 +63,7 @@ export default function PanelApp() {
       }));
       setUsersList(displayUsers);
     } catch (error) {
-      alertService.showToast('error', 'Error al cargar usuarios');
+      alertService.showToast('error', 'Error al cargar los usuarios');
     } finally {
       setIsLoadingUsers(false);
     }
@@ -78,10 +78,10 @@ export default function PanelApp() {
   const handleUnlockUser = async (id: string | number) => {
     try {
       await userService.unlockUser(id.toString());
-      alertService.showToast('success', 'Cuenta desbloqueada');
+      alertService.showToast('success', 'Usuario desbloqueado con éxito.');
       await loadUsersList(); // Refresh
     } catch (e) {
-      alertService.showToast('error', 'Restringido: Sólo Admins');
+      alertService.showToast('error', 'Acción denegada. Contacte con soporte.');
     }
   };
 
@@ -98,7 +98,7 @@ export default function PanelApp() {
             className="h-8 w-auto object-contain"
           />
           <span className="flex-1 border-none bg-transparent py-2.5 text-[0.95rem] text-[#FFFFFF] outline-none w-full">
-            {user.nom_usu || user.correo_usu}
+            {String(user?.nom_usu || user?.correo_usu || '')}
           </span>
         </div>
 
@@ -136,7 +136,7 @@ export default function PanelApp() {
             Bienvenido al Panel de Control
           </h1>
           <p className="text-gray-600 text-[0.95rem]">
-            Has iniciado sesión correctamente. Aquí podrás gestionar tu sistema Kiora próximamente.
+            Has iniciado sesión exitosamente. Pronto podrás gestionar Kiora desde aquí.
           </p>
         </div>
       </main>
@@ -173,7 +173,7 @@ export default function PanelApp() {
                   {!isLoadingUsers && usersList.map(u => (
                     <tr key={u.id_usu || u.correo_usu} className="hover:bg-gray-50/50 transition-colors group">
                       <td className="py-4 px-4 whitespace-nowrap">
-                        <div className="font-medium text-[#334155]">{u.nom_usu || 'Sin Nombre'}</div>
+                        <div className="font-medium text-[#334155]">{String(u.nom_usu || 'Sin Nombre')}</div>
                       </td>
                       <td className="py-4 px-4 whitespace-nowrap text-gray-500 text-sm">{u.correo_usu}</td>
                       <td className="py-4 px-4 whitespace-nowrap">
@@ -213,7 +213,7 @@ export default function PanelApp() {
               {isLoadingUsers && (
                 <div className="text-center py-10 flex flex-col items-center justify-center gap-3">
                   <div className="w-8 h-8 border-4 border-gray-200 border-t-[#ec131e] rounded-full animate-spin"></div>
-                  <p className="text-sm font-medium text-gray-500">Cargando información de usuarios...</p>
+                  <p className="weglot-dynamic text-sm font-medium text-gray-500">Cargando lista de usuarios...</p>
                 </div>
               )}
             </div>

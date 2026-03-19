@@ -2,6 +2,7 @@
 import "../styles/global.css";
 import Icono from "../components/icono.jsx";
 import RecoverPasswordForm from "../components/auth/RecoverPasswordForm";
+import GlobalControls from "../components/ui/GlobalControls";
 ---
 
 <html lang="es">
@@ -41,4 +42,6 @@ import RecoverPasswordForm from "../components/auth/RecoverPasswordForm";
     </p>
 
     <RecoverPasswordForm client:load />
+    <GlobalControls client:load />
+  </body>
 </html>

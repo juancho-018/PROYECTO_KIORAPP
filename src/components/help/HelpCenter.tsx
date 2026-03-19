@@ -1,10 +1,6 @@
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import '../../config/i18n';
-import LanguageSelector from '../ui/LanguageSelector';
 
 export default function HelpCenter() {
-  const { t } = useTranslation();
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   const toggleFaq = (index: number) => {
@@ -12,23 +8,21 @@ export default function HelpCenter() {
   };
 
   const faqs = [
-    { question: t('help.q1'), answer: t('help.a1') },
-    { question: t('help.q2'), answer: t('help.a2') },
-    { question: t('help.q3'), answer: t('help.a3') },
+    { question: '¿Qué pasa si olvido mi contraseña?', answer: 'Ve a la pantalla de inicio, haz clic en \'¿Olvidaste tu contraseña?\' y sigue las instrucciones que enviamos a tu correo.' },
+    { question: '¿Por qué mi cuenta aparece como bloqueada?', answer: 'Después de 5 intentos fallidos, el sistema de seguridad de Kiora suspende temporalmente tu cuenta. Un administrador puede desbloquearla en el Panel.' },
+    { question: '¿Cómo puedo cambiar el idioma de la aplicación?', answer: 'Puedes usar el botón ubicado en la esquina inferior derecha de la pantalla para alternar entre Español e Inglés en cualquier momento.' },
+    { question: 'Guía: ¿Cómo iniciar sesión en el sistema?', answer: 'Para entrar a Kiora, dirígete a la página de ingreso, escribe tu correo y contraseña registrados y presiona "Iniciar sesión".' },
+    { question: 'Guía: ¿Cómo escoger un pedido o producto?', answer: 'Una vez en la aplicación, navega a través del catálogo o las categorías. Cuando encuentres lo que quieres, selecciónalo y presiona el botón para añadirlo a tu carrito.' },
+    { question: 'Guía: ¿Cómo pagar mi pedido?', answer: 'Tras elegir tus productos, dirígete a tu carrito, revisa el resumen de tu compra y pulsa en "Pagar". Luego, sigue los pasos seleccionando tu medio de pago.' },
+    { question: 'Guía: ¿Cómo hacer seguimiento a mi compra?', answer: 'Dirígete al apartado de "Mis Pedidos" desde tu panel para ver en qué estado se encuentra tu comida o servicio.' },
   ];
 
   return (
     <div className="w-full flex flex-col items-center">
-      
-      {/* Botón Flotante para cambiar de idioma global */}
-      <div className="fixed bottom-6 left-6 z-50">
-        <LanguageSelector />
-      </div>
-
       <div className="bg-white w-full max-w-2xl p-8 rounded-xl border border-gray-100 shadow-[0_4px_24px_rgba(0,0,0,0.04)]">
         <div className="mb-8 text-center">
-          <h2 className="text-2xl font-bold text-[#1e293b]">{t('help.title')}</h2>
-          <p className="text-[#64748b] mt-2">{t('help.subtitle')}</p>
+          <h2 className="text-2xl font-bold text-[#1e293b]">Centro de Ayuda y Preguntas</h2>
+          <p className="text-[#64748b] mt-2">Encuentra respuestas rápidas a problemas comunes</p>
         </div>
 
         <div className="space-y-4">
@@ -70,7 +64,7 @@ export default function HelpCenter() {
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            {t('help.back')}
+            Volver al Inicio
           </a>
         </div>
 

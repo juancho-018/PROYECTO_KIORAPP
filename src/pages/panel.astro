@@ -3,6 +3,7 @@
 import "../styles/global.css";
 import Icono from "../components/icono.jsx";
 import PanelApp from "../components/panel/PanelApp";
+import GlobalControls from "../components/ui/GlobalControls";
 ---
 
 <html lang="es">
@@ -19,5 +20,6 @@ import PanelApp from "../components/panel/PanelApp";
     />
   <body>
     <PanelApp client:only="react" />
+    <GlobalControls client:load />
   </body>
 </html>

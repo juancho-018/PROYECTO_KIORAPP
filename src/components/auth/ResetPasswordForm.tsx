@@ -68,18 +68,38 @@ export default function ResetPasswordForm() {
     }
   };
 
+  if (!token) {
+    return (
+      <div className="bg-white w-full max-w-105 p-8 rounded-xl border border-red-100 shadow-sm text-center">
+        <svg className="w-12 h-12 text-red-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <h2 className="text-xl font-bold text-gray-800 mb-2">Error de validación</h2>
+        <p className="text-gray-600 mb-6">No tienes un token válido para acceder a esta página.</p>
+        <a href="/login" className="inline-block bg-[#ec131e] text-white px-6 py-2 rounded-lg font-semibold hover:bg-[#d0111a] transition-colors no-underline">
+          Volver al inicio
+        </a>
+      </div>
+    );
+  }
+
   return (
     <>
       <form
         onSubmit={handleSubmit}
         className="bg-white w-full max-w-105 p-8 rounded-xl border border-gray-100 shadow-[0_4px_24px_rgba(0,0,0,0.04)]"
       >
+        <div className="mb-6 text-center">
+          <h2 className="text-2xl font-bold text-[#1e293b] mb-2">Crear Nueva Contraseña</h2>
+          <p className="text-[0.95rem] text-[#64748b]">Ingresa tu nueva contraseña para la cuenta.</p>
+        </div>
+
         <div className="mb-5">
           <label
             htmlFor="newPassword"
             className="block font-semibold text-[0.85rem] text-[#374151] mb-2"
           >
-            Nueva contraseña
+            Nueva Contraseña
           </label>
           <div className="relative flex items-center border border-gray-300 rounded-lg bg-white overflow-hidden transition-all duration-200 focus-within:border-[#9ca3af] focus-within:ring-[3px] focus-within:ring-gray-400/10">
             <div className="pl-3.5 pr-2 text-gray-400 flex items-center">
@@ -91,11 +111,12 @@ export default function ResetPasswordForm() {
               type="password"
               id="newPassword"
               className="flex-1 border-none bg-transparent py-2.5 text-[0.95rem] text-[#334155] outline-none w-full placeholder-gray-400"
-              placeholder="Escribe tu nueva contraseña"
+              placeholder="••••••••"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               required
-              disabled={!token || isLoading}
+              minLength={6}
+              disabled={isLoading}
             />
           </div>
         </div>
@@ -105,7 +126,7 @@ export default function ResetPasswordForm() {
             htmlFor="confirmPassword"
             className="block font-semibold text-[0.85rem] text-[#374151] mb-2"
           >
-            Confirmar contraseña
+            Confirmar Contraseña
           </label>
           <div className="relative flex items-center border border-gray-300 rounded-lg bg-white overflow-hidden transition-all duration-200 focus-within:border-[#9ca3af] focus-within:ring-[3px] focus-within:ring-gray-400/10">
             <div className="pl-3.5 pr-2 text-gray-400 flex items-center">
@@ -117,29 +138,29 @@ export default function ResetPasswordForm() {
               type="password"
               id="confirmPassword"
               className="flex-1 border-none bg-transparent py-2.5 text-[0.95rem] text-[#334155] outline-none w-full placeholder-gray-400"
-              placeholder="Vuelve a escribir la contraseña"
+              placeholder="••••••••"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
-              disabled={!token || isLoading}
+              disabled={isLoading}
             />
           </div>
         </div>
 
         <button
           type="submit"
-          disabled={!token || isLoading}
+          disabled={isLoading}
           className="w-full bg-[#ec131e] hover:bg-[#d0111a] text-white border-none rounded-lg py-2.5 text-[1rem] font-semibold cursor-pointer transition-colors duration-200 shadow-[0_2px_4px_rgba(237,19,30,0.15)] disabled:opacity-70 disabled:cursor-not-allowed mb-4"
         >
-          {isLoading ? 'Guardando...' : 'Restablecer contraseña'}
+          {isLoading ? 'Restableciendo...' : 'Restablecer Contraseña'}
         </button>
 
         <div className="text-center">
-          <a
-            href="/login"
-            className="text-[0.85rem] text-[#64748b] hover:text-[#ec131e] font-medium transition-colors"
-          >
-            Volver a iniciar sesión
+          <a href="/login" className="inline-flex items-center gap-1 text-[#64748b] hover:text-[#334155] font-medium text-[0.9rem] no-underline transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Volver al inicio
           </a>
         </div>
       </form>
@@ -147,7 +168,7 @@ export default function ResetPasswordForm() {
       {/* Loading Overlay */}
       {isLoading && (
         <div>
-          <Loading message="Procesando..." />
+          <Loading message="Restableciendo..." />
         </div>
       )}
     </>

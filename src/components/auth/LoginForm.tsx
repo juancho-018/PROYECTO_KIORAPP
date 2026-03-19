@@ -1,12 +1,8 @@
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import '../../config/i18n';
-import LanguageSelector from '../ui/LanguageSelector';
 import { authService, alertService } from '../../config/setup';
 import Loading from '../cargando'; // Importamos el componente de carga existente
 
 export default function LoginForm() {
-  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -37,22 +33,8 @@ export default function LoginForm() {
   return (
     <div className="w-full flex flex-col items-center">
       <p className="text-[0.95rem] text-[#64748b] m-0 mb-8 font-medium">
-        {t('login.title')}
+        Bienvenido de nuevo. Por favor, ingresa tus datos.
       </p>
-
-      {/* Widgets Inferiores (Idioma y Ayuda) anclados a la esquina izquierda */}
-      <div className="fixed bottom-6 left-6 z-50 flex items-center gap-3">
-        <LanguageSelector />
-        <a
-          href="/ayuda"
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:text-[#ec131e] bg-white hover:bg-red-50 rounded-lg transition-all duration-200 border border-gray-200 hover:border-red-100 shadow-sm no-underline"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
-          </svg>
-          {t('login.help')}
-        </a>
-      </div>
 
       <form
         onSubmit={handleSubmit}
@@ -63,7 +45,7 @@ export default function LoginForm() {
             htmlFor="email"
             className="block font-semibold text-[0.85rem] text-[#374151] mb-2"
           >
-            {t('login.emailLabel')}
+            Correo electrónico
           </label>
           <div className="relative flex items-center border border-gray-300 rounded-lg bg-white overflow-hidden transition-all duration-200 focus-within:border-[#9ca3af] focus-within:ring-[3px] focus-within:ring-gray-400/10">
             <div className="pl-3.5 pr-2 text-gray-400 flex items-center">
@@ -75,7 +57,7 @@ export default function LoginForm() {
               type="email"
               id="email"
               className="flex-1 border-none bg-transparent py-2.5 text-[0.95rem] text-[#334155] outline-none w-full placeholder-gray-400"
-              placeholder={t('login.emailPlaceholder')}
+              placeholder="ejemplo@kiora.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -89,10 +71,10 @@ export default function LoginForm() {
               htmlFor="password"
               className="block font-semibold text-[0.85rem] text-[#374151]"
             >
-              {t('login.passwordLabel')}
+              Contraseña
             </label>
             <a href="/recuperarContraseña" className="text-[#ec131e] font-semibold text-[0.8rem] no-underline hover:underline">
-              {t('login.forgotPassword')}
+              ¿Olvidaste tu contraseña?
             </a>
           </div>
           <div className="relative flex items-center border border-gray-300 rounded-lg bg-white overflow-hidden transition-all duration-200 focus-within:border-[#9ca3af] focus-within:ring-[3px] focus-within:ring-gray-400/10">
@@ -105,7 +87,7 @@ export default function LoginForm() {
               type="password"
               id="password"
               className="flex-1 border-none bg-transparent py-2.5 text-[0.95rem] text-[#334155] outline-none w-full placeholder-gray-400"
-              placeholder={t('login.passwordPlaceholder')}
+              placeholder="Escribe tu contraseña"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -118,14 +100,14 @@ export default function LoginForm() {
           disabled={isLoading}
           className="w-full bg-[#ec131e] hover:bg-[#d0111a] text-white border-none rounded-lg py-2.5 text-[1rem] font-semibold cursor-pointer transition-colors duration-200 shadow-[0_2px_4px_rgba(237,19,30,0.15)] disabled:opacity-70 disabled:cursor-not-allowed"
         >
-          {isLoading ? t('login.loading') : t('login.submit')}
+          {isLoading ? 'Iniciando sesión...' : 'Iniciar sesión'}
         </button>
       </form>
 
       {/* Loading Overlay */}
       {isLoading && (
         <div>
-          <Loading message={t('login.loading')} />
+          <Loading message="Iniciando sesión..." />
         </div>
       )}
     </div>
