@@ -32,8 +32,22 @@ export default function HelpCenter() {
 
   return (
     <div className="w-full max-w-3xl mx-auto px-4 pb-24 relative">
+      <button 
+        onClick={() => {
+          if (window.history.length > 1) {
+            window.history.back();
+          } else {
+            window.location.href = '/login';
+          }
+        }}
+        className="mt-6 flex items-center gap-2 text-gray-400 hover:text-[#ec131e] transition-all group border-none bg-transparent cursor-pointer"
+      >
+        <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+        <span className="text-[12px] font-bold uppercase tracking-widest">Volver</span>
+      </button>
+
       {/* Search Header */}
-      <div className="mb-10 text-left pt-6">
+      <div className="mb-10 text-left pt-4">
         <h1 className="text-[26px] font-extrabold text-[#111827] tracking-tight mb-6">¿En qué podemos ayudarte?</h1>
         <div className="relative group">
           <input 

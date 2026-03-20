@@ -104,23 +104,14 @@ export default function LoginForm() {
         </button>
       </form>
 
-      <span className="text-[#797676]">Kiora | Sistema para Kioskos </span>
+      <div className="mt-8 text-center bg-transparent border-none shadow-none flex flex-col items-center">
+        <p className="text-[0.9rem] font-medium text-gray-500">
+          ¿Necesitas contactarte con nosotros?<span className="text-[#ec131e] font-bold">KiosKiora@gmail.com</span>
+        </p>
+      </div>
 
-      <div className="mt-10 w-full max-w-105 bg-gray-50 rounded-2xl p-6 border border-gray-100 flex flex-col gap-4 shadow-[0_4px_12px_rgba(0,0,0,0.02)]">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm text-[#ec131e]">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-          </div>
-          <div>
-            <h4 className="text-[14px] font-bold text-gray-800 leading-tight">¿Necesitas soporte?</h4>
-            <p className="text-[12px] text-gray-500">Contáctanos directamente vía e-mail</p>
-          </div>
-        </div>
-        
-        <div className="bg-white px-5 py-4 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between pointer-events-none select-all relative overflow-hidden group">
-          <span className="text-[14px] font-bold text-gray-700 tracking-tight">KiosKiora@gmail.com</span>
-          <svg className="w-5 h-5 text-[#ec131e]/20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-        </div>
+      <div className="mt-6 w-full px-[10%] sm:px-[15%] text-left">
+        <span className="text-[#797676] text-[0.85rem] font-medium tracking-wide">Kiora | Sistema para Kioskos</span>
       </div>
 
       {/* Loading Overlay */}
