@@ -1,96 +1,63 @@
-# Kiora - Frontend Panel (Enterprise Edition)
+# Kiora - Frontend Workspace (Professional Edition)
 
-**Kiora** es el panel de control central para la gestión de sistema de microservicios para el kiosko inteligente Kiora. Esta aplicación ha sido diseñada bajo estándares de ingeniería de software de alto nivel, utilizando **Astro v5**, **React v19**, y **Tailwind CSS v4**.
-
-La arquitectura no es solo funcional; es una declaración de principios. Implementamos de forma estricta los principios de **Arquitectura Limpia (Clean Architecture)** y **Principios SOLID** para garantizar que el código sea un activo de larga duración, no una deuda técnica.
+**Kiora** es el ecosistema frontend centralizado para la gestión del sistema de microservicios. Esta aplicación integra los módulos de **Administración**, **Autenticación**, **Seguridad** y **Soporte** bajo una arquitectura robusta de **Astro v5** y **React v19**.
 
 ---
 
-## Arquitectura del proyecto
+## 📂 Arquitectura Global del Proyecto
+
+La estructura ha sido diseñada para escalar horizontalmente mediante módulos independientes:
 
 ```text
 src/
-├── components/             # Componentes de UI (React)
-│   ├── cargando.jsx        # Overlay de carga reutilizable (con props)
-│   └── icono.jsx           # Favicon y recursos visuales base
-├── core/                   # Abstracciones de infraestructura (DIP)
-│   ├── http/
-│   │   └── HttpClient.ts   # Cliente base para peticiones Fetch (Generic)
-│   └── ui/
-│       └── AlertService.ts # Servicio de notificaciones (SweetAlert2)
-├── services/               # Lógica de negocio y Casos de Uso (SRP)
-│   ├── AuthService.ts      # Autenticación, Login y manejo de JWT
-│   ├── SessionManager.ts   # Control de inactividad (15m) y expiración
-│   └── UserService.ts      # Gestión de datos de usuarios y desbloqueos
-├── views/                  # Patrón MVP (Model-View-Presenter)
-│   └── panel/
-│       ├── PanelPresenter.ts # Orquestador de lógica (Sin interactuar con DOM)
-│       └── PanelView.ts      # Manipulación directa del DOM y eventos
-├── pages/                  # Rutas de Astro e Inicialización de MVP
-│   ├── index.astro         # Router de entrada (Redirección a login)
-│   ├── login.astro         # Vista de Login e inyección de dependencias
-│   ├── panel.astro         # Dashboard principal y gestión de usuarios
-│   └── recuperarContraseña.astro # Flujo de recuperación de credenciales
-├── styles/
-│   └── global.css          # Estilos base y configuración de Tailwind v4
-└── assets/                 # Assets procesados por Astro durante el build
+├── components/             # Capa de Presentación (React)
+│   ├── auth/               # Login, Recuperación y Reseteo de Password
+│   ├── panel/              # Dashboard Administrativo Modular
+│   ├── help/               # Centro de Ayuda y FAQ
+│   ├── ui/                 # Componentes Globales (Loading, Controles)
+│   └── icono.jsx           # Activos Visuales Base
+├── core/                   # Abstracciones de Infraestructura (HttpClient)
+├── services/               # Lógica de Negocio (Auth, Users, Session)
+├── models/                 # Contratos de Datos e Interfaces TS
+├── pages/                  # Orquestación de Rutas (Astro)
+└── styles/                 # Configuración de Tailwind v4 y Global CSS
 ```
-
-### Capas de la Aplicación
-
-- **`src/core/`**: Abstracciones base. Aquí vive la infraestructura que se comunica con el "mundo exterior" (APIs, Alertas).
-- **`src/services/`**: La inteligencia del sistema. Las reglas de negocio (Login, Gestión de Sesión, Validaciones) se definen aquí de forma agnóstica al framework.
-- **`src/views/`**: El contrato visual. Los `Presenters` coordinan, las `Views` ejecutan la manipulación del DOM. **Prohibido poner `fetch` aquí.**
-- **`src/pages/`**: Solo inicialización. Son el pegamento que une las piezas de MVP cuando el usuario entra en una ruta.
-- **`src/components/`**: Componentes de React puros. UI de alta calidad sin lógica pesada.
 
 ---
 
-## Docker & Despliegue de Producción
+## 🛠️ Documentación Detallada
 
-El despliegue está automatizado mediante un **Multistage Dockerfile** que garantiza una imagen final mínima y segura.
+Para una explicación profunda de la arquitectura y patrones utilizados, consulta:
+👉 **[TECHNICAL_DOCS.md](./src/TECHNICAL_DOCS.md)**
 
-### Requisitos
-- [Docker](https://www.docker.com/) & [Docker Compose](https://docs.docker.com/compose/)
+---
 
-### Comandos Rápidos
+## 🚀 Guía de Inicio Rápido
 
+### Desarrollo Local
+1. **Instalar dependencias:** `npm install`
+2. **Configurar entorno:** `cp .env.example .env`
+3. **Ejecutar:** `npm run dev`
+
+### Despliegue con Docker
 ```bash
-# 1. Preparar variables (Asegúrate de editar .env antes)
-cp .env.example .env
-
-# 2. Levantar en producción (Usa el puerto 3000 por defecto)
+# Construir y levantar todo el ecosistema front
 docker-compose up -d --build
-
-# 3. Detener los servicios
-docker-compose down
 ```
 
-> [!IMPORTANT]
-> Astro hornea las variables `PUBLIC_` durante el tiempo de **build**. Por eso, el `docker-compose.yml` pasa la `PUBLIC_API_URL` como un `build-arg` al `Dockerfile`. Si cambias la URL de la API, necesitas hacer un `--build`.
+---
+
+## 📐 Principios de Ingeniería
+
+- **Clean Architecture**: Separación estricta entre UI e Infraestructura.
+- **SOLID**: Código mantenible, extensible y testeable.
+- **Performance**: Hidratación selectiva de componentes React mediante Astro.
+- **Premium UI**: Diseño consistente basado en tokens de marca (Kiora Red).
 
 ---
 
-## 🛠️ Guía de Desarrollo Local
+## 📝 Soporte y Troubleshooting
 
-Si prefieres trabajar fuera de un contenedor:
-
-1. **Instalación:** `npm install`
-2. **Ejecución:** `npm run dev` (Accede en `http://localhost:4321`)
-3. **Build local:** `npm run build` (Genera la carpeta `dist/`)
-
-### Reglas de Oro para Desarrolladores
-
-1. **No Logic in Scripts:** El tag `<script>` en los archivos `.astro` debe tener máximo 10-15 líneas. Solo debe servir para instanciar clases e inicializarlas.
-2. **SOLID for life:** Si una función hace más de una cosa, divídela. Si un archivo tiene más de 300 líneas, analízalo.
-3. **Typography & UI:** Usamos **Inter** como tipografía principal. Mantén la consistencia visual usando los tokens de Tailwind definidos en el proyecto.
-
----
-
-## 📝 Troubleshooting
-
-- **¿El backend me da 401/403?:** Verifica que `SessionManager.ts` esté enviando correctamente el token desde el `localStorage`.
-- **¿Nginx no carga las rutas secundarias?:** El archivo `nginx.conf` ya está configurado para manejar el ruteo de Astro (SPA-like) mediante `try_files`. No lo modifiques a menos que sepas qué haces.
-- **¿Variables de entorno vacías?:** Asegúrate de reiniciar el servidor de Astro (`npm run dev`) cada vez que toques el archivo `.env`.
-
----
+- **Logs de Build**: Revisa `build.log` o `tsc.log` para errores de compilación o tipos.
+- **Sesiones**: Si experimentas desconexiones inesperadas, verifica la configuración de `SessionManager.ts`.
+- **API**: Asegúrate de que `PUBLIC_API_URL` en tu `.env` apunte al backend correcto.

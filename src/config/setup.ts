@@ -4,7 +4,7 @@ import { AuthService } from "../services/AuthService";
 import { UserService } from "../services/UserService";
 
 // Utilizamos la variable entorno o el fallback
-export const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:3002/api";
+export const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:3001/api";
 
 // Instancias únicas (Singleton Pattern)
 export const httpClient = new FetchHttpClient(API_URL);

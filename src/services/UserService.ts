@@ -76,9 +76,66 @@ export class UserService {
     return true;
   }
 
+  async updateUser(id: string | number, dto: Partial<RegisterUserDto>): Promise<void> {
+    const { password, ...cleanDto } = dto;
+    const response = await this.httpClient.patch<any>(`/auth/users/${id}`, cleanDto, {
+      headers: this.getAuthHeaders()
+    });
+    if (!response.ok) {
+      throw new Error(response.error ?? 'Error al actualizar usuario');
+    }
+  }
+
+  async updateRole(id: string | number, role: string): Promise<void> {
+    const response = await this.httpClient.patch<any>(`/auth/users/${id}/role`, { rol_usu: role }, {
+      headers: this.getAuthHeaders()
+    });
+    if (!response.ok) {
+      throw new Error(response.error ?? 'Error al actualizar el rol');
+    }
+  }
+
+  async deleteUser(id: string | number): Promise<void> {
+    const response = await this.httpClient.delete<any>(`/auth/users/${id}`, {
+      headers: this.getAuthHeaders()
+    });
+    if (!response.ok) {
+      throw new Error(response.error ?? 'Error al eliminar usuario');
+    }
+  }
+
+  async getMe(): Promise<User> {
+    const response = await this.httpClient.get<User>('/auth/me', this.getAuthHeaders());
+    if (!response.ok || !response.data) {
+      throw new Error(response.error ?? 'Error al obtener datos del perfil');
+    }
+    return response.data;
+  }
+
+  async changePassword(current_password: string, new_password: string): Promise<void> {
+    const response = await this.httpClient.patch<any>('/auth/me/password', {
+      current_password,
+      new_password
+    }, {
+      headers: this.getAuthHeaders()
+    });
+    if (!response.ok) {
+      throw new Error(response.error ?? 'Error al cambiar la contraseña');
+    }
+  }
+
   isUserBlocked(user: User): boolean {
     if (user.intentos_fallidos && user.intentos_fallidos >= 5) return true;
     if (user.bloqueado_hasta && new Date(user.bloqueado_hasta) > new Date()) return true;
     return false;
+  }
+
+  async adminUpdatePassword(id: string | number, password: string): Promise<void> {
+    const response = await this.httpClient.patch<any>(`/auth/users/${id}/password`, { password }, {
+      headers: this.getAuthHeaders()
+    });
+    if (!response.ok) {
+      throw new Error(response.error ?? 'Error al actualizar la contraseña');
+    }
   }
 }

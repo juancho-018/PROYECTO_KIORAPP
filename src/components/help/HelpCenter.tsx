@@ -1,74 +1,114 @@
 import { useState } from 'react';
 
 export default function HelpCenter() {
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [openIndex, setOpenIndex] = useState<number | null>(1); // Set one open by default as in screenshot
+  const [searchTerm, setSearchTerm] = useState('');
 
   const toggleFaq = (index: number) => {
     setOpenIndex(openIndex === index ? null : index);
   };
 
+  const topics = [
+    { title: 'Gestión de Inventario', icon: (
+      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" /></svg>
+    )},
+    { title: 'Configuración de Kiosco', icon: (
+      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" /></svg>
+    )},
+    { title: 'Reportes y Analítica', icon: (
+      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" /><path d="M12 2.252A8.001 8.001 0 0117.748 8H12V2.252z" /></svg>
+    )},
+    { title: 'Usuarios y Permisos', icon: (
+      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" /></svg>
+    )},
+  ];
+
   const faqs = [
-    { question: '¿Qué pasa si olvido mi contraseña?', answer: 'Ve a la pantalla de inicio, haz clic en \'¿Olvidaste tu contraseña?\' y sigue las instrucciones que enviamos a tu correo.' },
-    { question: '¿Por qué mi cuenta aparece como bloqueada?', answer: 'Después de 5 intentos fallidos, el sistema de seguridad de Kiora suspende temporalmente tu cuenta. Un administrador puede desbloquearla en el Panel.' },
-    { question: '¿Cómo puedo cambiar el idioma de la aplicación?', answer: 'Puedes usar el botón ubicado en la esquina inferior derecha de la pantalla para alternar entre Español e Inglés en cualquier momento.' },
-    { question: 'Guía: ¿Cómo iniciar sesión en el sistema?', answer: 'Para entrar a Kiora, dirígete a la página de ingreso, escribe tu correo y contraseña registrados y presiona "Iniciar sesión".' },
-    { question: 'Guía: ¿Cómo escoger un pedido o producto?', answer: 'Una vez en la aplicación, navega a través del catálogo o las categorías. Cuando encuentres lo que quieres, selecciónalo y presiona el botón para añadirlo a tu carrito.' },
-    { question: 'Guía: ¿Cómo pagar mi pedido?', answer: 'Tras elegir tus productos, dirígete a tu carrito, revisa el resumen de tu compra y pulsa en "Pagar". Luego, sigue los pasos seleccionando tu medio de pago.' },
-    { question: 'Guía: ¿Cómo hacer seguimiento a mi compra?', answer: 'Dirígete al apartado de "Mis Pedidos" desde tu panel para ver en qué estado se encuentra tu comida o servicio.' },
+    { question: '¿Cómo restablecer un kiosco?', answer: 'Para restablecer un kiosco, dirígete a la configuración del mismo y selecciona la opción de reinicio forzado.' },
+    { question: '¿Cómo añadir un nuevo producto?', answer: 'Para añadir un nuevo producto, dirígete a la pestaña \'Inventario\' en el menú principal, haz clic en el botón \'+\' ubicado en la esquina superior derecha y completa los campos obligatorios como nombre, precio y stock inicial.' },
+    { question: '¿Por qué no se sincroniza mi inventario?', answer: 'Asegúrate de tener una conexión a internet estable y que los servicios de base de datos estén activos.' },
+    { question: '¿Cómo cambiar los métodos de pago?', answer: 'Dirígete a la configuración de pagos en el panel administrativo para habilitar o deshabilitar métodos.' },
   ];
 
   return (
-    <div className="w-full flex flex-col items-center">
-      <div className="bg-white w-full max-w-2xl p-8 rounded-xl border border-gray-100 shadow-[0_4px_24px_rgba(0,0,0,0.04)]">
-        <div className="mb-8 text-center">
-          <h2 className="text-2xl font-bold text-[#1e293b]">Centro de Ayuda y Preguntas</h2>
-          <p className="text-[#64748b] mt-2">Encuentra respuestas rápidas a problemas comunes</p>
+    <div className="w-full max-w-3xl mx-auto px-4 pb-24 relative">
+      {/* Search Header */}
+      <div className="mb-10 text-left pt-6">
+        <h1 className="text-[26px] font-extrabold text-[#111827] tracking-tight mb-6">¿En qué podemos ayudarte?</h1>
+        <div className="relative group">
+          <input 
+            type="text" 
+            placeholder="Busca guías, tutoriales o FAQs..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-[#f3f4f6] border-none py-4 pl-12 pr-6 rounded-2xl text-[15px] focus:ring-4 focus:ring-red-50 focus:bg-white transition-all placeholder:text-gray-400 font-medium"
+          />
+          <svg className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2 group-focus-within:text-[#ec131e] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
         </div>
+      </div>
 
-        <div className="space-y-4">
-          {faqs.map((faq, idx) => (
-            <div 
-              key={idx} 
-              className="border border-gray-200 rounded-lg overflow-hidden transition-all duration-200"
+      {/* Popular Topics */}
+      <section className="mb-12">
+        <h2 className="text-[17px] font-bold text-[#111827] mb-6">Temas Populares</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {topics.map((topic, idx) => (
+            <button 
+              key={idx}
+              className="flex items-center gap-4 p-5 bg-white border border-gray-100 rounded-2xl hover:shadow-xl hover:border-red-50 transition-all text-left active:scale-[0.98] group"
             >
-              <button
-                type="button"
-                className="w-full px-5 py-4 text-left font-semibold text-[#334155] bg-gray-50 hover:bg-gray-100 flex justify-between items-center transition-colors"
-                onClick={() => toggleFaq(idx)}
-              >
-                {faq.question}
-                <svg 
-                  className={`w-5 h-5 transform transition-transform text-gray-500 ${openIndex === idx ? 'rotate-180 text-[#ec131e]' : ''}`} 
-                  fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              
-              <div 
-                className={`px-5 text-[#475569] bg-white transition-all duration-300 ease-in-out overflow-hidden ${
-                  openIndex === idx ? 'py-4 max-h-40 opacity-100' : 'max-h-0 opacity-0'
-                }`}
-              >
-                {faq.answer}
+              <div className="w-12 h-12 bg-red-50 text-[#ec131e] rounded-xl flex items-center justify-center shrink-0 group-hover:bg-[#ec131e] group-hover:text-white transition-colors">
+                {topic.icon}
               </div>
-            </div>
+              <span className="font-bold text-[#111827] text-[15px] leading-tight">{topic.title}</span>
+            </button>
           ))}
         </div>
+      </section>
 
-        <div className="mt-8 text-center border-t border-gray-100 pt-6">
-          <a
-            href="/login"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#ec131e] hover:bg-[#d0111a] text-white rounded-lg font-semibold transition-colors shadow-sm no-underline"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            Volver al Inicio
-          </a>
+      {/* FAQs */}
+      <section>
+        <h2 className="text-[17px] font-bold text-[#111827] mb-6">Preguntas Frecuentes</h2>
+        <div className="space-y-3">
+          {faqs.map((faq, idx) => {
+            const isActive = openIndex === idx;
+            return (
+              <div 
+                key={idx} 
+                className={`border transition-all duration-300 rounded-2xl overflow-hidden ${
+                  isActive ? 'border-red-200 bg-red-50/10 shadow-lg' : 'border-gray-100 bg-white hover:border-gray-200'
+                }`}
+              >
+                <button
+                  onClick={() => toggleFaq(idx)}
+                  className="w-full px-6 py-5 text-left flex justify-between items-center group"
+                >
+                  <span className={`font-bold transition-colors text-[15px] ${isActive ? 'text-[#ec131e]' : 'text-[#374151]'}`}>
+                    {faq.question}
+                  </span>
+                  <svg 
+                    className={`w-5 h-5 transition-transform ${isActive ? 'rotate-180 text-[#ec131e]' : 'text-gray-400 group-hover:text-gray-600'}`} 
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                <div 
+                  className={`px-6 text-[#6b7280] text-[14px] leading-relaxed transition-all duration-350 ease-in-out overflow-hidden ${
+                    isActive ? 'pb-6 pt-0 max-h-[300px] opacity-100 visible' : 'max-h-0 opacity-0 invisible'
+                  }`}
+                >
+                  {faq.answer}
+                </div>
+              </div>
+            );
+          })}
         </div>
+      </section>
 
-      </div>
+      <button className="fixed bottom-6 right-6 bg-[#ec131e] hover:bg-[#d01019] text-white px-6 py-3.5 rounded-full shadow-2xl flex items-center gap-3 active:scale-95 transition-all z-50">
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
+        <span className="font-bold text-[14px]">Chat en vivo</span>
+      </button>
     </div>
   );
 }

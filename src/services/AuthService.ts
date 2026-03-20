@@ -42,7 +42,15 @@ export class AuthService {
     return null;
   }
 
-  logout() {
+  async logout() {
+    try {
+      // Intentar cerrar sesión en el servidor (opcionalmente ignoramos errores si el servidor no responde)
+      await this.httpClient.post('/auth/logout', undefined, {
+        headers: { Authorization: `Bearer ${this.getToken()}` }
+      });
+    } catch (e) {
+      console.error('Error al cerrar sesión en el servidor:', e);
+    }
     this.clearSession();
     window.location.href = '/login';
   }
