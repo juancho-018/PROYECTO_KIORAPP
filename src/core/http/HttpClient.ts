@@ -1,3 +1,35 @@
+/** Extrae mensaje legible de respuestas JSON de error (REST, validación, etc.). */
+export function errorMessageFromResponseBody(
+  responseData: unknown,
+  status: number
+): string {
+  if (responseData == null) {
+    return `Error ${status}`;
+  }
+  if (typeof responseData === 'string') {
+    return responseData || `Error ${status}`;
+  }
+  if (typeof responseData !== 'object') {
+    return `Error ${status}`;
+  }
+  const d = responseData as Record<string, unknown>;
+  if (typeof d.error === 'string' && d.error) return d.error;
+  if (typeof d.message === 'string' && d.message) return d.message;
+  if (Array.isArray(d.errors)) {
+    const parts = d.errors
+      .map((e) => {
+        if (typeof e === 'string') return e;
+        if (e && typeof e === 'object' && 'message' in e) {
+          return String((e as { message: unknown }).message);
+        }
+        return '';
+      })
+      .filter(Boolean);
+    if (parts.length) return parts.join(', ');
+  }
+  return `Error ${status}`;
+}
+
 /**
  * Options for making HTTP requests.
  */
@@ -45,7 +77,7 @@ export class FetchHttpClient implements IHttpClient {
       if (!response.ok) {
         return {
           data: null,
-          error: responseData?.error || responseData?.message || `Error ${response.status}`,
+          error: errorMessageFromResponseBody(responseData, response.status),
           status: response.status,
           ok: false,
         };

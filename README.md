@@ -28,7 +28,8 @@ src/
 ## 🛠️ Documentación Detallada
 
 Para una explicación profunda de la arquitectura y patrones utilizados, consulta:
-👉 **[TECHNICAL_DOCS.md](./src/TECHNICAL_DOCS.md)**
+👉 **[TECHNICAL_DOCS.md](./src/TECHNICAL_DOCS.md)**  
+👉 **[Seguridad (modelo de amenazas del cliente)](./SECURITY.md)**
 
 ---
 
@@ -36,7 +37,7 @@ Para una explicación profunda de la arquitectura y patrones utilizados, consult
 
 ### Desarrollo Local
 1. **Instalar dependencias:** `npm install`
-2. **Configurar entorno:** `cp .env.example .env`
+2. **Configurar entorno:** `cp .env.example .env` (opcional: `PUBLIC_WEGLOT_API_KEY` si usas traducción Weglot)
 3. **Ejecutar:** `npm run dev`
 
 ### Despliegue con Docker
@@ -61,3 +62,4 @@ docker-compose up -d --build
 - **Logs de Build**: Revisa `build.log` o `tsc.log` para errores de compilación o tipos.
 - **Sesiones**: Si experimentas desconexiones inesperadas, verifica la configuración de `SessionManager.ts`.
 - **API**: Asegúrate de que `PUBLIC_API_URL` en tu `.env` apunte al backend correcto.
+- **Seguridad**: Lee [SECURITY.md](./SECURITY.md) antes de desplegar en producción (sesión, JWT, CSP).

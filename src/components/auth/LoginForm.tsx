@@ -73,7 +73,7 @@ export default function LoginForm() {
             >
               Contraseña
             </label>
-            <a href="/recuperarContraseña" className="text-[#ec131e] font-semibold text-[0.8rem] no-underline hover:underline">
+            <a href="/recuperar-contrasena" className="text-[#ec131e] font-semibold text-[0.8rem] no-underline hover:underline">
               ¿Olvidaste tu contraseña?
             </a>
           </div>

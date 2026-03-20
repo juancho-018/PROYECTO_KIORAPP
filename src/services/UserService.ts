@@ -1,16 +1,8 @@
 import { type IHttpClient } from '../core/http/HttpClient';
 import { type AuthService } from './AuthService';
 import type { User } from '../models/User';
-
-export interface PaginatedUsers {
-  data: User[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-}
+import type { PaginatedUsers } from '../models/PaginatedUsers';
+import { parsePaginatedUsersPayload } from './userResponse';
 
 export interface RegisterUserDto {
   nom_usu: string;
@@ -35,21 +27,23 @@ export class UserService {
   }
 
   async fetchUsers(page: number = 1, limit: number = 10): Promise<PaginatedUsers> {
-    const response = await this.httpClient.get<PaginatedUsers>(`/auth/users?page=${page}&limit=${limit}`, this.getAuthHeaders());
+    const response = await this.httpClient.get<unknown>(
+      `/auth/users?page=${page}&limit=${limit}`,
+      this.getAuthHeaders()
+    );
     if (!response.ok) {
       throw new Error(response.error ?? 'Error al consultar usuarios');
     }
-    
-    // Si el backend devuelve el objeto completo { data, pagination }
-    if (response.data && 'pagination' in (response.data as any)) {
-      return response.data as unknown as PaginatedUsers;
+    if (response.data == null) {
+      throw new Error('Respuesta de usuarios sin cuerpo');
     }
-    
-    // Fallback por si la respuesta vino vacía o diferente
-    return {
-      data: (response.data as unknown as { data?: User[] })?.data || (response.data as unknown as User[]) || [],
-      pagination: { page, limit, total: 0, totalPages: 0 }
-    };
+    try {
+      return parsePaginatedUsersPayload(response.data, page, limit);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Respuesta inválida';
+      console.warn('[UserService.fetchUsers]', msg, response.data);
+      throw new Error(msg);
+    }
   }
 
   async registerUser(dto: RegisterUserDto): Promise<void> {
@@ -57,7 +51,7 @@ export class UserService {
     const payload = { ...dto, password: defaultPassword };
     
     // Se asume que /auth/register recibe el body en minúsculas y está protegido por isAdmin según el authController
-    const response = await this.httpClient.post<any>('/auth/register', payload, {
+    const response = await this.httpClient.post<unknown>('/auth/register', payload, {
       headers: this.getAuthHeaders()
     });
     
@@ -77,8 +71,9 @@ export class UserService {
   }
 
   async updateUser(id: string | number, dto: Partial<RegisterUserDto>): Promise<void> {
-    const { password, ...cleanDto } = dto;
-    const response = await this.httpClient.patch<any>(`/auth/users/${id}`, cleanDto, {
+    const cleanDto: Partial<RegisterUserDto> = { ...dto };
+    delete cleanDto.password;
+    const response = await this.httpClient.patch<unknown>(`/auth/users/${id}`, cleanDto, {
       headers: this.getAuthHeaders()
     });
     if (!response.ok) {
@@ -87,7 +82,7 @@ export class UserService {
   }
 
   async updateRole(id: string | number, role: string): Promise<void> {
-    const response = await this.httpClient.patch<any>(`/auth/users/${id}/role`, { rol_usu: role }, {
+    const response = await this.httpClient.patch<unknown>(`/auth/users/${id}/role`, { rol_usu: role }, {
       headers: this.getAuthHeaders()
     });
     if (!response.ok) {
@@ -96,7 +91,7 @@ export class UserService {
   }
 
   async deleteUser(id: string | number): Promise<void> {
-    const response = await this.httpClient.delete<any>(`/auth/users/${id}`, {
+    const response = await this.httpClient.delete<unknown>(`/auth/users/${id}`, {
       headers: this.getAuthHeaders()
     });
     if (!response.ok) {
@@ -113,7 +108,7 @@ export class UserService {
   }
 
   async changePassword(current_password: string, new_password: string): Promise<void> {
-    const response = await this.httpClient.patch<any>('/auth/me/password', {
+    const response = await this.httpClient.patch<unknown>('/auth/me/password', {
       current_password,
       new_password
     }, {
@@ -131,7 +126,7 @@ export class UserService {
   }
 
   async adminUpdatePassword(id: string | number, password: string): Promise<void> {
-    const response = await this.httpClient.patch<any>(`/auth/users/${id}/password`, { password }, {
+    const response = await this.httpClient.patch<unknown>(`/auth/users/${id}/password`, { password }, {
       headers: this.getAuthHeaders()
     });
     if (!response.ok) {

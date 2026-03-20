@@ -28,7 +28,7 @@ Gestiona todo el flujo de acceso y seguridad:
 ### 2.2 Módulo Administrativo (`src/components/panel/`)
 El núcleo de gestión del sistema (Refactorizado):
 - **`PanelApp.tsx`**: Orquestador principal del dashboard.
-- **`UserList.tsx`**: Visualización de usuarios con búsqueda híbrida y paginación.
+- **`UserList.tsx`**: Lista paginada de usuarios con filtro **solo sobre la página cargada** (no sustituye búsqueda global en API).
 - **`UserDrawer` / `ProfileDrawer`**: Gestión de datos mediante paneles laterales (Offcanvas).
 - **`AdminNavbar` / `AdminSubNav`**: Sistema de navegación multinivel.
 

@@ -11,6 +11,6 @@ describe('Componente Icono', () => {
 
     // Verificamos que se haya renderizado y tenga los atributos correctos
     expect(linkElement).toBeInTheDocument();
-    expect(linkElement).toHaveAttribute('href', '/img/Logo-kiora-vectorizado.png');
+    expect(linkElement).toHaveAttribute('href', '/img/logo-kiora-vectorizado.svg');
   });
 });

@@ -9,7 +9,10 @@ export class SessionManager {
   private maxInactivity = 15 * 60; // 15 minutes by default
   private warningThreshold = 60; // Warning 1 minute before max
   private warningShown = false;
-  private intervalId?: number;
+  private intervalId: ReturnType<typeof setInterval> | undefined;
+
+  private readonly onActivity = () => this.resetInactivity();
+  private readonly touchStartOptions: AddEventListenerOptions = { passive: true };
 
   constructor(
     private authService: AuthService,
@@ -17,21 +20,27 @@ export class SessionManager {
   ) {}
 
   startMonitoring() {
+    this.stopMonitoring();
     this.resetInactivity();
-    
-    // Bind interaction events
-    window.onload = () => this.resetInactivity();
-    document.onmousemove = () => this.resetInactivity();
-    document.onkeypress = () => this.resetInactivity();
-    document.ontouchstart = () => this.resetInactivity();
+
+    window.addEventListener('load', this.onActivity);
+    document.addEventListener('mousemove', this.onActivity);
+    document.addEventListener('keydown', this.onActivity);
+    document.addEventListener('touchstart', this.onActivity, this.touchStartOptions);
 
     this.checkTokenAndInactivity();
     this.intervalId = window.setInterval(() => this.checkTokenAndInactivity(), 5000);
   }
 
   stopMonitoring() {
-    if (this.intervalId) {
+    window.removeEventListener('load', this.onActivity);
+    document.removeEventListener('mousemove', this.onActivity);
+    document.removeEventListener('keydown', this.onActivity);
+    document.removeEventListener('touchstart', this.onActivity, this.touchStartOptions);
+
+    if (this.intervalId !== undefined) {
       window.clearInterval(this.intervalId);
+      this.intervalId = undefined;
     }
   }
 
@@ -42,10 +51,14 @@ export class SessionManager {
 
   private decodeJWT(token: string) {
     try {
-      const base64Url = token.split(".")[1];
-      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
       const jsonPayload = decodeURIComponent(
-        window.atob(base64).split("").map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2)).join(""),
+        window
+          .atob(base64)
+          .split('')
+          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
       );
       return JSON.parse(jsonPayload);
     } catch (e) {
@@ -65,19 +78,26 @@ export class SessionManager {
       !this.warningShown
     ) {
       this.warningShown = true;
-      this.alertService.showToast('info', 'Por favor realice una acción dentro del sistema para evitar que su sesión expire.', 10000);
+      this.alertService.showToast(
+        'info',
+        'Por favor realice una acción dentro del sistema para evitar que su sesión expire.',
+        10000
+      );
     }
 
     // Terminate Session due to inactivity
     if (this.inactivityTime >= this.maxInactivity) {
       this.stopMonitoring();
       this.authService.clearSession();
-      await this.alertService.showExpiringSession('Sesión Finalizada por Inactividad', 'Has estado mucho tiempo inactivo. Vuelve a ingresar.');
+      await this.alertService.showExpiringSession(
+        'Sesión Finalizada por Inactividad',
+        'Has estado mucho tiempo inactivo. Vuelve a ingresar.'
+      );
       window.location.href = '/login';
       return;
     }
 
-    // Token logic 
+    // Token logic
     const token = this.authService.getToken();
     if (!token) return;
 
@@ -93,12 +113,15 @@ export class SessionManager {
         } catch (e) {
           console.error('Error renovando token session.', e);
         }
-      } 
+      }
       // Force logout if token expired
       else if (timeToLive <= 0) {
         this.stopMonitoring();
         this.authService.clearSession();
-        await this.alertService.showExpiringSession('Sesión Expirada', 'Tu sesión ha expirado por seguridad.');
+        await this.alertService.showExpiringSession(
+          'Sesión Expirada',
+          'Tu sesión ha expirado por seguridad.'
+        );
         window.location.href = '/login';
       }
     }

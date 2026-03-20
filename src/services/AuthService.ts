@@ -73,7 +73,13 @@ export class AuthService {
 
   getUser(): User | null {
     const userStr = localStorage.getItem('kiora_user');
-    return userStr ? (JSON.parse(userStr) as User) : null;
+    if (!userStr) return null;
+    try {
+      return JSON.parse(userStr) as User;
+    } catch {
+      this.clearSession();
+      return null;
+    }
   }
 
   isAuthenticated(): boolean {

@@ -12,6 +12,8 @@ import { UserDrawer } from './UserDrawer';
 import { ProfileDrawer } from './ProfileDrawer';
 import { RolesSection } from './RolesSection';
 import { SecurityDrawer } from './SecurityDrawer';
+import { ComingSoonSection } from './ComingSoonSection';
+import { getErrorMessage } from '../../utils/getErrorMessage';
 
 export default function PanelApp() {
   const [user, setUser] = useState<User | null>(null);
@@ -62,7 +64,7 @@ export default function PanelApp() {
     const currentUser = authService.getUser();
     if (currentUser) {
       setUser(currentUser);
-      setIsAdmin(currentUser.rol_usu === 'admin');
+      setIsAdmin(String(currentUser.rol_usu ?? '').toLowerCase() === 'admin');
     }
     return () => {
       sessionManager.stopMonitoring();
@@ -80,17 +82,21 @@ export default function PanelApp() {
       setUsersList(displayUsers);
       setCurrentPage(paginated.pagination?.page || page);
       setTotalPages(paginated.pagination?.totalPages || 1);
-    } catch (error) {
-      alertService.showToast('error', 'Error al cargar los usuarios');
+    } catch (error: unknown) {
+      alertService.showToast('error', getErrorMessage(error, 'Error al cargar los usuarios'));
     } finally {
       setIsLoadingUsers(false);
     }
   };
 
   useEffect(() => {
-    if (isAdmin) {
-      loadUsersList(currentPage);
+    if (!isAdmin) {
+      setIsLoadingUsers(false);
+      setUsersList([]);
+      setTotalPages(1);
+      return;
     }
+    void loadUsersList(currentPage);
   }, [isAdmin, currentPage]);
 
   const filteredUsers = useMemo(() => {
@@ -128,8 +134,8 @@ export default function PanelApp() {
       }
       setIsDrawerOpen(false);
       loadUsersList(currentPage); 
-    } catch (e: any) {
-      alertService.showToast('error', e.message || 'Error al procesar');
+    } catch (e: unknown) {
+      alertService.showToast('error', getErrorMessage(e, 'Error al procesar'));
     } finally {
       setIsRegistering(false);
     }
@@ -154,8 +160,8 @@ export default function PanelApp() {
         await userService.deleteUser(id);
         alertService.showToast('success', 'Usuario eliminado');
         loadUsersList(currentPage);
-      } catch (e: any) {
-        alertService.showToast('error', e.message);
+      } catch (e: unknown) {
+        alertService.showToast('error', getErrorMessage(e, 'Error al eliminar'));
       }
     }
   };
@@ -167,8 +173,8 @@ export default function PanelApp() {
         await userService.unlockUser(id.toString());
         alertService.showToast('success', 'Usuario desbloqueado');
         loadUsersList(currentPage);
-      } catch (e) {
-        alertService.showToast('error', 'Error al desbloquear');
+      } catch (e: unknown) {
+        alertService.showToast('error', getErrorMessage(e, 'Error al desbloquear'));
       }
     }
   };
@@ -185,8 +191,8 @@ export default function PanelApp() {
       alertService.showToast('success', 'Contraseña actualizada');
       setIsProfileOpen(false);
       setPasswords({ current: '', new: '', confirm: '' });
-    } catch (e: any) {
-      alertService.showToast('error', e.message);
+    } catch (e: unknown) {
+      alertService.showToast('error', getErrorMessage(e, 'Error al cambiar la contraseña'));
     } finally {
       setIsChangingPassword(false);
     }
@@ -204,8 +210,8 @@ export default function PanelApp() {
       await userService.adminUpdatePassword(resettingUser.id_usu, newPassword);
       alertService.showToast('success', 'Contraseña actualizada correctamente');
       setIsSecurityOpen(false);
-    } catch (e: any) {
-      alertService.showToast('error', e.message);
+    } catch (e: unknown) {
+      alertService.showToast('error', getErrorMessage(e, 'Error al actualizar la contraseña'));
     } finally {
       setIsResettingPassword(false);
     }
@@ -214,25 +220,37 @@ export default function PanelApp() {
   if (!user) return null;
 
   return (
-    <div className="font-[Inter] bg-[#f9fafb] text-[#334155] min-h-screen pb-20 relative">
+    <div className="min-h-screen bg-gradient-to-b from-slate-100/80 via-slate-50 to-white pb-24 font-[Inter] text-slate-800 antialiased">
       <AdminNavbar user={user} onLogout={handleLogout} onProfileOpen={() => setIsProfileOpen(true)} />
       
       <AdminSubNav activeId={activeTab} onItemClick={setActiveTab} />
 
-      <main className="max-w-4xl mx-auto px-6 py-10 w-full relative">
+      <main className="relative mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
         {activeTab === 'ajustes' ? (
           <>
-            <div className="flex justify-between items-end mb-8">
-              <h1 className="text-[28px] font-bold text-[#1f2937]">Usuarios y Roles</h1>
+            <header className="mb-8 flex flex-col gap-4 sm:mb-10 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Ajustes</p>
+                <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Usuarios y roles</h1>
+                <p className="mt-1.5 max-w-xl text-sm text-slate-500">
+                  Alta, edición y bloqueos de cuentas. Los cambios dependen de tu rol en el sistema.
+                </p>
+              </div>
               {isAdmin && (
                 <button
-                  onClick={() => { setIsEditing(false); setNewUser({ nom_usu: '', correo_usu: '', tel_usu: '', rol_usu: '' }); setIsDrawerOpen(true); }}
-                  className="bg-[#ec131e] px-5 py-2.5 rounded-full text-white font-semibold shadow-md hover:bg-[#d01019] transition-all"
+                  type="button"
+                  onClick={() => {
+                    setIsEditing(false);
+                    setNewUser({ nom_usu: '', correo_usu: '', tel_usu: '', rol_usu: '' });
+                    setIsDrawerOpen(true);
+                  }}
+                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#ec131e] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-[#ec131e]/25 transition hover:bg-[#d01019] focus:outline-none focus:ring-2 focus:ring-[#ec131e] focus:ring-offset-2"
                 >
-                  <span>+ Nuevo Usuario</span>
+                  <span className="text-lg leading-none">+</span>
+                  Nuevo usuario
                 </button>
               )}
-            </div>
+            </header>
 
             <UserList 
               users={filteredUsers}
@@ -249,13 +267,7 @@ export default function PanelApp() {
             <RolesSection />
           </>
         ) : (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 text-gray-400">
-              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-            </div>
-            <h2 className="text-xl font-bold text-gray-800">Sección en Desarrollo</h2>
-            <p className="text-gray-500 max-w-xs mt-2">La sección de {activeTab} aún no está disponible en esta versión de Kiora.</p>
-          </div>
+          <ComingSoonSection tabId={activeTab} />
         )}
       </main>
 

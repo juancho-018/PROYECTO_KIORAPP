@@ -1,3 +1,7 @@
+/**
+ * Usuario en el dominio de la aplicación.
+ * Campos opcionales reflejan el contrato del API; evitar índice `[key: string]` para mantener el contrato explícito.
+ */
 export interface User {
   id?: string | number;
   id_usu?: string | number;
@@ -10,6 +14,6 @@ export interface User {
   estado_usu?: boolean;
   intentos_fallidos?: number;
   bloqueado_hasta?: string | Date | null;
-  // Permitir la extensión controlada del objeto sin usar any
-  [key: string]: unknown;
+  /** Metadatos adicionales no mapeados aún (evitar depender de esto en lógica de negocio). */
+  meta?: Record<string, unknown>;
 }
