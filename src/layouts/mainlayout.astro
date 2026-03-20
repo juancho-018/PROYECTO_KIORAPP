@@ -1,0 +1,35 @@
+---
+import "../styles/global.css";
+import Icono from "../components/icono.jsx";
+
+interface Props {
+  title?: string;
+  lang?: string;
+}
+
+const { 
+  title = "KIORA | Sistema para Kioskos",
+  lang = "es"
+} = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang={lang}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <Icono />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <title>{title}</title>
+  </head>
+  <body
+    class="m-0 font-[Inter] bg-[#fafafc] text-[#334155] flex flex-col items-center justify-center min-h-screen relative overflow-x-hidden"
+  >
+    <slot />
+  </body>
+</html>
