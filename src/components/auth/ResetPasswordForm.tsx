@@ -3,22 +3,25 @@ import { httpClient, alertService } from '../../config/setup';
 import Loading from '../cargando';
 
 export default function ResetPasswordForm() {
-  const [token, setToken] = useState<string | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
+  const [code, setCode] = useState<string | null>(null);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    // Extraer el token de la URL: ?token=XYZ
+    // Extraer email y code de la URL: ?email=...&code=...
     const searchParams = new URLSearchParams(window.location.search);
-    const urlToken = searchParams.get('token');
+    const urlEmail = searchParams.get('email');
+    const urlCode = searchParams.get('code');
     
-    if (urlToken) {
-      setToken(urlToken);
+    if (urlEmail && urlCode) {
+      setEmail(urlEmail);
+      setCode(urlCode);
     } else {
       alertService.showError(
-        'Token inválido',
-        'No hay un token de recuperación válido en la URL.'
+        'Datos insuficientes',
+        'Faltan el correo o el código de verificación en la URL.'
       );
     }
   }, []);
@@ -26,8 +29,8 @@ export default function ResetPasswordForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!token) {
-      alertService.showError('Error', 'Token ausente en la URL');
+    if (!email || !code) {
+      alertService.showError('Error', 'Faltan datos para procesar el restablecimiento.');
       return;
     }
 
@@ -45,7 +48,8 @@ export default function ResetPasswordForm() {
 
     try {
       const response = await httpClient.post<{ message?: string }>('/auth/reset-password', {
-        token,
+        correo_usu: email,
+        code,
         new_password: newPassword,
       });
 
@@ -68,16 +72,16 @@ export default function ResetPasswordForm() {
     }
   };
 
-  if (!token) {
+  if (!email || !code) {
     return (
       <div className="bg-white w-full max-w-105 p-8 rounded-xl border border-red-100 shadow-sm text-center">
         <svg className="w-12 h-12 text-red-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
         </svg>
         <h2 className="text-xl font-bold text-gray-800 mb-2">Error de validación</h2>
-        <p className="text-gray-600 mb-6">No tienes un token válido para acceder a esta página.</p>
-        <a href="/login" className="inline-block bg-[#ec131e] text-white px-6 py-2 rounded-lg font-semibold hover:bg-[#d0111a] transition-colors no-underline">
-          Volver al inicio
+        <p className="text-gray-600 mb-6">No tienes los datos necesarios para acceder a esta página (correo o código).</p>
+        <a href="/recuperarContraseña" className="inline-block bg-[#ec131e] text-white px-6 py-2 rounded-lg font-semibold hover:bg-[#d0111a] transition-colors no-underline">
+          Volver a empezar
         </a>
       </div>
     );

@@ -1,5 +1,5 @@
 import React from 'react';
-import { PANEL_TAB_LABELS } from './panelNav';
+import { PANEL_TAB_LABELS } from '@/components/panel/panelNav';
 
 interface ComingSoonSectionProps {
   tabId: string;
@@ -10,7 +10,7 @@ export function ComingSoonSection({ tabId }: ComingSoonSectionProps) {
 
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-      <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-slate-200/90 bg-gradient-to-br from-white to-slate-50 shadow-[var(--panel-shadow)] ring-1 ring-slate-900/[0.04]">
+      <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-slate-200/90 bg-linear-to-br from-white to-slate-50 shadow-(--panel-shadow) ring-1 ring-slate-900/[0.04]">
         <svg
           className="h-10 w-10 text-[#ec131e]"
           fill="none"

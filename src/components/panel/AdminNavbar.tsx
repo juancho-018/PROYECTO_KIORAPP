@@ -1,5 +1,5 @@
 import React from 'react';
-import type { User } from '../../models/User';
+import type { User } from '@/models/User';
 
 interface AdminNavbarProps {
   user: User;
@@ -16,41 +16,59 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({ user, onLogout, onProf
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-white/10 bg-gradient-to-r from-slate-900 via-slate-900 to-slate-800 shadow-[0_1px_0_0_rgba(255,255,255,0.06)]">
-      <nav className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3.5 sm:px-6">
-        <div className="flex min-w-0 items-center gap-3">
-          <img
-            src="/img/logo-kiora-vectorizado.svg"
-            alt="Kiora"
-            className="h-8 w-auto shrink-0 object-contain"
+    <header className="sticky top-0 z-40 bg-[#3E2723] shadow-lg border-b border-white/5">
+      <nav className="flex items-center justify-between px-6 py-3">
+        {/* Left Section: Branding */}
+        <div className="flex items-center gap-4">
+          <img 
+            src="/img/logo-kiora-vectorizado-blanco.png" 
+            alt="Kiora Logo" 
+            className="h-8 w-auto hover:opacity-90 transition-opacity cursor-pointer"
+            onClick={() => window.location.reload()}
           />
-          <div className="min-w-0">
-            <span className="block truncate text-sm font-semibold tracking-tight text-white sm:text-[0.95rem]">
-              Panel de Administración
-            </span>
-            <span className="hidden text-xs font-medium text-slate-400 sm:block">Kiora</span>
-          </div>
+          <span className="hidden sm:block text-[10px] font-bold tracking-[0.3em] text-white/40 uppercase mt-1">
+            Admin System
+          </span>
         </div>
-        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-          <button
-            type="button"
-            onClick={onProfileOpen}
-            className="group flex items-center gap-2.5 rounded-xl px-2 py-1.5 transition-colors hover:bg-white/10 sm:px-3"
-          >
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#ec131e] text-xs font-bold text-white shadow-md ring-2 ring-white/10 transition-transform group-hover:scale-[1.03]">
-              {getInitials(String(user.nom_usu))}
-            </div>
-            <span className="hidden max-w-[10rem] truncate text-sm font-medium text-slate-200 group-hover:text-white sm:block">
-              Hola, {String(user.nom_usu)}
-            </span>
+
+        {/* Right Section: Actions & User */}
+        <div className="flex items-center gap-6">
+          {/* Notifications */}
+          <button className="relative p-1 text-white/80 transition-all hover:scale-110 hover:text-white">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+              />
+            </svg>
+            <div className="absolute right-1 top-1.5 h-2.5 w-2.5 rounded-full bg-[#ec131e] border-2 border-[#3E2723]"></div>
           </button>
-          <button
-            type="button"
-            onClick={onLogout}
-            className="rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-slate-200 transition-colors hover:border-white/25 hover:bg-white/10 hover:text-white sm:text-sm"
-          >
-            Cerrar sesión
-          </button>
+
+          {/* User Profile */}
+          <div className="flex items-center gap-3">
+             <button
+              onClick={onProfileOpen}
+              className="group flex items-center transition-all hover:opacity-90 active:scale-95"
+            >
+              <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[#ec131e] text-sm font-bold text-white shadow-xl ring-2 ring-white/10">
+                {getInitials(String(user.nom_usu))}
+              </div>
+            </button>
+            <button
+               onClick={onLogout}
+               className="ml-2 rounded-full bg-white/10 px-4 py-1.5 text-xs font-semibold text-white transition-all hover:bg-white/15 active:bg-white/20"
+            >
+              Salir
+            </button>
+          </div>
         </div>
       </nav>
     </header>

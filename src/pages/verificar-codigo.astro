@@ -1,10 +1,10 @@
 ---
-import EmailSentMessage from "../components/auth/EmailSentMessage";
+import VerifyCodeForm from "../components/auth/VerifyCodeForm";
 import GlobalControls from "../components/ui/GlobalControls";
 import MainLayout from "@/layouts/mainlayout.astro";
 ---
 
-<MainLayout title="Correo Enviado - Kiora">
+<MainLayout title="Verificar Código - Kiora">
     <div class="flex flex-col items-center justify-center min-h-screen w-full relative z-10 px-4">
         <!-- Abstract Background Detail -->
         <div
@@ -16,12 +16,16 @@ import MainLayout from "@/layouts/mainlayout.astro";
         <img
           src="/img/logo-kiora-vectorizado.svg"
           alt="Kiora Logo"
-          class="w-48 h-auto mt-4 mb-10 relative z-10 object-contain"
+          class="w-48 h-auto mt-4 mb-6 relative z-10 object-contain"
         />
 
-        <EmailSentMessage client:load />
-    </div>
-    
-    <GlobalControls client:load />
+        <p
+          class="text-[0.95rem] text-[#64748b] m-0 mb-8 font-medium text-center max-w-md px-4"
+        >
+          Ingresa el código que hemos enviado a tu correo electrónico para validar tu identidad.
+        </p>
 
+        <VerifyCodeForm client:load />
+    </div>
+    <GlobalControls client:load />
 </MainLayout>

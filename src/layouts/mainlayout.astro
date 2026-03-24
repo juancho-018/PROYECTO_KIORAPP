@@ -2,6 +2,8 @@
 import "../styles/global.css";
 import Icono from "../components/icono.jsx";
 
+const weglotKey = import.meta.env.PUBLIC_WEGLOT_API_KEY;
+
 interface Props {
   title?: string;
   lang?: string;
@@ -26,9 +28,48 @@ const {
       rel="stylesheet"
     />
     <title>{title}</title>
+
+    {weglotKey && (
+      <>
+        <script is:inline src="https://cdn.weglot.com/weglot.min.js"></script>
+        <script is:inline define:vars={{ weglotKey }}>
+          // @ts-ignore
+          if (window.Weglot) {
+            window.Weglot.initialize({ api_key: weglotKey });
+          }
+        </script>
+        <style is:inline>
+          .weglot-container {
+            position: fixed !important;
+            bottom: 1.5rem !important;
+            right: 1.5rem !important;
+            z-index: 9999 !important;
+          }
+          .wg-default, .wg-default .wg-li {
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(8px) !important;
+            border: 1px solid rgba(226, 232, 240, 0.8) !important;
+            border-radius: 0.5rem !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
+            color: #475569 !important;
+            font-family: 'Inter', sans-serif !important;
+            font-size: 0.80rem !important;
+            font-weight: 600 !important;
+            padding: 0.2rem 0.6rem !important;
+            transition: all 0.2s ease !important;
+          }
+          .wg-default:hover, .wg-default.wg-open {
+            border-color: #ec131e !important;
+            color: #ec131e !important;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+            transform: translateY(-2px) !important;
+          }
+        </style>
+      </>
+    )}
   </head>
   <body
-    class="m-0 font-[Inter] bg-[#fafafc] text-[#334155] flex flex-col items-center justify-center min-h-screen relative overflow-x-hidden"
+    class="m-0 font-[Inter] bg-[#fafafc] text-[#334155] min-h-screen relative overflow-x-hidden"
   >
     <slot />
   </body>

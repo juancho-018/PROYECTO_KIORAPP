@@ -51,35 +51,40 @@ const roles = [
 export const RolesSection: React.FC = () => {
   return (
     <section>
-      <div className="mb-4 flex flex-col gap-1 px-0.5 sm:flex-row sm:items-end sm:justify-between">
+      <div className="mb-6 flex flex-col gap-1 px-1 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">Roles y permisos</p>
-          <h2 className="text-lg font-bold tracking-tight text-slate-900">Referencia rápida</h2>
+           <div className="flex items-center gap-2 mb-1">
+            <div className="h-1 w-3 rounded-full bg-[#ec131e]"></div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#3E2723]/60">Roles y permisos</p>
+          </div>
+          <h2 className="text-xl font-bold tracking-tight text-[#1a1a1a]">Referencia de privilegios</h2>
         </div>
-        <span className="text-xs font-medium text-slate-400">Solo lectura · la asignación es en cada usuario</span>
+        <span className="text-xs font-semibold text-slate-400 italic">Solo lectura · Asignación individual</span>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-6 sm:grid-cols-3">
         {roles.map((role) => (
           <article
             key={role.title}
-            className="group relative overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-5 shadow-[var(--panel-shadow)] ring-1 ring-slate-900/[0.03] transition-shadow hover:shadow-md"
+            className="group relative overflow-hidden rounded-3xl border border-slate-200/90 bg-white p-6 shadow-sm transition-all hover:shadow-xl hover:-translate-y-1"
           >
             <div
-              className={`pointer-events-none absolute inset-0 bg-gradient-to-br opacity-90 ${role.accent}`}
+              className={`pointer-events-none absolute inset-0 bg-linear-to-br opacity-90 ${role.accent}`}
               aria-hidden
             />
-            <div className="relative flex flex-col gap-3">
+            <div className="relative flex flex-col gap-4">
               <div className="flex items-start justify-between gap-2">
-                <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${role.iconBg}`}>{role.icon}</div>
+                <div className={`flex h-12 w-12 items-center justify-center rounded-2xl shadow-sm ${role.iconBg}`}>{role.icon}</div>
                 {role.badge && (
-                  <span className="rounded-full bg-slate-900/5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-500">
+                  <span className="rounded-full bg-[#3E2723]/5 border border-[#3E2723]/10 px-3 py-1 text-[9px] font-bold uppercase tracking-wider text-[#3E2723]/60">
                     {role.badge}
                   </span>
                 )}
               </div>
-              <h3 className="text-base font-bold text-slate-900">{role.title}</h3>
-              <p className="text-sm leading-relaxed text-slate-600">{role.description}</p>
+              <div>
+                <h3 className="text-lg font-bold text-[#1a1a1a]">{role.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-500 font-medium">{role.description}</p>
+              </div>
             </div>
           </article>
         ))}

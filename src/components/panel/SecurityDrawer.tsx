@@ -19,7 +19,7 @@ export const SecurityDrawer: React.FC<SecurityDrawerProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (password.length < 6) return;
+    if (password.length < 8) return;
     onConfirm(password);
   };
 
@@ -61,8 +61,8 @@ export const SecurityDrawer: React.FC<SecurityDrawerProps> = ({
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-10 pr-3 py-3.5 rounded-xl border border-gray-200 focus:outline-none focus:border-[#ec131e] focus:ring-4 focus:ring-red-50 transition-all text-base bg-white placeholder:text-gray-300 font-medium" 
-                  placeholder="Mínimo 6 caracteres" 
-                  minLength={6}
+                  placeholder="Mínimo 8 caracteres" 
+                  minLength={8}
                 />
               </div>
               <p className="text-[11px] text-gray-400 mt-1 italic">El usuario recibirá esta clave directamente de tu parte.</p>
@@ -79,7 +79,7 @@ export const SecurityDrawer: React.FC<SecurityDrawerProps> = ({
           <button 
              form="securityForm" 
              type="submit" 
-             disabled={isProcessing || password.length < 6}
+             disabled={isProcessing || password.length < 8}
              className="w-full bg-gray-900 hover:bg-black text-white font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {isProcessing ? (

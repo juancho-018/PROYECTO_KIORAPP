@@ -1,6 +1,6 @@
 import React from 'react';
-import type { User } from '../../models/User';
-import { getPaginationPages } from '../../utils/pagination';
+import type { User } from '@/models/User';
+import { getPaginationPages } from '@/utils/pagination';
 
 interface UserListProps {
   users: (User & { isBlocked: boolean })[];
@@ -59,10 +59,13 @@ export const UserList: React.FC<UserListProps> = ({
     <section className="mb-10">
       <div className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-[var(--panel-shadow)] ring-1 ring-slate-900/[0.04]">
         {/* Barra superior del card */}
-        <div className="flex flex-col gap-4 border-b border-slate-100 bg-gradient-to-b from-slate-50/80 to-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5">
+        <div className="flex flex-col gap-6 border-b border-slate-100 bg-[#3E2723]/[0.02] px-6 py-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">Lista de usuarios</p>
-            <p className="mt-0.5 text-sm text-slate-500">Filtra y administra las cuentas de esta página</p>
+            <div className="flex items-center gap-2">
+              <div className="h-1 w-4 rounded-full bg-[#ec131e]"></div>
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#3E2723]/60">Cuentas Registradas</p>
+            </div>
+            <p className="mt-1 text-sm text-slate-500 font-medium">Listado detallado de miembros del equipo</p>
           </div>
           <div className="w-full sm:max-w-sm">
             <label htmlFor="user-search" className="sr-only">
