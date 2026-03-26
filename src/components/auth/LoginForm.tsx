@@ -57,7 +57,7 @@ export default function LoginForm() {
               type="email"
               id="email"
               className="flex-1 border-none bg-transparent py-2.5 text-[0.95rem] text-[#334155] outline-none w-full placeholder-gray-400"
-              placeholder="ejemplo@kiora.com"
+              placeholder="kiora@gmail.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -106,7 +106,7 @@ export default function LoginForm() {
 
       <div className="mt-8 text-center bg-transparent border-none shadow-none flex flex-col items-center">
         <p className="text-[0.9rem] font-medium text-gray-500">
-          ¿Necesitas contactarte con nosotros?<span className="text-[#ec131e] font-bold">KiosKiora@gmail.com</span>
+          ¿Necesitas contactarte con nosotros?<span className="text-[#ec131e] font-bold"> KiosKiora@gmail.com</span>
         </p>
       </div>
 
