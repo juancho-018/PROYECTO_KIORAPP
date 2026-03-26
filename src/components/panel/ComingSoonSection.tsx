@@ -1,12 +1,10 @@
 import React from 'react';
-import { PANEL_TAB_LABELS } from '@/components/panel/panelNav';
 
 interface ComingSoonSectionProps {
   tabId: string;
 }
 
 export function ComingSoonSection({ tabId }: ComingSoonSectionProps) {
-  const label = PANEL_TAB_LABELS[tabId] ?? tabId;
 
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
@@ -27,7 +25,6 @@ export function ComingSoonSection({ tabId }: ComingSoonSectionProps) {
         </svg>
       </div>
       <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-[#ec131e]">Próximamente</p>
-      <h2 className="mb-3 text-2xl font-bold tracking-tight text-slate-900">{label}</h2>
       <p className="max-w-md text-[15px] leading-relaxed text-slate-500">
         Este módulo está en la hoja de ruta. Mientras tanto, usa{' '}
         <strong className="font-semibold text-slate-700">Ajustes</strong> para usuarios y roles.
