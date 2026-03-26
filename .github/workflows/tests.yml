@@ -1,0 +1,33 @@
+name: KiorApp CI Tests
+
+# ¿Cuándo se va a ejecutar este robot?
+on:
+  push:
+    branches: [ "develop", "main" ]
+  pull_request:
+    branches: [ "develop", "main" ]
+
+# ¿Qué tareas va a hacer?
+jobs:
+  test:
+    name: Run Unit Tests
+    runs-on: ubuntu-latest # Corre en un servidor virtual de Linux
+
+    steps:
+    # 1. Copia tu código al servidor virtual
+    - name: Clonar el repositorio
+      uses: actions/checkout@v4
+
+    # 2. Instala Node.js (Asegúrate de poner la versión que uses, ej: 18 o 20)
+    - name: Configurar Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20' 
+
+    # 3. Instala las dependencias de tu proyecto (el equivalente a npm install)
+    - name: Instalar dependencias
+      run: npm ci
+
+    # 4. ¡Ejecuta tus pruebas!
+    - name: Ejecutar pruebas de Vitest
+      run: npm run test

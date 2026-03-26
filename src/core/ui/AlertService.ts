@@ -36,7 +36,7 @@ export class SweetAlertService implements IAlertService {
   showToast(icon: 'success' | 'error' | 'warning' | 'info', title: string, timer = 3000) {
     Swal.fire({
       toast: true,
-      position: 'top-end',
+      position: 'top-start',
       icon,
       title,
       showConfirmButton: false,
