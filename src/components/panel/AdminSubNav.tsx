@@ -1,5 +1,4 @@
 import React from 'react';
-import { isPanelTabAvailable } from '@/components/panel/panelNav';
 
 interface NavItem {
   id: string;
@@ -94,30 +93,24 @@ export const AdminSubNav: React.FC<AdminSubNavProps> = ({ activeId, onItemClick 
         aria-label="Secciones del panel"
       >
         {items.map((item) => {
-          const available = isPanelTabAvailable(item.id);
           const active = activeId === item.id;
           return (
             <button
               key={item.id}
               type="button"
               onClick={() => onItemClick(item.id)}
-              title={available ? item.label : `${item.label} — Próximamente`}
+              title={`Próximamente`}
               aria-current={active ? 'page' : undefined}
               className={`group flex shrink-0 items-center gap-2 rounded-xl px-4 py-2 text-left font-medium transition-all ${
                 active
-                  ? 'bg-white/10 text-white shadow-sm ring-1 ring-white/20'
+                  ? 'bg-white text-[#ec131e] shadow-[0_8px_30px_rgb(0,0,0,0.12)] scale-105 ring-1 ring-white/20'
                   : 'text-white/60 hover:bg-white/5 hover:text-white'
-              } ${!available && !active ? 'opacity-50' : ''}`}
+              }`}
             >
-              <span className={`transition-colors ${active ? 'text-white' : 'text-white/40 group-hover:text-white/70'}`}>
+              <span className={`transition-all duration-300 ${active ? 'text-[#ec131e] scale-110' : 'text-white/40 group-hover:text-white/70'}`}>
                 {item.icon}
               </span>
-              <span className="hidden whitespace-nowrap text-sm sm:block">{item.label}</span>
-              {!available && (
-                <span className="rounded-md bg-white/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white/40 group-hover:text-white/60">
-                  Soon
-                </span>
-              )}
+              <span className={`hidden whitespace-nowrap text-sm sm:block ${active ? 'font-bold' : ''}`}>{item.label}</span>
             </button>
           );
         })}

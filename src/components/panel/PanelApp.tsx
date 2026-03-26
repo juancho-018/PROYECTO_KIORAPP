@@ -335,7 +335,7 @@ export default function PanelApp() {
                   </svg>
                   Volver a Ajustes
                 </button>
-                <HelpCenter />
+                <HelpCenter hideBackButton={true} />
               </div>
             )}
           </div>

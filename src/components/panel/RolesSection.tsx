@@ -59,7 +59,7 @@ export const RolesSection: React.FC = () => {
           </div>
           <h2 className="text-xl font-bold tracking-tight text-[#1a1a1a]">Referencia de privilegios</h2>
         </div>
-        <span className="text-xs font-semibold text-slate-400 italic">Solo lectura · Asignación individual</span>
+        <span className="text-xs font-semibold text-slate-400 italic">Solo lectura · Asignación Manual desde panel de usuarios</span>
       </div>
 
       <div className="grid gap-6 sm:grid-cols-3">
