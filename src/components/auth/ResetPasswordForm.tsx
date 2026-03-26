@@ -80,7 +80,7 @@ export default function ResetPasswordForm() {
         </svg>
         <h2 className="text-xl font-bold text-gray-800 mb-2">Error de validación</h2>
         <p className="text-gray-600 mb-6">No tienes los datos necesarios para acceder a esta página (correo o código).</p>
-        <a href="/recuperarContraseña" className="inline-block bg-[#ec131e] text-white px-6 py-2 rounded-lg font-semibold hover:bg-[#d0111a] transition-colors no-underline">
+        <a href="/recuperar-contrasena" className="inline-block bg-[#ec131e] text-white px-6 py-2 rounded-lg font-semibold hover:bg-[#d0111a] transition-colors no-underline">
           Volver a empezar
         </a>
       </div>
