@@ -18,7 +18,7 @@ export class AuthService {
   constructor(private httpClient: IHttpClient) {}
 
   async login(credentials: LoginCredentials): Promise<AuthData> {
-    const response = await this.httpClient.post<AuthData>('/auth/login', credentials, {
+    const response = await this.httpClient.post<AuthData>('/users/auth/login', credentials, {
       credentials: 'include' // needed for HttpOnly cookies or CORS
     });
 
@@ -31,7 +31,7 @@ export class AuthService {
   }
 
   async refreshToken(): Promise<string | null> {
-    const response = await this.httpClient.post<{ token: string }>('/auth/refresh', undefined, {
+    const response = await this.httpClient.post<{ token: string }>('/users/auth/refresh', undefined, {
       credentials: 'include'
     });
     
@@ -45,7 +45,7 @@ export class AuthService {
   async logout() {
     try {
       // Intentar cerrar sesión en el servidor (opcionalmente ignoramos errores si el servidor no responde)
-      await this.httpClient.post('/auth/logout', undefined, {
+      await this.httpClient.post('/users/auth/logout', undefined, {
         headers: { Authorization: `Bearer ${this.getToken()}` }
       });
     } catch (e) {
