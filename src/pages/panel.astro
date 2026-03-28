@@ -1,0 +1,10 @@
+---
+import PanelApp from "../components/panel/PanelApp";
+import GlobalControls from "../components/ui/GlobalControls";
+import MainLayout from "@/layouts/mainlayout.astro";
+---
+
+<MainLayout title="Panel Principal - Kiora">
+    <PanelApp client:only="react" />
+    <GlobalControls client:load />
+</MainLayout>

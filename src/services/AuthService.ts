@@ -1,0 +1,88 @@
+import { type IHttpClient } from '../core/http/HttpClient';
+import type { User } from '../models/User';
+
+export interface LoginCredentials {
+  correo_usu: string;
+  password?: string;
+}
+
+export interface AuthData {
+  token: string;
+  usuario: User;
+}
+
+/**
+ * Service to handle Authentication logic (SRP).
+ */
+export class AuthService {
+  constructor(private httpClient: IHttpClient) {}
+
+  async login(credentials: LoginCredentials): Promise<AuthData> {
+    const response = await this.httpClient.post<AuthData>('/users/auth/login', credentials, {
+      credentials: 'include' // needed for HttpOnly cookies or CORS
+    });
+
+    if (!response.ok || !response.data) {
+      throw new Error(response.error ?? 'Error desconocido al iniciar sesión');
+    }
+
+    this.saveSession(response.data.token, response.data.usuario);
+    return response.data;
+  }
+
+  async refreshToken(): Promise<string | null> {
+    const response = await this.httpClient.post<{ token: string }>('/users/auth/refresh', undefined, {
+      credentials: 'include'
+    });
+    
+    if (response.ok && response.data?.token) {
+      this.saveSession(response.data.token, this.getUser());
+      return response.data.token;
+    }
+    return null;
+  }
+
+  async logout() {
+    try {
+      // Intentar cerrar sesión en el servidor (opcionalmente ignoramos errores si el servidor no responde)
+      await this.httpClient.post('/users/auth/logout', undefined, {
+        headers: { Authorization: `Bearer ${this.getToken()}` }
+      });
+    } catch (e) {
+      console.error('Error al cerrar sesión en el servidor:', e);
+    }
+    this.clearSession();
+    window.location.href = '/login';
+  }
+
+  saveSession(token: string, user: User | null) {
+    if (user) {
+      localStorage.setItem('kiora_token', token);
+      localStorage.setItem('kiora_user', typeof user === 'string' ? user : JSON.stringify(user));
+    }
+  }
+
+  clearSession() {
+    localStorage.removeItem('kiora_token');
+    localStorage.removeItem('kiora_user');
+  }
+
+  getToken(): string | null {
+    return localStorage.getItem('kiora_token');
+  }
+
+  getUser(): User | null {
+    const userStr = localStorage.getItem('kiora_user');
+    if (!userStr) return null;
+    try {
+      return JSON.parse(userStr) as User;
+    } catch {
+      this.clearSession();
+      return null;
+    }
+  }
+
+  isAuthenticated(): boolean {
+    return !!this.getToken();
+  }
+}
