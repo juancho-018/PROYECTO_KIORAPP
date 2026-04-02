@@ -21,7 +21,7 @@ interface UserListProps {
 function roleKey(rol?: string): 'admin' | 'operario' | 'other' {
   const r = String(rol ?? '').toLowerCase();
   if (r === 'admin') return 'admin';
-  if (r === 'operario') return 'operario';
+  if (r === 'cliente' || r === 'operario') return 'operario';
   return 'other';
 }
 
@@ -125,7 +125,7 @@ export const UserList: React.FC<UserListProps> = ({
                         <p className="truncate font-semibold text-slate-900">{String(u.nom_usu || 'Sin nombre')}</p>
                         <p className="truncate text-sm text-slate-500">{u.correo_usu}</p>
                         <span className="mt-1 inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold capitalize text-slate-600">
-                          {u.rol_usu || 'Usuario'}
+                          {u.rol_usu === 'cliente' ? 'operario' : (u.rol_usu || 'Usuario')}
                         </span>
                       </div>
                     </div>
