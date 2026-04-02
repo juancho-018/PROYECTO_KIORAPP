@@ -11,4 +11,4 @@ services:
     container_name: kiora_frontend_app
     restart: unless-stopped
     ports:
-      - "4321:80"
+      - "8080:80"
