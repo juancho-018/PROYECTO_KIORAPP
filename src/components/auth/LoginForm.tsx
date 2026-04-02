@@ -25,8 +25,7 @@ export default function LoginForm() {
       } else {
         alertService.showToast('warning', errorMsg, 4000);
       }
-    } finally {
-      setIsLoading(false);
+      setIsLoading(false); // Solo desactivar el cargador en error (en éxito, se navegará)
     }
   };
 

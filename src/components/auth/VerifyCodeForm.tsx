@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { httpClient, alertService } from '../../config/setup';
+import { authService, alertService } from '../../config/setup';
 import Loading from '../cargando';
 
 export default function VerifyCodeForm() {
@@ -24,14 +24,7 @@ export default function VerifyCodeForm() {
     setIsLoading(true);
 
     try {
-      const response = await httpClient.post<{ message?: string }>('/auth/verify-reset-code', {
-        correo_usu: email,
-        code: code,
-      });
-
-      if (!response.ok) {
-        throw new Error(response.error || 'Código inválido o expirado');
-      }
+      await authService.verifyResetCode(email, code);
 
       // Redirigir a la página de restablecimiento final
       window.location.href = `/reset-password?email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}`;

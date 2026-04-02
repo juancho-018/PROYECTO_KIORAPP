@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { httpClient, alertService } from '../../config/setup';
+import { authService, alertService } from '../../config/setup';
 import Loading from '../cargando';
 
 export default function ResetPasswordForm() {
@@ -47,19 +47,11 @@ export default function ResetPasswordForm() {
     setIsLoading(true);
 
     try {
-      const response = await httpClient.post<{ message?: string }>('/auth/reset-password', {
-        correo_usu: email,
-        code,
-        new_password: newPassword,
-      });
-
-      if (!response.ok) {
-        throw new Error(response.error || 'Error al restablecer contraseña');
-      }
+      await authService.resetPassword(email, code, newPassword);
 
       await alertService.showSuccess(
         '¡Éxito!',
-        response.data?.message || 'Tu contraseña ha sido restablecida exitosamente.'
+        'Tu contraseña ha sido restablecida exitosamente.'
       );
 
       // Redirigir al inicio de sesión luego del éxito
