@@ -18,7 +18,7 @@ export class AuthService {
   constructor(private httpClient: IHttpClient) {}
 
   async login(credentials: LoginCredentials): Promise<AuthData> {
-    const response = await this.httpClient.post<AuthData>('/users/auth/login', credentials, {
+    const response = await this.httpClient.post<AuthData>('/auth/login', credentials, {
       credentials: 'include' // needed for HttpOnly cookies or CORS
     });
 
@@ -31,7 +31,7 @@ export class AuthService {
   }
 
   async refreshToken(): Promise<string | null> {
-    const response = await this.httpClient.post<{ token: string }>('/users/auth/refresh', undefined, {
+    const response = await this.httpClient.post<{ token: string }>('/auth/refresh', undefined, {
       credentials: 'include'
     });
     
@@ -45,7 +45,7 @@ export class AuthService {
   async logout() {
     try {
       // Intentar cerrar sesión en el servidor (opcionalmente ignoramos errores si el servidor no responde)
-      await this.httpClient.post('/users/auth/logout', undefined, {
+      await this.httpClient.post('/auth/logout', undefined, {
         headers: { Authorization: `Bearer ${this.getToken()}` }
       });
     } catch (e) {
@@ -84,5 +84,37 @@ export class AuthService {
 
   isAuthenticated(): boolean {
     return !!this.getToken();
+  }
+
+  // ── Password Recovery (HU05) ────────────────────────────────────────────────
+
+  async forgotPassword(email: string): Promise<void> {
+    const response = await this.httpClient.post('/auth/forgot-password', {
+      correo_usu: email
+    });
+    if (!response.ok) {
+      throw new Error(response.error ?? 'Error al solicitar el código de recuperación');
+    }
+  }
+
+  async verifyResetCode(email: string, code: string): Promise<void> {
+    const response = await this.httpClient.post('/auth/verify-reset-code', {
+      correo_usu: email,
+      code: code
+    });
+    if (!response.ok) {
+      throw new Error(response.error ?? 'Código inválido o expirado');
+    }
+  }
+
+  async resetPassword(email: string, code: string, newPassword: string): Promise<void> {
+    const response = await this.httpClient.post('/auth/reset-password', {
+      correo_usu: email,
+      code: code,
+      new_password: newPassword
+    });
+    if (!response.ok) {
+      throw new Error(response.error ?? 'Error al restablecer la contraseña');
+    }
   }
 }

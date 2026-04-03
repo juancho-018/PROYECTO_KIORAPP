@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { httpClient, alertService } from '../../config/setup';
+import { authService, alertService } from '../../config/setup';
 import Loading from '../cargando';
 
 export default function RecoverPasswordForm() {
@@ -13,13 +13,7 @@ export default function RecoverPasswordForm() {
     setIsLoading(true);
 
     try {
-      const response = await httpClient.post<{ message?: string }>('/auth/forgot-password', {
-        correo_usu: email,
-      });
-
-      if (!response.ok) {
-        throw new Error(response.error || 'Error al procesar la solicitud');
-      }
+      await authService.forgotPassword(email);
 
       await alertService.showSuccess('Código enviado', 'Revisa tu correo para obtener el código de verificación.');
 
