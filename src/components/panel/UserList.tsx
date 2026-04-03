@@ -132,18 +132,22 @@ export const UserList: React.FC<UserListProps> = ({
 
                     <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
                       {u.isBlocked ? (
-                        <button
-                          type="button"
-                          onClick={() => onUnlock(u.id_usu as string, true)}
-                          className="rounded-full bg-slate-200/80 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-600 transition-colors hover:bg-slate-300/80"
-                        >
-                          Inactivo
-                        </button>
+                        <div className="flex flex-col items-end gap-1">
+                          <button
+                            type="button"
+                            onClick={() => onUnlock(u.id_usu as string, true)}
+                            className="rounded-full bg-red-100 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-red-700 ring-1 ring-red-200 transition-colors hover:bg-red-200 animate-pulse"
+                          >
+                            Bloqueado
+                          </button>
+                          <span className="text-[9px] text-red-400 font-bold uppercase">Click para liberar</span>
+                        </div>
                       ) : (
                         <span className="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-700 ring-1 ring-emerald-200/80">
                           Activo
                         </span>
                       )}
+
 
                       <div className="flex items-center gap-0.5 rounded-xl bg-slate-100/80 p-0.5 ring-1 ring-slate-200/80">
                         <button
