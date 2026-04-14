@@ -52,10 +52,8 @@ export interface HttpResponse<T> {
 export interface IHttpClient {
   get<T>(url: string, headers?: Record<string, string>): Promise<HttpResponse<T>>;
   post<T>(url: string, body?: unknown, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
-  put<T>(url: string, body?: unknown, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
   patch<T>(url: string, body?: unknown, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
   delete<T>(url: string, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
-  download(url: string, headers?: Record<string, string>): Promise<Blob>;
 }
 
 /**
@@ -71,17 +69,8 @@ export class FetchHttpClient implements IHttpClient {
   private async request<T>(endpoint: string, options: RequestInit): Promise<HttpResponse<T>> {
     const url = `${this.baseURL}${endpoint}`;
     
-    // Si el body es FormData, no seteamos Content-Type manualmente para que el navegador
-    // lo haga con el boundary correcto.
-    const isFormData = options.body instanceof FormData;
-    const headers = { ...options.headers } as Record<string, string>;
-    
-    if (isFormData) {
-      delete headers['Content-Type'];
-    }
-
     try {
-      const response = await fetch(url, { ...options, headers });
+      const response = await fetch(url, options);
       const isJson = response.headers.get('content-type')?.includes('application/json');
       const responseData = isJson ? await response.json() : null;
 
@@ -123,42 +112,26 @@ export class FetchHttpClient implements IHttpClient {
 
   async post<T>(url: string, body?: unknown, options: HttpRequestOptions = {}): Promise<HttpResponse<T>> {
     const { headers, ...rest } = options;
-    const isFormData = body instanceof FormData;
     return this.request<T>(url, {
       method: 'POST',
       headers: {
-        ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+        'Content-Type': 'application/json',
         ...headers,
       },
-      body: isFormData ? (body as FormData) : body ? JSON.stringify(body) : undefined,
-      ...rest,
-    });
-  }
-
-  async put<T>(url: string, body?: unknown, options: HttpRequestOptions = {}): Promise<HttpResponse<T>> {
-    const { headers, ...rest } = options;
-    const isFormData = body instanceof FormData;
-    return this.request<T>(url, {
-      method: 'PUT',
-      headers: {
-        ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
-        ...headers,
-      },
-      body: isFormData ? (body as FormData) : body ? JSON.stringify(body) : undefined,
+      body: body ? JSON.stringify(body) : undefined,
       ...rest,
     });
   }
 
   async patch<T>(url: string, body?: unknown, options: HttpRequestOptions = {}): Promise<HttpResponse<T>> {
     const { headers, ...rest } = options;
-    const isFormData = body instanceof FormData;
     return this.request<T>(url, {
       method: 'PATCH',
       headers: {
-        ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+        'Content-Type': 'application/json',
         ...headers,
       },
-      body: isFormData ? (body as FormData) : body ? JSON.stringify(body) : undefined,
+      body: body ? JSON.stringify(body) : undefined,
       ...rest,
     });
   }
@@ -173,21 +146,5 @@ export class FetchHttpClient implements IHttpClient {
       },
       ...rest,
     });
-  }
-
-  async download(url: string, headers?: Record<string, string>): Promise<Blob> {
-    const fullUrl = `${this.baseURL}${url}`;
-    const response = await fetch(fullUrl, {
-      method: 'GET',
-      headers: {
-        ...headers,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`Error al descargar archivo: ${response.status}`);
-    }
-
-    return response.blob();
   }
 }
