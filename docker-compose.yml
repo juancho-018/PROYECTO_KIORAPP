@@ -10,5 +10,7 @@ services:
         - PUBLIC_WEGLOT_API_KEY=${PUBLIC_WEGLOT_API_KEY:-wg_9377AA8B32}
     container_name: kiora_frontend_app
     restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "8080:80"
