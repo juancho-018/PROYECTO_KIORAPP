@@ -1,1 +1,0 @@
-feat(inventory): implement inventory management, categories, and full UI enhancements

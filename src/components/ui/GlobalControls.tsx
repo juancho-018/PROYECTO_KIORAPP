@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+
 export default function GlobalControls() {
   const isPanel = typeof window !== 'undefined' && window.location.pathname.startsWith('/panel');
 

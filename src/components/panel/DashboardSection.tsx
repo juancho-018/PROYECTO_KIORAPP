@@ -61,7 +61,6 @@ export function DashboardSection({ onSwitchTab }: DashboardSectionProps) {
     { label: 'Upselling (IA)', value: '18%', icon: 'sparkles', color: 'text-purple-500', bg: 'bg-purple-50', growth: '+12%', iconSvg: 'M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-7.714 2.143L11 21l-2.286-6.857L1 12l7.714-2.143L11 3z' },
   ];
 
-  // Simplify traffic data for now, just randomizing heights based on actual counts if possible
   const trafficData = [
     { hour: '8am', height: '30%' },
     { hour: '10am', height: '45%' },
@@ -69,8 +68,6 @@ export function DashboardSection({ onSwitchTab }: DashboardSectionProps) {
     { hour: '2pm', height: '55%' },
     { hour: '4pm', height: '25%' },
   ];
-
-  const criticalProduct = lowStockProducts[0];
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
