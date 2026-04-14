@@ -1,0 +1,1 @@
+feat(products): implement detailed product view on click and catalog enhancements

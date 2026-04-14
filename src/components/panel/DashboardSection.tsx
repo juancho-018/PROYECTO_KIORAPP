@@ -1,13 +1,83 @@
-import React from 'react';
+import { useState, useEffect } from 'react';
+import { productService, orderService } from '@/config/setup';
+import type { Product } from '@/models/Product';
+import type { Order } from '@/models/Order';
 
-export function DashboardSection() {
+interface DashboardSectionProps {
+  onNavigate: (tabId: string) => void;
+}
+
+export function DashboardSection({ onNavigate }: DashboardSectionProps) {
+  const [lowStockProducts, setLowStockProducts] = useState<Product[]>([]);
+  const [todayOrders, setTodayOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      setIsLoading(true);
+      try {
+        const [lowStock, allOrders] = await Promise.all([
+          productService.fetchLowStock(),
+          orderService.fetchOrders(100, 0)
+        ]);
+
+        setLowStockProducts(Array.isArray(lowStock) ? lowStock : []);
+        
+        // Filter orders for today
+        const today = new Date().toISOString().split('T')[0];
+        const ordersArray = Array.isArray(allOrders) ? allOrders : [];
+        const filtered = ordersArray.filter(o => o.fecha_vent && o.fecha_vent.startsWith(today));
+        setTodayOrders(filtered);
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void loadDashboardData();
+  }, []);
+
+  const totalSalesToday = todayOrders.reduce((sum, o) => sum + Number(o.montofinal_vent), 0);
+  const formattedSales = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(totalSalesToday);
+
   const stats = [
-    { label: 'Ventas de Hoy', value: '$1,245,000', icon: 'money', color: 'text-emerald-500', bg: 'bg-emerald-50', iconSvg: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
-    { label: 'Pedidos Kiosco', value: '84', icon: 'clipboard', color: 'text-blue-500', bg: 'bg-blue-50', iconSvg: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' },
-    { label: 'Upselling (IA)', value: '18%', icon: 'sparkles', color: 'text-purple-500', bg: 'bg-purple-50', growth: '+12%', iconSvg: 'M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-7.714 2.143L11 21l-2.286-6.857L1 12l7.714-2.143L11 3z' },
-    { label: 'Stock Bajo', value: '2 Productos', icon: 'alert', color: 'text-red-500', bg: 'bg-red-50', iconSvg: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z' },
+    { 
+      label: 'Ventas de Hoy', 
+      value: isLoading ? '...' : formattedSales, 
+      icon: 'money', 
+      color: 'text-emerald-500', 
+      bg: 'bg-emerald-50', 
+      iconSvg: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' 
+    },
+    { 
+      label: 'Pedidos Kiosco', 
+      value: isLoading ? '...' : String(todayOrders.length), 
+      icon: 'clipboard', 
+      color: 'text-blue-500', 
+      bg: 'bg-blue-50', 
+      iconSvg: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' 
+    },
+    { 
+      label: 'Upselling (IA)', 
+      value: '18%', 
+      icon: 'sparkles', 
+      color: 'text-purple-500', 
+      bg: 'bg-purple-50', 
+      growth: '+12%', 
+      iconSvg: 'M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-7.714 2.143L11 21l-2.286-6.857L1 12l7.714-2.143L11 3z' 
+    },
+    { 
+      label: 'Stock Bajo', 
+      value: isLoading ? '...' : `${lowStockProducts.length} Productos`, 
+      icon: 'alert', 
+      color: 'text-red-500', 
+      bg: 'bg-red-50', 
+      iconSvg: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z' 
+    },
   ];
 
+  // Simplify traffic data for now, just randomizing heights based on actual counts if possible
   const trafficData = [
     { hour: '8am', height: '30%' },
     { hour: '10am', height: '45%' },
@@ -15,6 +85,8 @@ export function DashboardSection() {
     { hour: '2pm', height: '55%' },
     { hour: '4pm', height: '25%' },
   ];
+
+  const criticalProduct = lowStockProducts[0];
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -62,7 +134,7 @@ export function DashboardSection() {
           {trafficData.map((bar) => (
             <div key={bar.hour} className="group flex flex-1 flex-col items-center gap-3">
               <div 
-                className={`w-full max-w-[60px] rounded-t-lg transition-all duration-500 ease-out group-hover:opacity-80 ${bar.highlight ? 'bg-[#ec131e] shadow-lg shadow-[#ec131e]/20' : 'bg-[#ec131e]/20'}`}
+                className={`w-full max-w-15 rounded-t-lg transition-all duration-500 ease-out group-hover:opacity-80 ${bar.highlight ? 'bg-[#ec131e] shadow-lg shadow-[#ec131e]/20' : 'bg-[#ec131e]/20'}`}
                 style={{ height: bar.height }}
               ></div>
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{bar.hour}</span>
@@ -89,9 +161,9 @@ export function DashboardSection() {
               </svg>
             </div>
             <div>
-              <h4 className="font-bold text-slate-900">Pico Detectado</h4>
+              <h4 className="font-bold text-slate-900">Análisis Predictivo</h4>
               <p className="mt-1 text-sm leading-relaxed text-slate-600 font-medium">
-                Alta demanda de "Merengón de Fresa" hoy. Sugerimos preparar <span className="text-[#ec131e] font-bold underline">15 unidades extra</span> para la tarde.
+                Se detecta un incremento en la rotación de categorías de <span className="text-orange-600 font-bold">pastelería</span> los fines de semana.
               </p>
             </div>
           </div>
@@ -104,13 +176,24 @@ export function DashboardSection() {
               </svg>
             </div>
             <div className="flex-1">
-              <h4 className="font-bold text-slate-900">Inventario Crítico</h4>
-              <p className="mt-1 text-sm text-slate-600 font-medium">
-                Quedan solo <span className="text-red-600 font-bold">5 Panelitas de Leche</span>. ¿Registrar entrada en inventario?
-              </p>
-              <button className="mt-4 w-full rounded-xl bg-red-100/80 py-2.5 text-xs font-bold uppercase tracking-wider text-red-700 transition-all hover:bg-red-200">
-                Actualizar Stock
-              </button>
+              <h4 className="font-bold text-slate-900">Alerta de Inventario</h4>
+              {criticalProduct ? (
+                <>
+                  <p className="mt-1 text-sm text-slate-600 font-medium">
+                    El producto <span className="text-red-600 font-bold">{criticalProduct.nom_prod}</span> tiene solo {criticalProduct.stock_actual} unidades.
+                  </p>
+                  <button 
+                    onClick={() => onNavigate('productos')} 
+                    className="mt-4 w-full rounded-xl bg-red-100/80 py-2.5 text-xs font-bold uppercase tracking-wider text-red-700 transition-all hover:bg-red-200"
+                  >
+                    Ver Productos
+                  </button>
+                </>
+              ) : (
+                <p className="mt-1 text-sm text-slate-600 font-medium">
+                  Todos los niveles de inventario están saludables.
+                </p>
+              )}
             </div>
           </div>
         </div>
