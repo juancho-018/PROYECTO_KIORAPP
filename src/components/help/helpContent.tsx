@@ -47,18 +47,18 @@ export const HELP_FAQS = [
       'En la pantalla de inicio de sesión elige «¿Olvidaste tu contraseña?», ingresa tu correo y revisa tu bandeja (y spam) para el enlace de restablecimiento.',
   },
   {
-    question: '¿Qué puede hacer un administrador frente a un operario?',
+    question: '¿Qué diferencia hay entre Admin y Vendedor?',
     answer:
-      'En esta versión, la gestión de usuarios (crear, editar, bloqueos, restablecer contraseña) está pensada para perfiles administrativos. Los demás roles ven el panel según lo permita el backend.',
+      'Los Administradores tienen acceso total a la gestión de usuarios, auditoría de salud del sistema y facturación histórica. Los Vendedores solo pueden gestionar el stock y realizar pedidos.',
   },
   {
-    question: '¿Por qué la lista de usuarios tiene paginación y un filtro?',
+    question: '¿Cómo descargo una factura?',
     answer:
-      'El filtro actúa solo sobre la página que estás viendo. Para buscar en todo el directorio hace falta que el API exponga búsqueda global; consulta con el equipo de backend si la necesitáis.',
+      'En la sección de «Pedidos», ve a la pestaña de «Facturación Histórica» y haz clic en el botón «Descargar PDF» de la factura deseada.',
   },
   {
-    question: '¿Dónde están inventario, pedidos o reportes?',
+    question: '¿Para qué sirve el monitor de Salud?',
     answer:
-      'Esas secciones están en la hoja de ruta del producto. Por ahora verás una pantalla «Próximamente» al entrar en esas pestañas; la funcionalidad disponible está en Ajustes (usuarios y roles).',
+      'Permite verificar en tiempo real si todos los microservicios (Usuarios, Productos, Inventario, Órdenes) están en línea y respondiendo correctamente.',
   },
 ];

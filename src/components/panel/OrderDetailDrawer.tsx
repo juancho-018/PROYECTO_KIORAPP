@@ -1,165 +1,108 @@
-import { useState, useEffect } from 'react';
-import { productService, userService, alertService } from '@/config/setup';
-import type { Order, OrderItem } from '@/models/Order';
-import type { Product } from '@/models/Product';
-import type { User } from '@/models/User';
+import React from 'react';
+import type { Order } from '@/models/Order';
 
 interface OrderDetailDrawerProps {
   isOpen: boolean;
-  onClose: () => void;
   order: Order | null;
+  onClose: () => void;
 }
 
-export function OrderDetailDrawer({ isOpen, onClose, order }: OrderDetailDrawerProps) {
-  const [items, setItems] = useState<(OrderItem & { productLabel?: string })[]>([]);
-  const [cashier, setCashier] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    if (isOpen && order) {
-      void loadDetails();
-    } else {
-      setItems([]);
-      setCashier(null);
-    }
-  }, [isOpen, order]);
-
-  const loadDetails = async () => {
-    if (!order) return;
-    setIsLoading(true);
-    try {
-      // 1. Get items (already hydrated or fetch if needed)
-      const orderItems = order.items || [];
-      
-      // 2. Fetch products and cashier in parallel
-      const [allProducts, users] = await Promise.all([
-        productService.fetchProducts(500, 0),
-        order.fk_id_usu ? userService.fetchUsers(100, 0) : Promise.resolve({ data: [] })
-      ]);
-
-      const productMap = new Map<number, Product>();
-      if (Array.isArray(allProducts)) {
-        allProducts.forEach(p => productMap.set(p.cod_prod, p));
-      }
-
-      const hydratedItems = orderItems.map(item => ({
-        ...item,
-        productLabel: productMap.get(item.cod_prod)?.nom_prod || `Prod #${item.cod_prod}`
-      }));
-
-      setItems(hydratedItems);
-
-      if (order.fk_id_usu) {
-        const foundCashier = (users as any).data?.find((u: any) => u.id_usu === order.fk_id_usu);
-        setCashier(foundCashier || null);
-      }
-    } catch (error) {
-      alertService.showToast('error', 'Error al cargar detalles de la orden');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  if (!isOpen) return null;
+export const OrderDetailDrawer: React.FC<OrderDetailDrawerProps> = ({
+  isOpen,
+  order,
+  onClose
+}) => {
+  if (!order) return null;
 
   return (
-    <div className="fixed inset-0 z-100 flex justify-end">
-      {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] animate-in fade-in duration-300" 
-        onClick={onClose} 
-      />
-      
-      {/* Content */}
-      <aside className="relative h-full w-full max-w-md bg-white shadow-2xl animate-in slide-in-from-right duration-500 flex flex-col">
-        <header className="border-b border-slate-100 p-6">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-xl font-bold text-slate-900">Resumen de la Orden</h3>
-            <button onClick={onClose} className="rounded-full bg-slate-100 p-2 text-slate-400 hover:text-slate-600 transition-all">
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+    <div className={`fixed inset-0 z-[99999] transition-all duration-300 ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+      <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-md" onClick={onClose}></div>
+      <div className={`absolute top-0 right-0 h-full w-120 max-w-[calc(100vw-1rem)] bg-[#fafafc] shadow-2xl transition-transform duration-300 transform ${isOpen ? 'translate-x-0' : 'translate-x-full'} flex flex-col`}>
+        <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-white">
+          <button onClick={onClose} className="p-2 -ml-2 text-gray-400 hover:bg-gray-50 rounded-full transition-colors">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
+          </button>
+          <div className="text-center">
+            <h2 className="text-[15px] font-black text-gray-900">Detalle de Venta #{order.id_vent}</h2>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{new Date(order.fecha_vent).toLocaleString()}</p>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-black uppercase tracking-widest text-[#ec131e]">ID: #{order?.id_vent}</span>
-            <span className="h-1 w-1 rounded-full bg-slate-300" />
-            <span className="text-xs font-bold text-slate-500">
-              {order && new Date(order.fecha_vent).toLocaleString('es-CO')}
-            </span>
-          </div>
-        </header>
+          <div className="w-9" />
+        </div>
 
-        <main className="flex-1 overflow-y-auto p-6 space-y-8">
-          {/* Status Section */}
-          <section>
-            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3">Estado y Pago</h4>
-            <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100">
-              <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Cajero/Atendido por:</p>
-                <div className="flex items-center gap-2">
-                  <div className="h-6 w-6 rounded-full bg-[#ec131e]/10 flex items-center justify-center">
-                    <svg className="w-3.5 h-3.5 text-[#ec131e]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  </div>
-                  <span className="text-sm font-bold text-slate-700">{cashier?.nom_usu || 'Sistema/Admin'}</span>
+        <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-8">
+          {/* Header Info */}
+          <div className="grid grid-cols-2 gap-4">
+             <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Estado</p>
+                <div className={`inline-flex px-3 py-1 rounded-full text-[10px] font-black uppercase ${
+                  order.estado === 'completada' ? 'bg-emerald-50 text-emerald-600' : 
+                  order.estado === 'cancelada' ? 'bg-red-50 text-red-600' : 
+                  'bg-amber-50 text-amber-600'
+                }`}>
+                  {order.estado}
                 </div>
-              </div>
-              <div className="text-right">
-                <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Método</p>
-                <span className="text-sm font-black text-slate-900">{order?.metodopago_usu || 'Efectivo'}</span>
-              </div>
-            </div>
-          </section>
+             </div>
+             <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Método de Pago</p>
+                <p className="text-sm font-black text-gray-900 capitalize">{order.metodopago_usu || 'Efectivo'}</p>
+             </div>
+          </div>
 
-          {/* Products Section */}
-          <section>
-            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Productos ({items.length})</h4>
-            {isLoading ? (
-              <div className="space-y-4 animate-pulse">
-                {[1, 2, 3].map(n => <div key={n} className="h-12 bg-slate-50 rounded-xl" />)}
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {items.map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-3 rounded-xl border border-slate-50 hover:bg-slate-50/50 transition-colors">
-                    <div className="flex items-center gap-4">
-                      <div className="h-10 w-10 rounded-lg bg-white border border-slate-100 flex items-center justify-center text-[10px] font-black text-slate-400">
-                        {item.cantidad}x
+          {/* Items List */}
+          <div className="space-y-4">
+             <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Productos Comprados</h3>
+             <div className="bg-white rounded-2xl border border-gray-100 divide-y divide-gray-50 overflow-hidden shadow-sm">
+                {order.items && order.items.length > 0 ? (
+                  order.items.map((item) => (
+                    <div key={item.id} className="p-4 flex items-center justify-between gap-4">
+                      <div className="flex-1">
+                        <p className="text-sm font-black text-gray-900">ID Prod #{item.cod_prod}</p>
+                        <p className="text-xs text-gray-500 font-medium">{item.cantidad} unidad(es) x ${Number(item.precio_unit).toLocaleString()}</p>
                       </div>
-                      <div>
-                        <p className="text-sm font-bold text-slate-900 leading-tight">{item.productLabel}</p>
-                        <p className="text-[10px] font-bold text-slate-400 mt-0.5">
-                          {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(item.precio_unit)} / u
-                        </p>
+                      <div className="text-right">
+                         <p className="text-sm font-black text-[#ec131e]">${(item.cantidad * item.precio_unit).toLocaleString()}</p>
                       </div>
                     </div>
-                    <p className="text-sm font-black text-slate-900">
-                      {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(item.precio_unit * item.cantidad)}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-        </main>
-
-        <footer className="border-t border-slate-100 p-6 bg-slate-50/50">
-          <div className="flex items-center justify-between mb-4">
-             <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Facturado</span>
-             <span className="text-2xl font-black text-slate-900">
-                {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(order?.montofinal_vent || 0)}
-             </span>
+                  ))
+                ) : (
+                  <div className="p-8 text-center text-gray-400 text-sm font-medium">No hay items registrados para esta venta.</div>
+                )}
+             </div>
           </div>
+
+          {/* Summary */}
+          <div className="mt-auto space-y-3 bg-red-50/50 p-6 rounded-3xl border border-red-100/50">
+             <div className="flex justify-between items-center text-gray-500 text-sm font-bold">
+                <span>Subtotal</span>
+                <span>${Number(order.precio_prod_final || 0).toLocaleString()}</span>
+             </div>
+             <div className="flex justify-between items-center text-gray-500 text-sm font-bold">
+                <span>Impuestos / Descuentos</span>
+                <span>$0</span>
+             </div>
+             <div className="flex justify-between items-center pt-3 border-t border-red-100">
+                <span className="text-gray-900 font-black">Total Final</span>
+                <span className="text-2xl font-black text-[#ec131e]">${Number(order.montofinal_vent).toLocaleString()}</span>
+             </div>
+          </div>
+        </div>
+
+        <div className="p-6 bg-white border-t border-gray-100 flex flex-col gap-3">
           <button 
-            onClick={onClose}
-            className="w-full rounded-2xl bg-slate-900 py-4 text-sm font-bold text-white shadow-xl transition-all hover:bg-slate-800 active:scale-95"
+             onClick={() => window.print()}
+             className="w-full bg-gray-900 hover:bg-[#111] text-white font-black py-4 rounded-2xl transition-all flex items-center justify-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2-2v4" /></svg>
+            <span>Imprimir Ticket</span>
+          </button>
+          <button 
+             onClick={onClose} 
+             className="w-full bg-white hover:bg-gray-50 text-gray-500 font-bold py-4 rounded-2xl border border-gray-100 transition-all"
           >
             Cerrar Detalle
           </button>
-        </footer>
-      </aside>
+        </div>
+      </div>
     </div>
   );
-}
+};

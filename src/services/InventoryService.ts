@@ -1,7 +1,6 @@
 import { type IHttpClient } from '../core/http/HttpClient';
-import type { Supplier, Movement, Suministra, CreateSupplierDto, CreateMovementDto, UpsertSuministraDto } from '../models/Inventory';
 import { type AuthService } from './AuthService';
-import { type PaginatedResponse } from '../models/Pagination';
+import type { Supplier, Movement, PaginatedSuppliers, PaginatedMovements, Suministra } from '../models/Inventory';
 
 export class InventoryService {
   constructor(
@@ -14,69 +13,65 @@ export class InventoryService {
     return token ? { Authorization: `Bearer ${token}` } : {};
   }
 
-  // ── Suppliers ─────────────────────────────────────────────────────────────
-
-  async fetchSuppliers(): Promise<Supplier[]> {
-    const response = await this.httpClient.get<PaginatedResponse<Supplier>>('/inventory/suppliers', this.getAuthHeaders());
-    if (!response.ok) throw new Error(response.error ?? 'Error al cargar proveedores');
-    return response.data?.data || [];
-  }
-
-  async createSupplier(dto: CreateSupplierDto): Promise<Supplier> {
-    const response = await this.httpClient.post<Supplier>('/inventory/suppliers', dto, {
-      headers: this.getAuthHeaders()
-    });
-    if (!response.ok || !response.data) throw new Error(response.error ?? 'Error al crear proveedor');
+  // Suppliers
+  async getSuppliers(page: number = 1, limit: number = 20): Promise<PaginatedSuppliers> {
+    const response = await this.httpClient.get<PaginatedSuppliers>(
+      `/inventory/suppliers?page=${page}&limit=${limit}`,
+      this.getAuthHeaders()
+    );
+    if (!response.ok || !response.data) throw new Error(response.error || 'Error retrieving suppliers');
     return response.data;
   }
 
-  async updateSupplier(id: number, dto: Partial<CreateSupplierDto>): Promise<Supplier> {
-    const response = await this.httpClient.patch<Supplier>(`/inventory/suppliers/${id}`, dto, {
-      headers: this.getAuthHeaders()
-    });
-    if (!response.ok || !response.data) throw new Error(response.error ?? 'Error al actualizar proveedor');
+  async createSupplier(supplier: Partial<Supplier>): Promise<Supplier> {
+    const response = await this.httpClient.post<Supplier>('/inventory/suppliers', supplier, { headers: this.getAuthHeaders() });
+    if (!response.ok || !response.data) throw new Error(response.error || 'Error creating supplier');
+    return response.data;
+  }
+
+  async updateSupplier(id: number, supplier: Partial<Supplier>): Promise<Supplier> {
+    const response = await this.httpClient.put<Supplier>(`/inventory/suppliers/${id}`, supplier, { headers: this.getAuthHeaders() });
+    if (!response.ok || !response.data) throw new Error(response.error || 'Error updating supplier');
     return response.data;
   }
 
   async deleteSupplier(id: number): Promise<void> {
-    const response = await this.httpClient.delete(`/inventory/suppliers/${id}`, {
-      headers: this.getAuthHeaders()
-    });
-    if (!response.ok) throw new Error(response.error ?? 'Error al eliminar proveedor');
+    const response = await this.httpClient.delete(`/inventory/suppliers/${id}`, { headers: this.getAuthHeaders() });
+    if (!response.ok) throw new Error(response.error || 'Error deleting supplier');
   }
 
-  // ── Movements ─────────────────────────────────────────────────────────────
-
-  async fetchMovements(cod_prod?: number): Promise<Movement[]> {
-    let url = '/inventory/movements';
-    if (cod_prod) url += `?cod_prod=${cod_prod}`;
-    const response = await this.httpClient.get<PaginatedResponse<Movement>>(url, this.getAuthHeaders());
-    if (!response.ok) throw new Error(response.error ?? 'Error al cargar movimientos');
-    return response.data?.data || [];
-  }
-
-  async createMovement(dto: CreateMovementDto): Promise<Movement> {
-    const response = await this.httpClient.post<Movement>('/inventory/movements', dto, {
-      headers: this.getAuthHeaders()
-    });
-    if (!response.ok || !response.data) throw new Error(response.error ?? 'Error al registrar movimiento');
+  // Movements
+  async getMovements(cod_prod?: number, page: number = 1, limit: number = 20): Promise<PaginatedMovements> {
+    const url = cod_prod 
+      ? `/inventory/movements?cod_prod=${cod_prod}&page=${page}&limit=${limit}`
+      : `/inventory/movements?page=${page}&limit=${limit}`;
+    const response = await this.httpClient.get<PaginatedMovements>(url, this.getAuthHeaders());
+    if (!response.ok || !response.data) throw new Error(response.error || 'Error retrieving movements');
     return response.data;
   }
 
-  // ── Suministra (Stock Alerts) ──────────────────────────────────────────────
-
-  async fetchLowStockAlerts(): Promise<Suministra[]> {
-    const response = await this.httpClient.get<PaginatedResponse<Suministra> | Suministra[]>('/inventory/low-stock', this.getAuthHeaders());
-    if (!response.ok) throw new Error(response.error ?? 'Error al cargar alertas de stock');
-    if (Array.isArray(response.data)) return response.data;
-    return response.data?.data || [];
+  async createMovement(movement: Partial<Movement>): Promise<Movement> {
+    const response = await this.httpClient.post<Movement>('/inventory/movements', movement, { headers: this.getAuthHeaders() });
+    if (!response.ok || !response.data) throw new Error(response.error || 'Error creating movement');
+    return response.data;
   }
 
-  async upsertSuministra(dto: UpsertSuministraDto): Promise<Suministra> {
-    const response = await this.httpClient.post<Suministra>('/inventory/suministra', dto, {
-      headers: this.getAuthHeaders()
-    });
-    if (!response.ok || !response.data) throw new Error(response.error ?? 'Error al configurar stock');
+  // Low Stock & Suministra
+  async getLowStock(): Promise<{ data: Suministra[] }> {
+    const response = await this.httpClient.get<{ data: Suministra[] }>('/inventory/low-stock', this.getAuthHeaders());
+    if (!response.ok || !response.data) throw new Error(response.error || 'Error retrieving low stock');
+    return response.data;
+  }
+
+  async upsertSuministra(suministra: Partial<Suministra>): Promise<Suministra> {
+    const response = await this.httpClient.post<Suministra>('/inventory/suministra', suministra, { headers: this.getAuthHeaders() });
+    if (!response.ok || !response.data) throw new Error(response.error || 'Error upserting suministra');
+    return response.data;
+  }
+
+  async getSuministra(page: number = 1, limit: number = 50): Promise<{ data: Suministra[], pagination: any }> {
+    const response = await this.httpClient.get<any>(`/inventory/suministra?page=${page}&limit=${limit}`, this.getAuthHeaders());
+    if (!response.ok || !response.data) throw new Error(response.error || 'Error retrieving suministra records');
     return response.data;
   }
 }

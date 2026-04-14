@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { User } from '@/models/User';
-import { useStockSync } from '@/context/StockContext';
+import type { Product } from '@/models/Product';
+import { productService, alertService } from '@/config/setup';
 
 interface AdminNavbarProps {
   user: User;
@@ -9,8 +10,44 @@ interface AdminNavbarProps {
 }
 
 export const AdminNavbar: React.FC<AdminNavbarProps> = ({ user, onLogout, onProfileOpen }) => {
+  const [alerts, setAlerts] = useState<Product[]>([]);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const { lowStockItems } = useStockSync();
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    let lastAlertCount = 0;
+
+    const fetchAlerts = async () => {
+      try {
+        const res = await productService.getLowStock();
+        if (res && res.data) {
+          const newAlerts = res.data;
+          if (newAlerts.length > lastAlertCount) {
+            // New alerts detected!
+            const newCount = newAlerts.length - lastAlertCount;
+            alertService.showToast('warning', `⚠️ ${newCount} nuevos productos con bajo stock detectados`);
+          }
+          setAlerts(newAlerts);
+          lastAlertCount = newAlerts.length;
+        }
+      } catch (err) {
+        console.error('[Navbar Notifications Error]', err);
+      }
+    };
+
+    fetchAlerts();
+    // Poll every 30 seconds for near-real-time feedback
+    const interval = setInterval(fetchAlerts, 30000);
+
+    // Listen for manual refresh events (e.g. from Inventory)
+    const handleManualRefresh = () => fetchAlerts();
+    window.addEventListener('kiora-refresh-alerts', handleManualRefresh);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('kiora-refresh-alerts', handleManualRefresh);
+    };
+  }, []);
 
   const getInitials = (name: string) => {
     if (!name) return 'UN';
@@ -20,7 +57,7 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({ user, onLogout, onProf
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-[#3E2723] shadow-lg border-b border-white/5">
+    <header className="sticky top-0 z-40 bg-[#3E2723] shadow-lg border-b border-white/5 font-[Inter]">
       <nav className="flex items-center justify-between px-6 py-3">
         {/* Left Section: Branding */}
         <div className="flex items-center gap-4">
@@ -37,14 +74,15 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({ user, onLogout, onProf
 
         {/* Right Section: Actions & User */}
         <div className="flex items-center gap-6">
+          {/* Notifications */}
           <div className="relative">
             <button 
               onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-              className={`relative p-1 transition-all hover:scale-110 ${isNotificationsOpen ? 'text-white' : 'text-white/80 hover:text-white'}`}
+              className="relative p-2 text-white/80 transition-all hover:scale-110 hover:text-white rounded-full hover:bg-white/5 active:scale-95"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
+                className="h-6 w-6 transition-transform group-active:rotate-12"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -56,66 +94,67 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({ user, onLogout, onProf
                   d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
                 />
               </svg>
-              {lowStockItems.length > 0 && (
-                <div className="absolute right-1 top-1.5 h-2.5 w-2.5 rounded-full bg-[#ec131e] border-2 border-[#3E2723] animate-pulse"></div>
+              {alerts.length > 0 && (
+                <>
+                  <div className="absolute right-1.5 top-1.5 h-3 w-3 rounded-full bg-[#ec131e] border-2 border-[#3E2723] animate-pulse"></div>
+                  <span className="absolute -right-1 -top-1 bg-[#ec131e] text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center text-white ring-2 ring-[#3E2723]">
+                    {alerts.length}
+                  </span>
+                </>
               )}
             </button>
 
-            {/* Notifications Dropdown */}
+            {/* Dropdown Menu */}
             {isNotificationsOpen && (
               <>
-                <div 
-                  className="fixed inset-0 z-40" 
-                  onClick={() => setIsNotificationsOpen(false)}
-                />
-                <div className="absolute right-0 mt-3 w-80 origin-top-right rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                  <div className="bg-[#3E2723] px-4 py-3">
-                    <h3 className="text-xs font-black uppercase tracking-widest text-white/60">Notificaciones</h3>
+                <div className="fixed inset-0 z-0" onClick={() => setIsNotificationsOpen(false)}></div>
+                <div className="absolute right-0 mt-4 w-80 origin-top-right rounded-2xl bg-white shadow-[0_10px_40px_rgba(0,0,0,0.15)] ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-200 z-10 overflow-hidden">
+                  <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+                    <h3 className="text-xs font-black text-gray-900 uppercase tracking-widest">Alertas de Stock</h3>
+                    <span className="px-2 py-0.5 bg-red-100 text-[#ec131e] text-[9px] font-black rounded-full uppercase tracking-tighter">Bajo Stock</span>
                   </div>
                   
                   <div className="max-h-96 overflow-y-auto">
-                    {lowStockItems.length === 0 ? (
-                      <div className="p-8 text-center">
-                        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-500">
-                           <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                           </svg>
-                        </div>
-                        <p className="text-sm font-bold text-slate-900">Todo en orden</p>
-                        <p className="text-xs font-medium text-slate-500 mt-1">No hay productos con stock bajo en este momento.</p>
-                      </div>
-                    ) : (
-                      <div className="divide-y divide-slate-50">
-                        {lowStockItems.map((item) => (
-                          <div key={item.cod_prod} className="flex gap-4 p-4 hover:bg-slate-50 transition-colors">
-                            <div className="h-10 w-10 shrink-0 rounded-lg bg-red-50 flex items-center justify-center text-[#ec131e]">
-                               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                               </svg>
+                    {isLoading ? (
+                      <div className="p-10 flex justify-center"><div className="w-6 h-6 border-2 border-red-100 border-t-[#ec131e] rounded-full animate-spin"></div></div>
+                    ) : alerts.length > 0 ? (
+                      alerts.map((alert) => (
+                        <div key={alert.cod_prod} className="p-4 hover:bg-red-50/50 transition-colors border-b border-gray-50 last:border-0 group cursor-default">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-red-100/50 text-[#ec131e] rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                             </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-bold text-slate-900 truncate">{item.nom_prod}</p>
-                              <p className="text-xs font-medium text-red-500 mt-0.5">Stock crítico: {item.stock_actual} unidades</p>
-                              <p className="text-[10px] font-medium text-slate-400 mt-1 uppercase tracking-tight">Mínimo requerido: {item.stock_minimo}</p>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-bold text-gray-900 truncate">{alert.nom_prod}</p>
+                              <p className="text-xs text-red-600 font-medium mt-0.5">⚠️ Solo quedan {alert.stock_actual} unid.</p>
                             </div>
                           </div>
-                        ))}
+                          <div className="mt-2 text-[10px] text-gray-400 font-bold bg-gray-50 px-2 py-1 rounded w-fit">
+                            Mínimo configurado: {alert.stock_minimo}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-12 text-center flex flex-col items-center">
+                        <div className="mb-3 p-3 bg-emerald-50 rounded-full text-emerald-600">
+                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"/></svg>
+                        </div>
+                        <p className="text-sm text-gray-600 font-bold">¡Todo en orden!</p>
+                        <p className="text-xs text-gray-400 font-medium">No hay productos con stock bajo.</p>
                       </div>
                     )}
                   </div>
                   
-                  {lowStockItems.length > 0 && (
-                    <div className="bg-slate-50 p-3 text-center border-t border-slate-100">
-                      <button 
-                        onClick={() => {
-                          setIsNotificationsOpen(false);
-                          // Maybe navigate to inventory?
-                        }}
-                        className="text-[10px] font-black uppercase tracking-widest text-[#ec131e] hover:underline"
-                      >
-                        Ver inventario completo
-                      </button>
-                    </div>
+                  {alerts.length > 0 && (
+                    <button 
+                      onClick={() => {
+                        window.location.hash = 'inventario';
+                        setIsNotificationsOpen(false);
+                      }}
+                      className="w-full p-3 bg-gray-50 text-[10px] font-black text-gray-500 uppercase tracking-widest hover:bg-gray-100 transition-colors border-t border-gray-100"
+                    >
+                      Ver todos en Inventario
+                    </button>
                   )}
                 </div>
               </>

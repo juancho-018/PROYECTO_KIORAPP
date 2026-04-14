@@ -9,7 +9,10 @@ export default function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) return;
+    if (!email || !password) {
+      alertService.showError('Campos incompletos', 'Por favor, ingresa tu correo y contraseña.');
+      return;
+    }
 
     setIsLoading(true);
 

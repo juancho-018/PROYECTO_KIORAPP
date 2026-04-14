@@ -9,10 +9,11 @@ interface NavItem {
 interface AdminSubNavProps {
   activeId: string;
   onItemClick: (id: string) => void;
+  isAdmin?: boolean;
 }
 
-export const AdminSubNav: React.FC<AdminSubNavProps> = ({ activeId, onItemClick }) => {
-  const items: NavItem[] = [
+export const AdminSubNav: React.FC<AdminSubNavProps> = ({ activeId, onItemClick, isAdmin = false }) => {
+  const allItems: NavItem[] = [
     {
       id: 'dashboard',
       label: 'Inicio',
@@ -46,6 +47,34 @@ export const AdminSubNav: React.FC<AdminSubNavProps> = ({ activeId, onItemClick 
             strokeLinejoin="round"
             strokeWidth="1.75"
             d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+          />
+        </svg>
+      ),
+    },
+    {
+      id: 'categorias',
+      label: 'Categorías',
+      icon: (
+        <svg className="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1.75"
+            d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+          />
+        </svg>
+      ),
+    },
+    {
+      id: 'proveedores',
+      label: 'Proveedores',
+      icon: (
+        <svg className="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1.75"
+            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
           />
         </svg>
       ),
@@ -105,13 +134,20 @@ export const AdminSubNav: React.FC<AdminSubNavProps> = ({ activeId, onItemClick 
     },
   ];
 
+  const items = allItems.filter(item => {
+    if (!isAdmin) {
+      return ['dashboard', 'inventario', 'proveedores', 'pedidos', 'ajustes'].includes(item.id);
+    }
+    return true;
+  });
+
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
       <nav
         className="flex items-center gap-1 rounded-2xl bg-[#3E2723]/90 p-1.5 shadow-2xl backdrop-blur-md ring-1 ring-white/10"
         aria-label="Secciones del panel"
       >
-        {items.map((item) => {
+        {items.map((item: NavItem) => {
           const active = activeId === item.id;
           return (
             <button

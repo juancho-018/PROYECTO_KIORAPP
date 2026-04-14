@@ -1,19 +1,17 @@
 export interface Supplier {
   cod_prov: number;
-  id_prov?: string;
+  id_prov: string | null;
   nom_prov: string;
-  tel_prov?: string;
-  tipoid_prov?: string;
+  tel_prov: string | null;
+  tipoid_prov: string | null;
 }
 
 export interface Movement {
   id_mov: number;
-  tipo_mov: 'entrada' | 'salida' | 'ajuste';
+  tipo_mov: string;
   fecha_mov: string;
   cantidad: number;
   cod_prod: number;
-  fk_cod_prov?: number;
-  fk_id_vent?: number;
 }
 
 export interface Suministra {
@@ -22,9 +20,25 @@ export interface Suministra {
   cod_prod: number;
   stock: number;
   stock_minimo: number;
-  nom_prov?: string; // from join
+  nom_prov?: string; // Joined field
 }
 
-export interface CreateSupplierDto extends Omit<Supplier, 'cod_prov'> {}
-export interface CreateMovementDto extends Omit<Movement, 'id_mov'> {}
-export interface UpsertSuministraDto extends Omit<Suministra, 'id' | 'nom_prov'> {}
+export interface PaginatedSuppliers {
+  data: Supplier[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface PaginatedMovements {
+  data: Movement[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}

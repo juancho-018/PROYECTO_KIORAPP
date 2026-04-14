@@ -1,226 +1,265 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { orderService, alertService } from '@/config/setup';
-import type { Order, CreateOrderDto } from '@/models/Order';
-import { OrderDrawer } from './OrderDrawer';
+import type { Order, Invoice } from '@/models/Order';
 import { OrderDetailDrawer } from './OrderDetailDrawer';
-import { SalesExportDrawer } from './SalesExportDrawer';
-import { getErrorMessage } from '@/utils/getErrorMessage';
-import { useStockSync } from '@/context/StockContext';
+
+// @ts-ignore
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
 
 export function OrdersSection() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isOrderDrawerOpen, setIsOrderDrawerOpen] = useState(false);
-  const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
-  const [isExportOpen, setIsExportOpen] = useState(false);
+  const [activeSubTab, setActiveSubTab] = useState<'ventas' | 'facturas'>('ventas');
+  const [searchInvoiceId, setSearchInvoiceId] = useState('');
+
+  // Detail Drawer
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { notifyStockChange } = useStockSync();
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+
+  useEffect(() => {
+    loadData();
+  }, [activeSubTab]);
 
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const data = await orderService.fetchOrders(50, 0);
-      setOrders(data);
-    } catch (error) {
-      alertService.showToast('error', 'Error al cargar órdenes');
+      if (activeSubTab === 'ventas') {
+        const res = await orderService.getOrders();
+        if (res && res.data) setOrders(res.data);
+      } else {
+        const res = await orderService.getInvoices();
+        if (res && res.data) setInvoices(res.data);
+      }
+    } catch (error: any) {
+      alertService.showError('Error', error.message || 'Error cargando datos');
     } finally {
       setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    void loadData();
-  }, []);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completada': return 'bg-emerald-50 text-emerald-600';
-      case 'cancelada': return 'bg-red-50 text-red-600';
-      case 'pendiente': return 'bg-amber-50 text-amber-600';
-      default: return 'bg-slate-50 text-slate-600';
+  const handleOpenDetail = async (order: Order) => {
+    try {
+      const detailed = await orderService.getOrderById(order.id_vent);
+      setSelectedOrder(detailed);
+      setIsDetailOpen(true);
+    } catch (error: any) {
+      alertService.showError('Error', 'No se pudo cargar el detalle de la venta');
     }
   };
 
-  const handleUpdateStatus = async (id: number, status: 'completada' | 'cancelada') => {
-    const action = status === 'completada' ? 'completar' : 'cancelar';
-    const confirm = await alertService.showConfirm(
-      `¿${action.charAt(0).toUpperCase() + action.slice(1)} Pedido?`,
-      `¿Estás seguro que deseas ${action} el pedido #${id}?`,
-      status === 'completada' ? 'Completar' : 'Cancelar',
-      'Volver'
-    );
+  const downloadInvoicePDF = (invoice: Invoice) => {
+    const doc = new jsPDF() as any;
     
-    if (confirm) {
-      try {
-        await orderService.updateOrderStatus(id, status);
-        alertService.showToast('success', `Pedido ${status === 'completada' ? 'completado' : 'cancelado'}`);
-        if (status === 'completada') {
-          notifyStockChange();
-        }
-        void loadData();
-      } catch (error) {
-        alertService.showToast('error', 'Error al actualizar el pedido');
-      }
+    // Header
+    doc.setFontSize(22);
+    doc.setTextColor(236, 19, 30); // Kiora Red
+    doc.text('KIORA - FACTURA DE VENTA', 20, 30);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`ID Factura: FAC-${invoice.id_fact}`, 20, 40);
+    doc.text(`ID Pedido: #${invoice.id_pedido}`, 20, 45);
+    doc.text(`Fecha Emisión: ${new Date(invoice.fecha_fact).toLocaleString()}`, 20, 50);
+    
+    // Customer Info (Placeholder)
+    doc.setFontSize(12);
+    doc.setTextColor(0);
+    doc.text('Detalles del Cliente:', 20, 65);
+    doc.setFontSize(10);
+    doc.text(`Identificador: ${invoice.id_usu || 'Cliente General'}`, 20, 72);
+    
+    // Table
+    const tableData = [
+      ['Descripción', 'Cantidad', 'Precio Unit.', 'Total'],
+      ['Servicio/Producto Kiora', invoice.cantidad_vent, `$${Number(invoice.precio_prod).toLocaleString()}`, `$${Number(invoice.total_fact).toLocaleString()}`]
+    ];
+    
+    doc.autoTable({
+      startY: 85,
+      head: [tableData[0]],
+      body: [tableData[1]],
+      theme: 'striped',
+      headStyles: { fillColor: [236, 19, 30] }
+    });
+    
+    // Totals
+    const finalY = (doc as any).lastAutoTable.finalY + 10;
+    doc.setFontSize(12);
+    doc.text(`TOTAL A PAGAR: $${Number(invoice.total_fact).toLocaleString()}`, 140, finalY);
+    
+    // Footer
+    doc.setFontSize(8);
+    doc.text('Gracias por su compra en Kiora. Este documento es un soporte legal de su transacción.', 20, 280);
+    
+    doc.save(`Factura_Kiora_FAC-${invoice.id_fact}.pdf`);
+    alertService.showToast('success', 'PDF generado correctamente');
+  };
+
+  const handleDeleteOrder = async (id: number) => {
+    const confirmed = await alertService.showConfirm(
+      '¿Eliminar Venta?',
+      'Esta acción eliminará el pedido y sus registros asociados permanentemente.',
+      'Sí, eliminar',
+      'Cancelar'
+    );
+    if (!confirmed) return;
+
+    try {
+      await orderService.deleteOrder(id);
+      alertService.showSuccess('Eliminado', 'Venta eliminada del sistema');
+      loadData();
+    } catch (error: any) {
+      alertService.showError('Error', error.message || 'No se pudo eliminar el registro');
     }
   };
 
-  const handleCreateOrder = async (items: { cod_prod: number; cantidad: number; precio_unit: number }[]) => {
-    setIsSubmitting(true);
+  const handleUpdateStatus = async (id: number, status: string) => {
     try {
-      const dto: CreateOrderDto = {
-        metodopago_usu: 'Efectivo',
-        items
-      };
-      await orderService.createCompletedSale(dto);
-      
-      alertService.showToast('success', 'Venta registrada e inventario actualizado');
-      notifyStockChange();
-      void loadData();
-    } catch (error: unknown) {
-      const msg = getErrorMessage(error, 'Error al procesar la venta');
-      alertService.showToast('error', msg);
-      
-      // Refresh list even on error because a "pendiente" order might have been created
-      void loadData();
-      
-      console.error('Error en Nueva Venta:', error);
-      throw error; 
-    } finally {
-      setIsSubmitting(false);
+      await orderService.updateOrderStatus(id, status);
+      alertService.showToast('success', `Estado actualizado a ${status}`);
+      loadData();
+    } catch (error: any) {
+      alertService.showError('Error', 'No se pudo actualizar el estado');
     }
   };
 
-  const handleViewDetails = async (order: Order) => {
-    try {
-      // Fetch full order to ensure items are present
-      const fullOrder = await orderService.getOrderById(order.id_vent);
-      setSelectedOrder(fullOrder);
-      setIsDetailDrawerOpen(true);
-    } catch (error) {
-       // Fallback to what we have if network fails for single order
-       setSelectedOrder(order);
-       setIsDetailDrawerOpen(true);
-    }
-  };
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-2xl font-bold text-slate-900">Historial de Ventas</h2>
-        <div className="flex items-center gap-3">
+    <>
+      <header className="mb-10 animate-in fade-in slide-in-from-top-4 duration-500">
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight text-[#111827] sm:text-4xl">
+              Caja <span className="text-[#ec131e]">& Ventas</span>
+            </h1>
+            <p className="mt-2 text-slate-500 font-medium">Historial de pedidos y facturación financiera.</p>
+          </div>
+          
+          {activeSubTab === 'facturas' && (
+            <div className="relative">
+              <input 
+                type="text" 
+                inputMode="numeric"
+                placeholder="Buscar Factura #ID..." 
+                className="bg-white border border-gray-200 rounded-xl px-4 py-3 pl-10 text-sm focus:ring-[#ec131e] focus:border-[#ec131e]"
+                value={searchInvoiceId}
+                onChange={(e) => setSearchInvoiceId(e.target.value.replace(/\D/g, ''))}
+              />
+              <svg className="w-4 h-4 text-gray-400 absolute left-4 top-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </div>
+          )}
+        </div>
+
+        {/* Subtabs */}
+        <div className="flex gap-1 p-1 bg-gray-100 rounded-xl w-fit">
           <button 
-            onClick={() => setIsExportOpen(true)}
-            className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition-all hover:bg-slate-50 active:scale-95"
+            onClick={() => setActiveSubTab('ventas')}
+            className={`px-6 py-2 rounded-lg text-xs font-bold transition-all ${activeSubTab === 'ventas' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
           >
-            <svg className="mr-2 inline-block h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            Exportar
+            Pedidos (Live)
           </button>
           <button 
-            onClick={() => setIsOrderDrawerOpen(true)}
-            className="rounded-xl bg-[#ec131e] px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#ec131e]/20 transition-all hover:bg-[#d01019] active:scale-95"
+            onClick={() => setActiveSubTab('facturas')}
+            className={`px-6 py-2 rounded-lg text-xs font-bold transition-all ${activeSubTab === 'facturas' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
           >
-            Nueva Venta
+            Facturación Histórica
           </button>
         </div>
       </header>
 
-      <div className="grid grid-cols-1 gap-4">
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-8 duration-700">
         {isLoading ? (
-          Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-24 animate-pulse rounded-2xl bg-slate-100"></div>
-          ))
-        ) : orders.length === 0 ? (
-          <div className="py-20 text-center text-slate-400">
-            No hay ventas registradas.
-          </div>
+          <div className="py-20 flex justify-center"><div className="w-10 h-10 border-4 border-red-100 border-t-[#ec131e] rounded-full animate-spin"></div></div>
+        ) : activeSubTab === 'ventas' ? (
+          <table className="w-full text-left">
+            <thead className="bg-gray-50 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-slate-100">
+              <tr>
+                <th className="px-6 py-4">ID / Fecha</th>
+                <th className="px-6 py-4">Usuario</th>
+                <th className="px-6 py-4 text-center">Estado</th>
+                <th className="px-6 py-4 text-right">Monto</th>
+                <th className="px-6 py-4 text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 font-medium">
+              {orders.map(order => (
+                <tr key={order.id_vent} className="hover:bg-slate-50 transition-colors">
+                  <td className="px-6 py-4">
+                    <p className="font-black text-gray-900">#{order.id_vent}</p>
+                    <p className="text-[10px] text-gray-400">{new Date(order.fecha_vent).toLocaleDateString()}</p>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600">ID Usuario: {order.metodopago_usu || 'Cliente'}</td>
+                  <td className="px-6 py-4 text-center">
+                    <select 
+                      value={order.estado}
+                      onChange={(e) => handleUpdateStatus(order.id_vent, e.target.value)}
+                      className={`text-[10px] font-black uppercase px-3 py-1 rounded-full border-none ring-1 appearance-none cursor-pointer text-center ${
+                        order.estado === 'completada' ? 'bg-emerald-50 text-emerald-600 ring-emerald-100' : 
+                        order.estado === 'cancelada' ? 'bg-red-50 text-red-600 ring-red-100' : 
+                        'bg-amber-50 text-amber-600 ring-amber-100'
+                      }`}
+                    >
+                      <option value="pendiente">Pendiente</option>
+                      <option value="completada">Completada</option>
+                      <option value="cancelada">Cancelada</option>
+                    </select>
+                  </td>
+                  <td className="px-6 py-4 text-right text-gray-900 font-black">
+                    ${Number(order.montofinal_vent).toLocaleString()}
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex justify-end gap-2">
+                       <button onClick={() => handleOpenDetail(order)} className="w-8 h-8 rounded-lg bg-red-50 text-[#ec131e] flex items-center justify-center hover:bg-red-100" title="Ver Detalle"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg></button>
+                       <button onClick={() => handleDeleteOrder(order.id_vent)} className="w-8 h-8 rounded-lg bg-gray-50 text-gray-400 flex items-center justify-center hover:bg-gray-100" title="Eliminar"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {orders.length === 0 && <tr><td colSpan={5} className="py-20 text-center text-slate-400">No hay pedidos registrados hoy.</td></tr>}
+            </tbody>
+          </table>
         ) : (
-          (Array.isArray(orders) ? orders : []).map((order) => (
-            <article 
-              key={order.id_vent} 
-              onClick={() => handleViewDetails(order)}
-              className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:shadow-md cursor-pointer group/card"
-            >
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-50 text-slate-400 group-hover/card:bg-[#ec131e]/5 group-hover/card:text-[#ec131e] transition-colors">
-                   <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                    </svg>
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-slate-900 leading-none group-hover/card:text-[#ec131e] transition-colors">Orden #{order.id_vent}</h3>
-                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${getStatusColor(order.estado)}`}>
-                      {order.estado}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-xs text-slate-500 font-medium">
-                    {new Date(order.fecha_vent).toLocaleString('es-CO', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })} • {order.metodopago_usu || 'Efectivo'}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-4 text-right">
-                <div>
-                  <p className="text-sm font-black text-slate-900">
-                    {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(order.montofinal_vent)}
-                  </p>
-                  <span className="mt-1 block text-[10px] font-bold uppercase tracking-wider text-[#ec131e] opacity-0 group-hover/card:opacity-100 transition-opacity">
-                    Ver Detalles
-                  </span>
-                </div>
-                
-                {order.estado === 'pendiente' && (
-                  <div 
-                    className="flex gap-2 border-l border-slate-100 pl-4"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <button 
-                      onClick={() => handleUpdateStatus(order.id_vent, 'completada')}
-                      className="rounded-xl bg-emerald-50 p-2.5 text-emerald-600 hover:bg-emerald-100 transition-all"
-                      title="Completar Venta"
-                    >
-                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </button>
-                    <button 
-                      onClick={() => handleUpdateStatus(order.id_vent, 'cancelada')}
-                      className="rounded-xl bg-red-50 p-2.5 text-red-600 hover:bg-red-100 transition-all"
-                      title="Cancelar Venta"
-                    >
-                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                )}
-              </div>
-            </article>
-          ))
+          <table className="w-full text-left">
+            <thead className="bg-gray-50 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-slate-100">
+              <tr>
+                <th className="px-6 py-4">ID / Factura</th>
+                <th className="px-6 py-4">ID Pedido</th>
+                <th className="px-6 py-4">Fecha Emisión</th>
+                <th className="px-6 py-4 text-right">Total Facturado</th>
+                <th className="px-6 py-4 text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 font-medium">
+              {invoices.filter(i => searchInvoiceId ? String(i.id_fact).includes(searchInvoiceId) : true).map(invoice => (
+                <tr key={invoice.id_fact} className="hover:bg-slate-50 transition-colors">
+                  <td className="px-6 py-4 font-black text-gray-900 text-sm">FAC-{invoice.id_fact}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">#{invoice.id_pedido}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{new Date(invoice.fecha_fact).toLocaleString()}</td>
+                  <td className="px-6 py-4 text-right text-[#ec131e] font-black">${Number(invoice.total_fact).toLocaleString()}</td>
+                  <td className="px-6 py-4 text-right">
+                     <button 
+                        onClick={() => downloadInvoicePDF(invoice)}
+                        className="text-[10px] font-black uppercase text-gray-400 hover:text-[#ec131e] bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 transition-all hover:scale-105 active:scale-95 flex items-center gap-1 float-right"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                        Descargar PDF
+                      </button>
+                  </td>
+                </tr>
+              ))}
+              {invoices.length === 0 && <tr><td colSpan={5} className="py-20 text-center text-slate-400">No hay facturas registradas.</td></tr>}
+            </tbody>
+          </table>
         )}
       </div>
 
-      <OrderDrawer 
-        isOpen={isOrderDrawerOpen}
-        onClose={() => setIsOrderDrawerOpen(false)}
-        onOrderCreated={loadData}
-        onSubmit={handleCreateOrder}
-        isSubmitting={isSubmitting}
-      />
-
-      <OrderDetailDrawer
-        isOpen={isDetailDrawerOpen}
-        onClose={() => setIsDetailDrawerOpen(false)}
+      <OrderDetailDrawer 
+        isOpen={isDetailOpen}
         order={selectedOrder}
+        onClose={() => setIsDetailOpen(false)}
       />
-
-      <SalesExportDrawer 
-        isOpen={isExportOpen}
-        onClose={() => setIsExportOpen(false)}
-      />
-    </div>
+    </>
   );
 }
