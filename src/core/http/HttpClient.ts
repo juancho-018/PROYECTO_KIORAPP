@@ -50,6 +50,7 @@ export interface HttpResponse<T> {
  * Interface abstracting the HTTP client (DIP).
  */
 export interface IHttpClient {
+  baseURL: string;
   get<T>(url: string, headers?: Record<string, string>): Promise<HttpResponse<T>>;
   post<T>(url: string, body?: unknown, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
   patch<T>(url: string, body?: unknown, options?: HttpRequestOptions): Promise<HttpResponse<T>>;

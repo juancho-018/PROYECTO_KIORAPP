@@ -16,6 +16,10 @@ import { ComingSoonSection } from './ComingSoonSection';
 import { DashboardSection } from './DashboardSection';
 import HelpCenter from '@/components/help/HelpCenter';
 import { getErrorMessage } from '@/utils/getErrorMessage';
+import { ProductsSection } from './ProductsSection';
+import { InventorySection } from './InventorySection';
+import { SalesSection } from './SalesSection';
+import { MaintenanceSection } from './MaintenanceSection';
 
 export default function PanelApp() {
   const [user, setUser] = useState<User | null>(null);
@@ -235,6 +239,14 @@ export default function PanelApp() {
       <main className="relative mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
         {activeTab === 'dashboard' ? (
           <DashboardSection />
+        ) : activeTab === 'productos' ? (
+          <ProductsSection />
+        ) : activeTab === 'inventario' ? (
+          <InventorySection />
+        ) : activeTab === 'ventas' ? (
+          <SalesSection />
+        ) : activeTab === 'mantenimiento' ? (
+          <MaintenanceSection />
         ) : activeTab === 'usuarios' ? (
           <>
             <header className="mb-10 flex flex-col gap-6 sm:mb-12 sm:flex-row sm:items-center sm:justify-between">
@@ -335,7 +347,7 @@ export default function PanelApp() {
                   </svg>
                   Volver a Ajustes
                 </button>
-                <HelpCenter hideBackButton={true} />
+                <HelpCenter />
               </div>
             )}
           </div>

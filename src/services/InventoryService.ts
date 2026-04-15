@@ -1,0 +1,114 @@
+import type { IHttpClient } from '../core/http/HttpClient';
+import type { AuthService } from './AuthService';
+import type { Supplier, Movement, Suministra, LowStockItem } from '../models/Inventory';
+
+export class InventoryService {
+  constructor(
+    private httpClient: IHttpClient,
+    private authService: AuthService
+  ) {}
+
+  private getAuthHeaders(): Record<string, string> {
+    const token = this.authService.getToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
+
+  private get baseURL(): string {
+    return this.httpClient.baseURL;
+  }
+
+  // ── Suppliers ───────────────────────────────────────────────────────────────
+
+  async getSuppliers(): Promise<Supplier[]> {
+    const res = await this.httpClient.get<Supplier[]>('/inventory/suppliers', this.getAuthHeaders());
+    if (!res.ok) throw new Error(res.error ?? 'Error al obtener proveedores');
+    return res.data ?? [];
+  }
+
+  async getSupplierById(id: number): Promise<Supplier> {
+    const res = await this.httpClient.get<Supplier>(`/inventory/suppliers/${id}`, this.getAuthHeaders());
+    if (!res.ok || !res.data) throw new Error(res.error ?? 'Proveedor no encontrado');
+    return res.data;
+  }
+
+  async createSupplier(dto: Omit<Supplier, 'cod_prov'>): Promise<Supplier> {
+    const res = await this.httpClient.post<Supplier>(
+      '/inventory/suppliers',
+      dto,
+      { headers: this.getAuthHeaders() }
+    );
+    if (!res.ok || !res.data) throw new Error(res.error ?? 'Error al crear proveedor');
+    return res.data;
+  }
+
+  async updateSupplier(id: number, dto: Partial<Supplier>): Promise<Supplier> {
+    const token = this.authService.getToken();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const rawRes = await fetch(`${this.baseURL}/inventory/suppliers/${id}`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify(dto),
+    });
+    const data = (await rawRes.json()) as Record<string, unknown>;
+    if (!rawRes.ok) throw new Error((data?.error ?? data?.message ?? 'Error al actualizar proveedor') as string);
+    return data as unknown as Supplier;
+  }
+
+  async deleteSupplier(id: number): Promise<void> {
+    const res = await this.httpClient.delete(`/inventory/suppliers/${id}`, { headers: this.getAuthHeaders() });
+    if (!res.ok) throw new Error(res.error ?? 'Error al eliminar proveedor');
+  }
+
+  // ── Movements ───────────────────────────────────────────────────────────────
+
+  async getMovements(cod_prod?: number): Promise<Movement[]> {
+    const query = cod_prod ? `?cod_prod=${cod_prod}` : '';
+    const res = await this.httpClient.get<Movement[]>(`/inventory/movements${query}`, this.getAuthHeaders());
+    if (!res.ok) throw new Error(res.error ?? 'Error al obtener movimientos');
+    return res.data ?? [];
+  }
+
+  async createMovement(dto: Omit<Movement, 'id_mov' | 'fecha_mov'>): Promise<Movement> {
+    const res = await this.httpClient.post<Movement>(
+      '/inventory/movements',
+      dto,
+      { headers: this.getAuthHeaders() }
+    );
+    if (!res.ok || !res.data) throw new Error(res.error ?? 'Error al registrar movimiento');
+    return res.data;
+  }
+
+  // ── Low Stock ───────────────────────────────────────────────────────────────
+
+  async getLowStock(): Promise<LowStockItem[]> {
+    const res = await this.httpClient.get<LowStockItem[]>('/inventory/low-stock', this.getAuthHeaders());
+    if (!res.ok) throw new Error(res.error ?? 'Error al obtener items con bajo stock');
+    return res.data ?? [];
+  }
+
+  // ── Suministra ──────────────────────────────────────────────────────────────
+
+  async getSuministra(): Promise<Suministra[]> {
+    const res = await this.httpClient.get<Suministra[]>('/inventory/suministra', this.getAuthHeaders());
+    if (!res.ok) throw new Error(res.error ?? 'Error al obtener suministra');
+    return res.data ?? [];
+  }
+
+  async getSuministraById(id: number): Promise<Suministra> {
+    const res = await this.httpClient.get<Suministra>(`/inventory/suministra/${id}`, this.getAuthHeaders());
+    if (!res.ok || !res.data) throw new Error(res.error ?? 'Suministra no encontrado');
+    return res.data;
+  }
+
+  async upsertSuministra(dto: { fk_cod_prov: number; cod_prod: number; stock: number; stock_minimo: number }): Promise<Suministra> {
+    const res = await this.httpClient.post<Suministra>(
+      '/inventory/suministra',
+      dto,
+      { headers: this.getAuthHeaders() }
+    );
+    if (!res.ok || !res.data) throw new Error(res.error ?? 'Error al guardar suministra');
+    return res.data;
+  }
+}

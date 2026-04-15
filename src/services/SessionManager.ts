@@ -29,7 +29,7 @@ export class SessionManager {
     document.addEventListener('touchstart', this.onActivity, this.touchStartOptions);
 
     this.checkTokenAndInactivity();
-    this.intervalId = window.setInterval(() => this.checkTokenAndInactivity(), 5000);
+    this.intervalId = setInterval(() => this.checkTokenAndInactivity(), 5000);
   }
 
   stopMonitoring() {
