@@ -112,26 +112,51 @@ export class FetchHttpClient implements IHttpClient {
 
   async post<T>(url: string, body?: unknown, options: HttpRequestOptions = {}): Promise<HttpResponse<T>> {
     const { headers, ...rest } = options;
+    const isFormData = body instanceof FormData;
+    
+    const finalHeaders: Record<string, string> = { ...headers };
+    if (!isFormData) {
+      finalHeaders['Content-Type'] = 'application/json';
+    }
+
     return this.request<T>(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...headers,
-      },
-      body: body ? JSON.stringify(body) : undefined,
+      headers: finalHeaders,
+      body: isFormData ? (body as any) : (body ? JSON.stringify(body) : undefined),
       ...rest,
     });
   }
 
   async patch<T>(url: string, body?: unknown, options: HttpRequestOptions = {}): Promise<HttpResponse<T>> {
     const { headers, ...rest } = options;
+    const isFormData = body instanceof FormData;
+    
+    const finalHeaders: Record<string, string> = { ...headers };
+    if (!isFormData) {
+      finalHeaders['Content-Type'] = 'application/json';
+    }
+
     return this.request<T>(url, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        ...headers,
-      },
-      body: body ? JSON.stringify(body) : undefined,
+      headers: finalHeaders,
+      body: isFormData ? (body as any) : (body ? JSON.stringify(body) : undefined),
+      ...rest,
+    });
+  }
+
+  async put<T>(url: string, body?: unknown, options: HttpRequestOptions = {}): Promise<HttpResponse<T>> {
+    const { headers, ...rest } = options;
+    const isFormData = body instanceof FormData;
+    
+    const finalHeaders: Record<string, string> = { ...headers };
+    if (!isFormData) {
+      finalHeaders['Content-Type'] = 'application/json';
+    }
+
+    return this.request<T>(url, {
+      method: 'PUT',
+      headers: finalHeaders,
+      body: isFormData ? (body as any) : (body ? JSON.stringify(body) : undefined),
       ...rest,
     });
   }

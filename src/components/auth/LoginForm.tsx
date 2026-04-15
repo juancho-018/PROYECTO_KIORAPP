@@ -9,7 +9,10 @@ export default function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) return;
+    if (!email || !password) {
+      alertService.showError('Campos incompletos', 'Por favor, ingresa tu correo y contraseña.');
+      return;
+    }
 
     setIsLoading(true);
 
@@ -60,6 +63,7 @@ export default function LoginForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              autoComplete="email"
             />
           </div>
         </div>
@@ -90,6 +94,7 @@ export default function LoginForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              autoComplete="current-password"
             />
           </div>
         </div>
