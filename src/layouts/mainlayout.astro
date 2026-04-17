@@ -41,6 +41,10 @@ const {
             .catch(error => console.error('PWA Registration Failed:', error));
         });
       }
+      // Add is-panel class if on panel route
+      if (window.location.pathname.startsWith('/panel')) {
+        document.body.classList.add('is-panel');
+      }
     </script>
     <title>{title}</title>
 
@@ -59,6 +63,9 @@ const {
             bottom: 1.5rem !important;
             right: 1.5rem !important;
             z-index: 9999 !important;
+          }
+          body.is-panel .weglot-container {
+            display: none !important;
           }
           .wg-default, .wg-default .wg-li {
             background: rgba(255, 255, 255, 0.95) !important;

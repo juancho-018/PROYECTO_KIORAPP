@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import type { User } from '@/models/User';
+import { notificationService } from '@/config/setup';
+import { NotificationSidebar } from './NotificationSidebar';
 
 interface AdminNavbarProps {
   user: User;
@@ -8,6 +10,19 @@ interface AdminNavbarProps {
 }
 
 export const AdminNavbar: React.FC<AdminNavbarProps> = ({ user, onLogout, onProfileOpen }) => {
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const updateCount = () => {
+    setUnreadCount(notificationService.getUnreadCount());
+  };
+
+  useEffect(() => {
+    updateCount();
+    window.addEventListener('kiora_notification_updated', updateCount);
+    return () => window.removeEventListener('kiora_notification_updated', updateCount);
+  }, []);
+
   const getInitials = (name: string) => {
     if (!name) return 'UN';
     const parts = name.trim().split(' ');
@@ -34,7 +49,10 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({ user, onLogout, onProf
         {/* Right Section: Actions & User */}
         <div className="flex items-center gap-6">
           {/* Notifications */}
-          <button className="relative p-1 text-white/80 transition-all hover:scale-110 hover:text-white">
+          <button 
+            onClick={() => setIsSidebarOpen(true)}
+            className="relative p-1 text-white/80 transition-all hover:scale-110 hover:text-white"
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-6 w-6"
@@ -49,7 +67,11 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({ user, onLogout, onProf
                 d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
               />
             </svg>
-            <div className="absolute right-1 top-1.5 h-2.5 w-2.5 rounded-full bg-[#ec131e] border-2 border-[#3E2723]"></div>
+            {unreadCount > 0 && (
+              <div className="absolute right-1 top-1.5 h-4 w-4 rounded-full bg-[#ec131e] border-2 border-[#3E2723] flex items-center justify-center">
+                <span className="text-[8px] font-black text-white">{unreadCount > 9 ? '9+' : unreadCount}</span>
+              </div>
+            )}
           </button>
 
           {/* User Profile */}
@@ -71,6 +93,8 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({ user, onLogout, onProf
           </div>
         </div>
       </nav>
+
+      <NotificationSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
     </header>
   );
 };

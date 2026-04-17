@@ -17,6 +17,58 @@ export class MaintenanceService {
     return this.httpClient.baseURL;
   }
 
+  private ensureArray<T>(data: any): T[] {
+    if (Array.isArray(data)) return data;
+    if (data && typeof data === 'object' && Array.isArray(data.data)) return data.data;
+    return [];
+  }
+
+  // ── Reports ─────────────────────────────────────────────────────────────────
+
+  async getReports(): Promise<MaintenanceReport[]> {
+    const res = await this.httpClient.get<any>('/maintenance/reports', this.getAuthHeaders());
+    if (!res.ok) throw new Error(res.error ?? 'Error al obtener reportes');
+    return this.ensureArray<MaintenanceReport>(res.data);
+  }
+
+  async getReportById(id: number): Promise<MaintenanceReport> {
+    const res = await this.httpClient.get<MaintenanceReport>(`/maintenance/reports/${id}`, this.getAuthHeaders());
+    if (!res.ok || !res.data) throw new Error(res.error ?? 'Reporte no encontrado');
+    return res.data;
+  }
+
+  async createReport(dto: Omit<MaintenanceReport, 'id_mante' | 'fecha_mante'>): Promise<MaintenanceReport> {
+    const res = await this.httpClient.post<MaintenanceReport>(
+      '/maintenance/reports',
+      dto,
+      { headers: this.getAuthHeaders() }
+    );
+    if (!res.ok || !res.data) throw new Error(res.error ?? 'Error al crear reporte');
+    return res.data;
+  }
+
+  async updateReport(id: number, dto: Partial<MaintenanceReport>): Promise<MaintenanceReport> {
+    const token = this.authService.getToken();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const rawRes = await fetch(`${this.baseURL}/maintenance/reports/${id}`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify(dto),
+    });
+    const data = (await rawRes.json()) as Record<string, unknown>;
+    if (!rawRes.ok) throw new Error((data?.error ?? data?.message ?? 'Error al actualizar reporte') as string);
+    return data as unknown as MaintenanceReport;
+  }
+
+  async deleteReport(id: number): Promise<void> {
+    const res = await this.httpClient.delete(`/maintenance/reports/${id}`, { headers: this.getAuthHeaders() });
+    if (!res.ok) throw new Error(res.error ?? 'Error al eliminar reporte');
+  }
+
+  // ── Export ──────────────────────────────────────────────────────────────────
+
   private async downloadBlob(path: string, fileName: string): Promise<void> {
     const token = this.authService.getToken();
     const headers: Record<string, string> = {};
@@ -33,39 +85,11 @@ export class MaintenanceService {
     URL.revokeObjectURL(url);
   }
 
-  async getReports(): Promise<MaintenanceReport[]> {
-    const res = await this.httpClient.get<MaintenanceReport[]>('/maintenance', this.getAuthHeaders());
-    if (!res.ok) throw new Error(res.error ?? 'Error al obtener reportes');
-    return res.data ?? [];
-  }
-
-  async createReport(
-    dto: Omit<MaintenanceReport, 'id' | 'fecha_creacion' | 'fecha_actualizacion'>
-  ): Promise<MaintenanceReport> {
-    const res = await this.httpClient.post<MaintenanceReport>(
-      '/maintenance',
-      dto,
-      { headers: this.getAuthHeaders() }
-    );
-    if (!res.ok || !res.data) throw new Error(res.error ?? 'Error al crear reporte');
-    return res.data;
-  }
-
-  async updateReport(id: number, dto: Partial<MaintenanceReport>): Promise<MaintenanceReport> {
-    const res = await this.httpClient.patch<MaintenanceReport>(
-      `/maintenance/${id}`,
-      dto,
-      { headers: this.getAuthHeaders() }
-    );
-    if (!res.ok || !res.data) throw new Error(res.error ?? 'Error al actualizar reporte');
-    return res.data;
-  }
-
   async exportExcel(): Promise<void> {
-    await this.downloadBlob('/maintenance/export/excel', `mantenimiento_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    await this.downloadBlob('/maintenance/export/excel', `mantenimientos_${new Date().toISOString().slice(0, 10)}.xlsx`);
   }
 
   async exportPdf(): Promise<void> {
-    await this.downloadBlob('/maintenance/export/pdf', `mantenimiento_${new Date().toISOString().slice(0, 10)}.pdf`);
+    await this.downloadBlob('/maintenance/export/pdf', `mantenimientos_${new Date().toISOString().slice(0, 10)}.pdf`);
   }
 }

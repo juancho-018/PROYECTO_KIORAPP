@@ -1,5 +1,5 @@
 export interface Category {
-  id_cat?: number;
+  cod_cat?: number;
   nom_cat: string;
   desc_cat?: string;
 }
@@ -12,7 +12,8 @@ export interface Product {
   stock_actual?: number;
   stock_minimo?: number;
   imagen_prod?: string;
-  fk_id_cat?: number;
+  fk_cod_cat?: number;
+  tipos_prod?: string[];
   categoria?: Category;
   alerta_stock_critico?: boolean;
 }

@@ -4,7 +4,7 @@ import type { Order, Invoice, Paginated } from '../models/Order';
 
 export interface CreateOrderDto {
   metodopago_usu: string;
-  items: { cod_prod: number; cantidad: number; precio_unit: number }[];
+  items: { cod_prod: number; cantidad: number; precio_unit: number; nom_prod?: string }[];
 }
 
 export class OrderService {

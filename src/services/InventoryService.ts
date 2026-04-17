@@ -17,12 +17,18 @@ export class InventoryService {
     return this.httpClient.baseURL;
   }
 
+  private ensureArray<T>(data: any): T[] {
+    if (Array.isArray(data)) return data;
+    if (data && typeof data === 'object' && Array.isArray(data.data)) return data.data;
+    return [];
+  }
+
   // ── Suppliers ───────────────────────────────────────────────────────────────
 
   async getSuppliers(): Promise<Supplier[]> {
-    const res = await this.httpClient.get<Supplier[]>('/inventory/suppliers', this.getAuthHeaders());
+    const res = await this.httpClient.get<any>('/inventory/suppliers', this.getAuthHeaders());
     if (!res.ok) throw new Error(res.error ?? 'Error al obtener proveedores');
-    return res.data ?? [];
+    return this.ensureArray<Supplier>(res.data);
   }
 
   async getSupplierById(id: number): Promise<Supplier> {
@@ -65,15 +71,24 @@ export class InventoryService {
 
   async getMovements(cod_prod?: number): Promise<Movement[]> {
     const query = cod_prod ? `?cod_prod=${cod_prod}` : '';
-    const res = await this.httpClient.get<Movement[]>(`/inventory/movements${query}`, this.getAuthHeaders());
+    const res = await this.httpClient.get<any>(`/inventory/movements${query}`, this.getAuthHeaders());
     if (!res.ok) throw new Error(res.error ?? 'Error al obtener movimientos');
-    return res.data ?? [];
+    return this.ensureArray<any>(res.data).map(m => ({
+      ...m,
+      fk_cod_prod: m.cod_prod,
+      cantidad_mov: m.cantidad
+    }));
   }
 
   async createMovement(dto: Omit<Movement, 'id_mov' | 'fecha_mov'>): Promise<Movement> {
+    const backendDto = {
+       ...dto,
+       cod_prod: dto.fk_cod_prod,
+       cantidad: dto.cantidad_mov
+    };
     const res = await this.httpClient.post<Movement>(
       '/inventory/movements',
-      dto,
+      backendDto,
       { headers: this.getAuthHeaders() }
     );
     if (!res.ok || !res.data) throw new Error(res.error ?? 'Error al registrar movimiento');
@@ -83,17 +98,17 @@ export class InventoryService {
   // ── Low Stock ───────────────────────────────────────────────────────────────
 
   async getLowStock(): Promise<LowStockItem[]> {
-    const res = await this.httpClient.get<LowStockItem[]>('/inventory/low-stock', this.getAuthHeaders());
+    const res = await this.httpClient.get<any>('/inventory/low-stock', this.getAuthHeaders());
     if (!res.ok) throw new Error(res.error ?? 'Error al obtener items con bajo stock');
-    return res.data ?? [];
+    return this.ensureArray<LowStockItem>(res.data);
   }
 
   // ── Suministra ──────────────────────────────────────────────────────────────
 
   async getSuministra(): Promise<Suministra[]> {
-    const res = await this.httpClient.get<Suministra[]>('/inventory/suministra', this.getAuthHeaders());
+    const res = await this.httpClient.get<any>('/inventory/suministra', this.getAuthHeaders());
     if (!res.ok) throw new Error(res.error ?? 'Error al obtener suministra');
-    return res.data ?? [];
+    return this.ensureArray<Suministra>(res.data);
   }
 
   async getSuministraById(id: number): Promise<Suministra> {

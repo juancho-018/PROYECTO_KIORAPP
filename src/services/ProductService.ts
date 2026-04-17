@@ -8,8 +8,9 @@ export interface CreateProductDto {
   precio_prod: number;
   stock_actual?: number;
   stock_minimo?: number;
-  fk_id_cat?: number;
+  fk_cod_cat?: number;
   imagen?: File;
+  tipos_prod?: string[];
 }
 
 export class ProductService {
@@ -27,34 +28,74 @@ export class ProductService {
     return this.httpClient.baseURL;
   }
 
+  /**
+   * Normalizes response to always return an array
+   */
+  private ensureArray<T>(data: any): T[] {
+    if (Array.isArray(data)) return data;
+    if (data && typeof data === 'object' && Array.isArray(data.data)) return data.data;
+    return [];
+  }
+
   // ── Products ────────────────────────────────────────────────────────────────
 
-  async getProducts(): Promise<Product[]> {
-    const res = await this.httpClient.get<Product[]>('/products', this.getAuthHeaders());
+  async getProducts(filters?: Record<string, any>): Promise<Product[]> {
+    let url = '/products';
+    if (filters) {
+      const qs = new URLSearchParams();
+      Object.entries(filters).forEach(([k, v]) => {
+        if (v !== undefined && v !== null && v !== '') {
+          qs.append(k, Array.isArray(v) ? v.join(',') : String(v));
+        }
+      });
+      if (qs.toString()) url += `?${qs.toString()}`;
+    }
+    const res = await this.httpClient.get<any>(url, this.getAuthHeaders());
     if (!res.ok) throw new Error(res.error ?? 'Error al obtener productos');
-    return res.data ?? [];
+    return this.ensureArray<any>(res.data).map(p => ({
+       ...p,
+       precio_prod: p.precio_unitario,
+       fk_cod_cat: p.fk_cod_cat,
+       desc_prod: p.descrip_prod,
+       imagen_prod: p.url_imagen,
+       tipos_prod: p.tipos_prod
+    }));
   }
 
   async getProductById(id: number): Promise<Product> {
     const res = await this.httpClient.get<Product>(`/products/${id}`, this.getAuthHeaders());
     if (!res.ok || !res.data) throw new Error(res.error ?? 'Producto no encontrado');
-    return res.data;
+    const p = res.data as any;
+    return {
+       ...p,
+       precio_prod: p.precio_unitario,
+       fk_cod_cat: p.fk_cod_cat,
+       desc_prod: p.descrip_prod,
+       imagen_prod: p.url_imagen
+    };
   }
 
   async getLowStockProducts(): Promise<Product[]> {
-    const res = await this.httpClient.get<Product[]>('/products/low-stock', this.getAuthHeaders());
+    const res = await this.httpClient.get<any>('/products/low-stock', this.getAuthHeaders());
     if (!res.ok) throw new Error(res.error ?? 'Error al obtener productos con bajo stock');
-    return res.data ?? [];
+    return this.ensureArray<any>(res.data).map(p => ({
+       ...p,
+       precio_prod: p.precio_unitario !== undefined ? p.precio_unitario : 0,
+       fk_cod_cat: p.fk_cod_cat,
+       desc_prod: p.descrip_prod,
+       imagen_prod: p.url_imagen
+    }));
   }
 
   async createProduct(dto: CreateProductDto): Promise<Product> {
     const formData = new FormData();
     formData.append('nom_prod', dto.nom_prod);
-    formData.append('precio_prod', String(dto.precio_prod));
-    if (dto.desc_prod) formData.append('desc_prod', dto.desc_prod);
+    formData.append('precio_unitario', String(dto.precio_prod));
+    if (dto.desc_prod) formData.append('descrip_prod', dto.desc_prod);
     if (dto.stock_actual !== undefined) formData.append('stock_actual', String(dto.stock_actual));
     if (dto.stock_minimo !== undefined) formData.append('stock_minimo', String(dto.stock_minimo));
-    if (dto.fk_id_cat !== undefined) formData.append('fk_id_cat', String(dto.fk_id_cat));
+    if (dto.fk_id_cat !== undefined) formData.append('fk_cod_cat', String(dto.fk_id_cat));
+    if (dto.tipos_prod) formData.append('tipos_prod', JSON.stringify(dto.tipos_prod));
     if (dto.imagen) formData.append('imagen', dto.imagen);
 
     const token = this.authService.getToken();
@@ -74,11 +115,12 @@ export class ProductService {
   async updateProduct(id: number, dto: CreateProductDto): Promise<Product> {
     const formData = new FormData();
     formData.append('nom_prod', dto.nom_prod);
-    formData.append('precio_prod', String(dto.precio_prod));
-    if (dto.desc_prod) formData.append('desc_prod', dto.desc_prod);
+    formData.append('precio_unitario', String(dto.precio_prod));
+    if (dto.desc_prod) formData.append('descrip_prod', dto.desc_prod);
     if (dto.stock_actual !== undefined) formData.append('stock_actual', String(dto.stock_actual));
     if (dto.stock_minimo !== undefined) formData.append('stock_minimo', String(dto.stock_minimo));
-    if (dto.fk_id_cat !== undefined) formData.append('fk_id_cat', String(dto.fk_id_cat));
+    if (dto.fk_id_cat !== undefined) formData.append('fk_cod_cat', String(dto.fk_id_cat));
+    if (dto.tipos_prod) formData.append('tipos_prod', JSON.stringify(dto.tipos_prod));
     if (dto.imagen) formData.append('imagen', dto.imagen);
 
     const token = this.authService.getToken();
@@ -101,8 +143,9 @@ export class ProductService {
   }
 
   async updateStock(id: number, cantidad: number): Promise<Product> {
+    const cleanId = String(id).trim();
     const res = await this.httpClient.patch<Product>(
-      `/products/${id}/stock`,
+      `/products/${cleanId}/stock`,
       { cantidad },
       { headers: this.getAuthHeaders() }
     );
@@ -113,9 +156,12 @@ export class ProductService {
   // ── Categories ──────────────────────────────────────────────────────────────
 
   async getCategories(): Promise<Category[]> {
-    const res = await this.httpClient.get<Category[]>('/categories', this.getAuthHeaders());
+    const res = await this.httpClient.get<any>('/categories', this.getAuthHeaders());
     if (!res.ok) throw new Error(res.error ?? 'Error al obtener categorías');
-    return res.data ?? [];
+    return this.ensureArray<any>(res.data).map(c => ({
+      ...c,
+      cod_cat: c.cod_cat
+    }));
   }
 
   async createCategory(nom_cat: string, desc_cat?: string): Promise<Category> {

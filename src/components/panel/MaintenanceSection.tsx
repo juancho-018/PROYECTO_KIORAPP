@@ -83,10 +83,10 @@ export function MaintenanceSection() {
   }
 
   const stats = {
-    total: reports.length,
-    pendiente: reports.filter(r => r.estado === 'pendiente').length,
-    en_progreso: reports.filter(r => r.estado === 'en_progreso').length,
-    completado: reports.filter(r => r.estado === 'completado').length,
+    total: Array.isArray(reports) ? reports.length : 0,
+    pendiente: Array.isArray(reports) ? reports.filter(r => r.estado === 'pendiente').length : 0,
+    en_progreso: Array.isArray(reports) ? reports.filter(r => r.estado === 'en_progreso').length : 0,
+    completado: Array.isArray(reports) ? reports.filter(r => r.estado === 'completado').length : 0,
   };
 
   return (
@@ -148,7 +148,7 @@ export function MaintenanceSection() {
         <div className="flex justify-center py-20">
           <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-[#ec131e]" />
         </div>
-      ) : reports.length === 0 ? (
+      ) : (!Array.isArray(reports) || reports.length === 0) ? (
         <div className="flex flex-col items-center justify-center py-20 text-slate-400">
           <svg className="h-12 w-12 mb-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
           <p className="font-semibold text-lg">Sin reportes</p>
@@ -156,7 +156,7 @@ export function MaintenanceSection() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {reports.map(r => (
+          {Array.isArray(reports) && reports.map(r => (
             <div key={r.id} className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm hover:shadow-md transition-all">
               <div className="flex items-start justify-between gap-3 mb-3">
                 <div className="flex-1 min-w-0">

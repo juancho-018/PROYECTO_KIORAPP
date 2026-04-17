@@ -1,36 +1,65 @@
 import { useState, useEffect, useCallback } from 'react';
-import { orderService, alertService } from '@/config/setup';
+import { orderService, productService, inventoryService, alertService, authService } from '@/config/setup';
 import type { Order, Invoice, Paginated } from '@/models/Order';
 import type { CreateOrderDto } from '@/services/OrderService';
+import type { Product } from '@/models/Product';
+import type { Movement } from '@/models/Inventory';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 
-type SubTab = 'ventas' | 'facturas';
+// Nuevos componentes importados
+import { OrderDetailModal } from './OrderDetailModal';
+import { OrderDrawer } from './OrderDrawer';
+
+type SubTab = 'ventas' | 'facturas' | 'movimientos';
+
+interface SalesSectionProps {
+  orderForm: CreateOrderDto;
+  setOrderForm: React.Dispatch<React.SetStateAction<CreateOrderDto>>;
+  addToCart: (p: Product) => void;
+  removeFromCart: (cod_prod: number) => void;
+  updateQuantity: (cod_prod: number, delta: number) => void;
+  clearCart: () => void;
+  cartKey: string | null;
+}
 
 const EMPTY_ORDER: CreateOrderDto = {
   metodopago_usu: 'efectivo',
-  items: [{ cod_prod: 0, cantidad: 1, precio_unit: 0 }],
+  items: [],
 };
 
 const ESTADO_COLORS: Record<string, string> = {
   pendiente: 'bg-amber-100 text-amber-700',
   completada: 'bg-emerald-100 text-emerald-700',
-  cancelada: 'bg-red-100 text-red-600',
+  cancelada: 'bg-red-100 text-red-700',
+  reembolsada: 'bg-purple-100 text-purple-700',
 };
 
-export function SalesSection() {
+export function SalesSection({
+  orderForm,
+  setOrderForm,
+  addToCart,
+  removeFromCart,
+  updateQuantity,
+  clearCart,
+  cartKey
+}: SalesSectionProps) {
   const [subTab, setSubTab] = useState<SubTab>('ventas');
   const [orders, setOrders] = useState<Paginated<Order>>({ data: [] });
   const [invoices, setInvoices] = useState<Paginated<Invoice>>({ data: [] });
+  const [movements, setMovements] = useState<Movement[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [invPage, setInvPage] = useState(1);
+  const [invPage, setInvPage] = useState(1); // Mantenemos para posible paginación de facturas
+
+  // Search in drawer
+  const [prodSearch, setProdSearch] = useState('');
 
   // Detail modal
   const [detailOrder, setDetailOrder] = useState<Order | null>(null);
 
   // Create order drawer
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [orderForm, setOrderForm] = useState<CreateOrderDto>(EMPTY_ORDER);
   const [saving, setSaving] = useState(false);
 
   // Export loading
@@ -39,35 +68,73 @@ export function SalesSection() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [ords, invs] = await Promise.all([
+      const [ords, invs, prods, movs] = await Promise.all([
         orderService.getOrders(page),
-        orderService.getInvoices(invPage),
+        orderService.getInvoices(1), // Assuming invPage might be used later
+        productService.getProducts(),
+        inventoryService.getMovements(),
       ]);
       setOrders(ords);
       setInvoices(invs);
+      setProducts(prods);
+      const mappedMovs = movs.map(m => ({
+        ...m,
+        producto: prods.find(p => p.cod_prod === m.fk_cod_prod) || m.producto
+      }));
+      setMovements(mappedMovs);
     } catch (e) {
-      alertService.showToast('error', getErrorMessage(e, 'Error al cargar ventas'));
+      alertService.showToast('error', getErrorMessage(e, 'Error al cargar datos'));
     } finally {
       setLoading(false);
     }
-  }, [page, invPage]);
+  }, [page]); // invPage excluded as it's not strictly changing right now but good to keep
 
   useEffect(() => { void load(); }, [load]);
 
   async function handleCreateOrder() {
-    const validItems = orderForm.items.filter(i => i.cod_prod > 0 && i.cantidad > 0 && i.precio_unit > 0);
-    if (!validItems.length) { alertService.showToast('warning', 'Agrega al menos un producto válido'); return; }
+    if (!orderForm.items.length) { 
+      alertService.showToast('warning', 'El carrito está vacío'); 
+      return; 
+    }
     setSaving(true);
     try {
-      await orderService.createOrder({ ...orderForm, items: validItems });
+      await orderService.createOrder(orderForm);
       alertService.showToast('success', 'Venta registrada exitosamente');
       setDrawerOpen(false);
-      setOrderForm(EMPTY_ORDER);
+      clearCart();
       void load();
     } catch (e) {
       alertService.showToast('error', getErrorMessage(e, 'Error al registrar venta'));
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleCancelOrder() {
+    const ok = await alertService.showConfirm(
+      '¿Cancelar pedido?',
+      '¿Estás seguro de que deseas cancelar este pedido? Se perderán todos los productos seleccionados.',
+      'Sí, cancelar',
+      'Mantener'
+    );
+    if (!ok) return;
+
+    clearCart();
+    alertService.showToast('info', 'Pedido cancelado y carrito vaciado');
+    setDrawerOpen(false);
+  }
+
+  async function handleRefund(id: number) {
+    const confirm = await alertService.showConfirm('¿Solicitar Reembolso?', 'Al reembolsar esta venta, el stock de los productos se devolverá al inventario automáticamente.', 'Sí, reembolsar', 'Mantener');
+    if (confirm) {
+      try {
+        await orderService.updateOrderStatus(id, 'reembolsada' as any);
+        alertService.showToast('success', 'Venta reembolsada y stock restaurado');
+        setDetailOrder(null);
+        void load();
+      } catch (e) {
+        alertService.showToast('error', getErrorMessage(e, 'Error al reembolsar'));
+      }
     }
   }
 
@@ -105,39 +172,56 @@ export function SalesSection() {
     }
   }
 
-  function addItem() {
-    setOrderForm(f => ({ ...f, items: [...f.items, { cod_prod: 0, cantidad: 1, precio_unit: 0 }] }));
+  const filteredProducts = Array.isArray(products) 
+    ? products.filter(p => {
+        const q = prodSearch.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        const name = (p.nom_prod || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        const code = String(p.cod_prod || '');
+        if (!q) return true;
+        if (name.includes(q) || code.includes(q)) return true;
+        
+        if (q.length >= 3) {
+          for (let i = 0; i < name.length - q.length + 1; i++) {
+            let diff = 0;
+            for (let j = 0; j < q.length; j++) {
+              if (name[i + j] !== q[j]) diff++;
+              if (diff > 1) break;
+            }
+            if (diff <= 1) return true;
+          }
+        }
+        return false;
+      })
+    : [];
+
+  function safePrice(v: unknown): number {
+    const n = Number(v);
+    return isNaN(n) || !isFinite(n) ? 0 : n;
   }
 
-  function removeItem(idx: number) {
-    setOrderForm(f => ({ ...f, items: f.items.filter((_, i) => i !== idx) }));
-  }
-
-  function updateItem(idx: number, key: keyof typeof orderForm.items[0], value: number) {
-    setOrderForm(f => ({ ...f, items: f.items.map((it, i) => i === idx ? { ...it, [key]: value } : it) }));
-  }
-
-  const total = orderForm.items.reduce((acc, i) => acc + i.cantidad * i.precio_unit, 0);
+  const cartTotal = orderForm.items.reduce((acc, i) => acc + i.cantidad * safePrice(i.precio_unit), 0);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-in fade-in duration-500">
       {/* Header */}
-      <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between group">
         <div className="space-y-1">
-          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-[#3E2723]/5 border border-[#3E2723]/10">
+          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-[#3E2723]/5 border border-[#3E2723]/10 transition-colors group-hover:bg-[#3E2723]/10">
             <div className="h-1.5 w-1.5 rounded-full bg-[#ec131e] animate-pulse" />
             <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#3E2723]/60">Comercial</span>
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-[#1a1a1a] sm:text-4xl">
+          <h1 className="text-3xl font-extrabold tracking-tight text-[#1a1a1a] sm:text-4xl transition-all">
             Ventas <span className="text-[#ec131e]">&</span> Facturas
           </h1>
-          <p className="text-sm text-slate-500 font-medium">Registro de ventas, facturación y exportaciones.</p>
+          <p className="text-sm text-slate-500 font-medium max-w-xl">
+            Registro de ventas, facturación contable y exportaciones del historial de tu negocio.
+          </p>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap items-center">
           <button
             onClick={() => void handleExport('excel')}
             disabled={exporting}
-            className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-bold text-emerald-700 hover:bg-emerald-100 disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-bold text-emerald-700 transition-all hover:bg-emerald-100 focus:ring-4 focus:ring-emerald-100 active:scale-95 disabled:opacity-50 disabled:grayscale"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
             Excel
@@ -145,28 +229,32 @@ export function SalesSection() {
           <button
             onClick={() => void handleExport('pdf')}
             disabled={exporting}
-            className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-100 disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-bold text-red-600 transition-all hover:bg-red-100 focus:ring-4 focus:ring-red-100 active:scale-95 disabled:opacity-50 disabled:grayscale"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
             PDF
           </button>
           <button
-            onClick={() => { setOrderForm(EMPTY_ORDER); setDrawerOpen(true); }}
-            className="inline-flex items-center gap-2 rounded-xl bg-[#ec131e] px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#ec131e]/20 hover:bg-[#d01019] active:scale-95"
+            onClick={() => { setDrawerOpen(true); }}
+            className="inline-flex items-center gap-2 rounded-xl bg-[#ec131e] px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#ec131e]/20 transition-all hover:bg-[#d01019] focus:ring-4 focus:ring-[#ec131e]/20 active:scale-95"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" /></svg>
-            Nueva Venta
+            Venta
           </button>
         </div>
       </header>
 
       {/* Sub Tabs */}
-      <div className="flex gap-1 rounded-2xl bg-slate-100 p-1 w-fit">
-        {(['ventas', 'facturas'] as SubTab[]).map(t => (
+      <div className="flex gap-1 rounded-2xl bg-slate-100/80 p-1 w-fit border border-slate-200/50 shadow-inner">
+        {(['ventas', 'facturas', 'movimientos'] as SubTab[]).map(t => (
           <button
             key={t}
             onClick={() => setSubTab(t)}
-            className={`rounded-xl px-5 py-2 text-sm font-bold transition-all capitalize ${subTab === t ? 'bg-white text-[#ec131e] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            className={`rounded-xl px-6 py-2 text-sm font-extrabold transition-all capitalize hover:bg-white/50 hover:text-slate-800 ${
+              subTab === t 
+                ? 'bg-white text-[#ec131e] shadow-sm hover:!bg-white' 
+                : 'text-slate-400'
+            }`}
           >
             {t}
           </button>
@@ -174,55 +262,66 @@ export function SalesSection() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-20">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-[#ec131e]" />
+        <div className="flex justify-center py-32">
+          <div className="relative h-12 w-12">
+            <div className="absolute inset-0 rounded-full border-4 border-slate-100"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-[#ec131e] border-t-transparent animate-spin"></div>
+          </div>
         </div>
       ) : (
-        <>
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
           {/* Orders Table */}
           {subTab === 'ventas' && (
             <>
-              <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+              <div className="overflow-hidden rounded-2xl border border-slate-100/80 bg-white shadow-sm ring-1 ring-slate-900/5">
                 <table className="w-full text-sm">
-                  <thead className="bg-slate-50 border-b border-slate-100">
+                  <thead className="bg-slate-50/80 border-b border-slate-100 backdrop-blur-md">
                     <tr>
                       {['#', 'Fecha', 'Método de pago', 'Total', 'Estado', 'Acciones'].map(h => (
-                        <th key={h} className="px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500">{h}</th>
+                        <th key={h} className="px-5 py-3.5 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
                     {orders.data.length === 0 ? (
-                      <tr><td colSpan={6} className="py-10 text-center text-slate-400">Sin ventas</td></tr>
+                      <tr><td colSpan={6} className="py-16 text-center text-slate-400 font-medium">No hay ventas registradas.</td></tr>
                     ) : orders.data.map(o => (
-                      <tr key={o.id_vent} className="hover:bg-slate-50 transition-colors">
-                        <td className="px-5 py-3 font-bold text-slate-400">#{o.id_vent}</td>
-                        <td className="px-5 py-3 text-slate-600">{o.fecha_vent ? new Date(o.fecha_vent).toLocaleDateString() : '—'}</td>
-                        <td className="px-5 py-3 capitalize text-slate-600">{o.metodopago_usu ?? '—'}</td>
-                        <td className="px-5 py-3 font-bold text-[#ec131e]">${Number(o.montofinal_vent ?? 0).toFixed(2)}</td>
-                        <td className="px-5 py-3">
-                          <select
-                            value={o.estado ?? 'pendiente'}
-                            onChange={e => void handleStatusChange(o.id_vent!, e.target.value as 'pendiente' | 'completada' | 'cancelada')}
-                            className={`rounded-full px-3 py-1 text-xs font-bold border-0 cursor-pointer ${ESTADO_COLORS[o.estado ?? 'pendiente']}`}
-                          >
-                            <option value="pendiente">Pendiente</option>
-                            <option value="completada">Completada</option>
-                            <option value="cancelada">Cancelada</option>
-                          </select>
+                      <tr key={o.id_vent} className="hover:bg-slate-50/60 transition-colors group">
+                        <td className="px-5 py-4 font-black text-slate-400 group-hover:text-slate-500 transition-colors">#{o.id_vent}</td>
+                        <td className="px-5 py-4 text-slate-600 font-medium">{o.fecha_vent ? new Date(o.fecha_vent).toLocaleDateString('es-CO') : '—'}</td>
+                        <td className="px-5 py-4 capitalize text-slate-600 font-bold">{o.metodopago_usu ?? '—'}</td>
+                        <td className="px-5 py-4 font-black text-[#111827] text-base drop-shadow-sm">
+                          <span className="text-xs text-[#ec131e] relative -top-1 mr-0.5">$</span>
+                          {Number(o.montofinal_vent ?? 0).toLocaleString('es-CO')}
                         </td>
-                        <td className="px-5 py-3">
+                        <td className="px-5 py-4">
+                          <div className="relative">
+                            <select
+                              value={o.estado ?? 'pendiente'}
+                              onChange={e => void handleStatusChange(o.id_vent!, e.target.value as 'pendiente' | 'completada' | 'cancelada')}
+                              className={`appearance-none rounded-full px-3 py-1.5 text-[11px] font-black tracking-wide border transition-all cursor-pointer outline-none focus:ring-2 focus:ring-offset-1 focus:ring-slate-200 pr-6 ${
+                                ESTADO_COLORS[o.estado ?? 'pendiente']?.replace('text-', 'text-').replace('bg-', 'bg-').concat(' border-current/10')
+                              }`}
+                            >
+                              <option value="pendiente">Pendiente</option>
+                              <option value="completada">Completada</option>
+                              <option value="cancelada">Cancelada</option>
+                            </select>
+                            <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-current opacity-60 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" /></svg>
+                          </div>
+                        </td>
+                        <td className="px-5 py-4">
                           <div className="flex gap-2">
                             <button
                               onClick={async () => {
                                 try { const d = await orderService.getOrderById(o.id_vent!); setDetailOrder(d); }
                                 catch (e) { alertService.showToast('error', getErrorMessage(e, 'Error al cargar detalle')); }
                               }}
-                              className="rounded-lg bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600 hover:bg-slate-200"
+                              className="rounded-xl border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-bold text-slate-600 transition-all hover:bg-slate-50 hover:text-slate-900 focus:ring-2 focus:ring-slate-200"
                             >Ver</button>
                             <button
                               onClick={() => void handleDeleteOrder(o.id_vent!)}
-                              className="rounded-lg bg-red-50 px-3 py-1 text-xs font-bold text-red-500 hover:bg-red-100"
+                              className="rounded-xl border border-red-100 bg-red-50/50 px-3.5 py-1.5 text-xs font-bold text-red-500 transition-all hover:bg-red-100 hover:text-red-700 focus:ring-2 focus:ring-red-100"
                             >Eliminar</button>
                           </div>
                         </td>
@@ -231,12 +330,15 @@ export function SalesSection() {
                   </tbody>
                 </table>
               </div>
+              
               {/* Pagination */}
               {orders.pagination && orders.pagination.totalPages > 1 && (
-                <div className="flex justify-center gap-2 mt-4">
-                  <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold disabled:opacity-40">← Anterior</button>
-                  <span className="flex items-center px-4 text-sm text-slate-500">{page} / {orders.pagination.totalPages}</span>
-                  <button disabled={page >= orders.pagination.totalPages} onClick={() => setPage(p => p + 1)} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold disabled:opacity-40">Siguiente →</button>
+                <div className="flex justify-center gap-3 mt-6">
+                  <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 active:scale-95">← Anterior</button>
+                  <span className="flex items-center px-4 py-2 text-sm text-slate-500 font-extrabold bg-slate-100/50 rounded-xl">
+                    {page} <span className="mx-2 text-slate-300 font-medium">/</span> {orders.pagination.totalPages}
+                  </span>
+                  <button disabled={page >= orders.pagination.totalPages} onClick={() => setPage(p => p + 1)} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 active:scale-95">Siguiente →</button>
                 </div>
               )}
             </>
@@ -244,155 +346,120 @@ export function SalesSection() {
 
           {/* Invoices Table */}
           {subTab === 'facturas' && (
-            <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+            <div className="overflow-hidden rounded-2xl border border-slate-100/80 bg-white shadow-sm ring-1 ring-slate-900/5">
               <table className="w-full text-sm">
-                <thead className="bg-slate-50 border-b border-slate-100">
+                <thead className="bg-slate-50/80 border-b border-slate-100 backdrop-blur-md">
                   <tr>
                     {['#Factura', 'Venta', 'Usuario', 'Monto Total', 'Fecha'].map(h => (
-                      <th key={h} className="px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500">{h}</th>
+                      <th key={h} className="px-5 py-3.5 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
                   {invoices.data.length === 0 ? (
-                    <tr><td colSpan={5} className="py-10 text-center text-slate-400">Sin facturas</td></tr>
+                    <tr><td colSpan={5} className="py-16 text-center text-slate-400 font-medium">Sin facturas emitidas</td></tr>
                   ) : invoices.data.map(inv => (
-                    <tr key={inv.id_fac} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-5 py-3 font-bold text-slate-400">#{inv.id_fac}</td>
-                      <td className="px-5 py-3 text-slate-600">Venta #{inv.fk_id_vent}</td>
-                      <td className="px-5 py-3 text-slate-600">Usuario #{inv.id_usu}</td>
-                      <td className="px-5 py-3 font-bold text-emerald-600">${Number(inv.montototal_vent ?? 0).toFixed(2)}</td>
-                      <td className="px-5 py-3 text-slate-400 text-xs">{inv.fecha_fac ? new Date(inv.fecha_fac).toLocaleDateString() : '—'}</td>
+                    <tr key={inv.id_fac} className="hover:bg-slate-50/60 transition-colors group">
+                      <td className="px-5 py-4 font-black text-slate-400 group-hover:text-slate-500">#{inv.id_fac}</td>
+                      <td className="px-5 py-4 text-slate-600 font-bold">
+                        <span className="bg-slate-100 px-2 py-0.5 rounded text-xs">Venta #{inv.fk_id_vent}</span>
+                      </td>
+                      <td className="px-5 py-4 text-slate-600 font-medium">Usuario <span className="font-bold">#{inv.id_usu}</span></td>
+                      <td className="px-5 py-4 font-black text-emerald-600 text-base drop-shadow-sm">
+                        <span className="text-xs text-emerald-500 relative -top-1 mr-0.5">$</span>
+                        {Number(inv.montototal_vent ?? 0).toLocaleString('es-CO')}
+                      </td>
+                      <td className="px-5 py-4 text-slate-400 text-xs font-bold tracking-wide">{inv.fecha_fac ? new Date(inv.fecha_fac).toLocaleDateString('es-CO') : '—'}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           )}
-        </>
+
+          {/* Movements */}
+          {subTab === 'movimientos' && (
+            <div className="overflow-hidden rounded-2xl border border-slate-100/80 bg-white shadow-sm ring-1 ring-slate-900/5">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-50/80 border-b border-slate-100 backdrop-blur-md">
+                    <tr>
+                      {['Tipo', 'Producto', 'Cantidad', 'Descripción', 'Fecha'].map(h => (
+                        <th key={h} className="px-5 py-3.5 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {!Array.isArray(movements) || movements.length === 0 ? (
+                      <tr><td colSpan={5} className="py-16 text-center text-slate-400 font-medium">Sin movimientos registrados</td></tr>
+                    ) : movements.map(m => (
+                      <tr key={m.id_mov} className="hover:bg-slate-50/60 transition-colors group">
+                        <td className="px-5 py-4">
+                          <span className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[10px] font-black uppercase tracking-widest transition-transform group-hover:scale-105 ${
+                             m.tipo_mov === 'entrada' 
+                              ? 'bg-emerald-50 text-emerald-600 border-emerald-200/50 shadow-[0_0_10px_rgba(16,185,129,0.1)]' 
+                              : 'bg-red-50 text-red-600 border-red-200/50 shadow-[0_0_10px_rgba(239,68,68,0.1)]'
+                          }`}>
+                            {m.tipo_mov === 'entrada' ? '↑ Entrada' : '↓ Salida'}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4">
+                          <div className="flex flex-col">
+                            <span className="font-bold text-[#111827] line-clamp-1">{m.producto?.nom_prod || 'Producto eliminado'}</span>
+                            <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-0.5">Cód: {m.fk_cod_prod}</span>
+                          </div>
+                        </td>
+                        <td className="px-5 py-4 text-slate-800 font-black text-sm tabular-nums">
+                           {m.tipo_mov === 'entrada' ? '+' : '-'}{m.cantidad_mov}
+                        </td>
+                        <td className="px-5 py-4 text-slate-500 text-xs font-medium leading-relaxed max-w-xs truncate">
+                           {m.desc_mov || '—'}
+                        </td>
+                        <td className="px-5 py-4 text-slate-400 text-[11px] font-bold tracking-wide uppercase">
+                          {m.fecha_mov ? new Date(m.fecha_mov).toLocaleString('es-CO', { 
+                            day: '2-digit', month: 'short', year: 'numeric',
+                            hour: '2-digit', minute: '2-digit'
+                          }) : '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
       )}
 
       {/* Order Detail Modal */}
       {detailOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setDetailOrder(null)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg mx-4 animate-in zoom-in-95 duration-200 max-h-[80vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-extrabold">Detalle Venta #{detailOrder.id_vent}</h3>
-              <button onClick={() => setDetailOrder(null)} className="text-slate-400 hover:text-slate-600">
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-            <div className="space-y-2 mb-4">
-              <div className="flex justify-between text-sm"><span className="text-slate-500">Fecha:</span><span className="font-semibold">{detailOrder.fecha_vent ? new Date(detailOrder.fecha_vent).toLocaleString() : '—'}</span></div>
-              <div className="flex justify-between text-sm"><span className="text-slate-500">Método de pago:</span><span className="font-semibold capitalize">{detailOrder.metodopago_usu ?? '—'}</span></div>
-              <div className="flex justify-between text-sm"><span className="text-slate-500">Estado:</span><span className={`rounded-full px-2 py-0.5 text-xs font-bold ${ESTADO_COLORS[detailOrder.estado ?? 'pendiente']}`}>{detailOrder.estado}</span></div>
-            </div>
-            <div className="rounded-xl border border-slate-100 overflow-hidden mb-4">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="px-4 py-2 text-left text-xs font-bold text-slate-500">Producto</th>
-                    <th className="px-4 py-2 text-right text-xs font-bold text-slate-500">Cant.</th>
-                    <th className="px-4 py-2 text-right text-xs font-bold text-slate-500">Precio unit.</th>
-                    <th className="px-4 py-2 text-right text-xs font-bold text-slate-500">Subtotal</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {(detailOrder.items ?? []).map((item, i) => (
-                    <tr key={i}>
-                      <td className="px-4 py-2">{item.nom_prod ?? `Prod #${item.cod_prod}`}</td>
-                      <td className="px-4 py-2 text-right">{item.cantidad}</td>
-                      <td className="px-4 py-2 text-right">${Number(item.precio_unit).toFixed(2)}</td>
-                      <td className="px-4 py-2 text-right font-bold">${(item.cantidad * item.precio_unit).toFixed(2)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="flex justify-between text-lg font-extrabold text-[#ec131e]">
-              <span>Total</span>
-              <span>${Number(detailOrder.montofinal_vent ?? 0).toFixed(2)}</span>
-            </div>
-          </div>
-        </div>
+        <OrderDetailModal
+          detailOrder={detailOrder}
+          onClose={() => setDetailOrder(null)}
+          safePrice={safePrice}
+          estadoColors={ESTADO_COLORS}
+          onRefund={handleRefund}
+        />
       )}
 
-      {/* Create Order Drawer */}
-      {drawerOpen && (
-        <div className="fixed inset-0 z-50 flex">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setDrawerOpen(false)} />
-          <div className="relative ml-auto h-full w-full max-w-md bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
-            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-              <h2 className="text-lg font-extrabold">Nueva Venta</h2>
-              <button onClick={() => setDrawerOpen(false)} className="text-slate-400 hover:text-slate-600">
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Método de pago</label>
-                <select
-                  value={orderForm.metodopago_usu}
-                  onChange={e => setOrderForm(f => ({ ...f, metodopago_usu: e.target.value }))}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm focus:border-[#ec131e] focus:outline-none"
-                >
-                  <option value="efectivo">Efectivo</option>
-                  <option value="tarjeta">Tarjeta</option>
-                  <option value="transferencia">Transferencia</option>
-                </select>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Productos</label>
-                  <button onClick={addItem} className="text-xs font-bold text-[#ec131e] hover:text-[#d01019]">+ Agregar</button>
-                </div>
-                <div className="space-y-3">
-                  {orderForm.items.map((item, idx) => (
-                    <div key={idx} className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs font-bold text-slate-400">Ítem {idx + 1}</span>
-                        {orderForm.items.length > 1 && (
-                          <button onClick={() => removeItem(idx)} className="text-red-400 text-xs hover:text-red-600">× Quitar</button>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-3 gap-2">
-                        <div>
-                          <label className="text-[10px] font-bold text-slate-400 uppercase">Cod. prod</label>
-                          <input type="number" value={item.cod_prod || ''} onChange={e => updateItem(idx, 'cod_prod', Number(e.target.value))}
-                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm focus:border-[#ec131e] focus:outline-none" />
-                        </div>
-                        <div>
-                          <label className="text-[10px] font-bold text-slate-400 uppercase">Cant.</label>
-                          <input type="number" min="1" value={item.cantidad} onChange={e => updateItem(idx, 'cantidad', Number(e.target.value))}
-                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm focus:border-[#ec131e] focus:outline-none" />
-                        </div>
-                        <div>
-                          <label className="text-[10px] font-bold text-slate-400 uppercase">Precio</label>
-                          <input type="number" min="0" step="0.01" value={item.precio_unit || ''} onChange={e => updateItem(idx, 'precio_unit', Number(e.target.value))}
-                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm focus:border-[#ec131e] focus:outline-none" />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-slate-200 bg-slate-50 px-5 py-3 flex justify-between">
-                <span className="text-sm font-bold text-slate-600">Total estimado</span>
-                <span className="text-lg font-extrabold text-[#ec131e]">${total.toFixed(2)}</span>
-              </div>
-            </div>
-            <div className="border-t border-slate-100 px-6 py-4 flex gap-3">
-              <button onClick={() => setDrawerOpen(false)} className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-bold text-slate-600">Cancelar</button>
-              <button onClick={() => void handleCreateOrder()} disabled={saving} className="flex-1 rounded-xl bg-[#ec131e] py-2.5 text-sm font-bold text-white disabled:opacity-60">
-                {saving ? 'Creando…' : 'Registrar Venta'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Create Order Drawer - Cart Mode */}
+      <OrderDrawer
+        drawerOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        prodSearch={prodSearch}
+        setProdSearch={setProdSearch}
+        filteredProducts={filteredProducts}
+        addToCart={addToCart}
+        removeFromCart={removeFromCart}
+        updateQuantity={updateQuantity}
+        orderForm={orderForm}
+        setOrderForm={setOrderForm}
+        cartTotal={cartTotal}
+        handleCreateOrder={() => void handleCreateOrder()}
+        onCancelOrder={() => void handleCancelOrder()}
+        saving={saving}
+        safePrice={safePrice}
+      />
     </div>
   );
 }

@@ -62,27 +62,36 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
               <label className="text-[12px] font-bold text-gray-600">Número de Teléfono</label>
               <input 
                 type="text" 
+                inputMode="numeric"
                 value={userData.tel_usu}
-                onChange={(e) => onUserDataChange({...userData, tel_usu: e.target.value})}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/[^0-9]/g, '');
+                  onUserDataChange({...userData, tel_usu: val});
+                }}
+                onKeyDown={(e) => { 
+                  if (!/[0-9]|Backspace|Delete|Arrow|Left|Right|Tab/.test(e.key) && !e.ctrlKey && !e.metaKey) {
+                    e.preventDefault();
+                  } 
+                }}
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-[#ec131e] focus:ring-4 focus:ring-red-50 transition-all text-[0.95rem] bg-white placeholder:text-gray-300" 
                 placeholder="3000000000" 
               />
             </div>
 
-            {!isEditing && (
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[12px] font-bold text-gray-600">Contraseña</label>
-                <input 
-                  type="password" 
-                  required
-                  value={userData.password || ''}
-                  onChange={(e) => onUserDataChange({...userData, password: e.target.value})}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-[#ec131e] focus:ring-4 focus:ring-red-50 transition-all text-[0.95rem] bg-white placeholder:text-gray-300" 
-                  placeholder="Ingresa clave segura"
-                  minLength={8}
-                />
-              </div>
-            )}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[12px] font-bold text-gray-600">
+                Contraseña {isEditing && <span className="font-normal text-slate-400">(Dejar en blanco para mantener actual)</span>}
+              </label>
+              <input 
+                type="password" 
+                required={!isEditing}
+                value={userData.password || ''}
+                onChange={(e) => onUserDataChange({...userData, password: e.target.value})}
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-[#ec131e] focus:ring-4 focus:ring-red-50 transition-all text-[0.95rem] bg-white placeholder:text-gray-300" 
+                placeholder={isEditing ? 'Ingresar nueva contraseña segura' : 'Ingresa clave segura'}
+                minLength={8}
+              />
+            </div>
 
             <div className="flex flex-col gap-1.5">
               <label className="text-[12px] font-bold text-gray-600">Seleccionar Rol</label>
@@ -94,7 +103,7 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
                   className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-[#ec131e] focus:ring-4 focus:ring-red-50 transition-all text-[0.95rem] bg-white text-gray-700 appearance-none cursor-pointer" 
                 >
                   <option value="" disabled>Selecciona un rol</option>
-                  <option value="operario">Operario</option>
+                  <option value="cliente">Operario (Cliente)</option>
                   <option value="admin">Administrador</option>
                 </select>
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
