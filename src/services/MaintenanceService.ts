@@ -48,18 +48,13 @@ export class MaintenanceService {
   }
 
   async updateReport(id: number, dto: Partial<MaintenanceReport>): Promise<MaintenanceReport> {
-    const token = this.authService.getToken();
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
-    const rawRes = await fetch(`${this.baseURL}/maintenance/reports/${id}`, {
-      method: 'PUT',
-      headers,
-      body: JSON.stringify(dto),
-    });
-    const data = (await rawRes.json()) as Record<string, unknown>;
-    if (!rawRes.ok) throw new Error((data?.error ?? data?.message ?? 'Error al actualizar reporte') as string);
-    return data as unknown as MaintenanceReport;
+    const res = await this.httpClient.put<MaintenanceReport>(
+      `/maintenance/reports/${id}`,
+      dto,
+      { headers: this.getAuthHeaders() }
+    );
+    if (!res.ok || !res.data) throw new Error(res.error ?? 'Error al actualizar reporte');
+    return res.data;
   }
 
   async deleteReport(id: number): Promise<void> {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { inventoryService, alertService, productService } from '@/config/setup';
+import { inventoryService, alertService, productService, authService } from '@/config/setup';
 import type { Supplier } from '@/models/Inventory';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 
@@ -12,6 +12,7 @@ export function InventorySection({ onNavigateToProducts }: { onNavigateToProduct
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [lowStock, setLowStock] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Supplier drawer
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -19,7 +20,8 @@ export function InventorySection({ onNavigateToProducts }: { onNavigateToProduct
   const [form, setForm] = useState<Omit<Supplier, 'cod_prov'>>(EMPTY_SUPPLIER);
   const [saving, setSaving] = useState(false);
 
-
+  const user = authService.getUser();
+  const isAdmin = user?.rol_usu?.toLowerCase() === 'administrador';
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -38,6 +40,12 @@ export function InventorySection({ onNavigateToProducts }: { onNavigateToProduct
   }, []);
 
   useEffect(() => { void load(); }, [load]);
+
+  const filteredSuppliers = (suppliers || []).filter(s => 
+    s.nom_prov.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (s.tel_prov || '').includes(searchTerm) ||
+    (s.correo_prov || '').toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   async function handleSaveSupplier() {
     if (!form.nom_prov.trim()) { alertService.showToast('warning', 'El nombre es obligatorio'); return; }
@@ -60,6 +68,10 @@ export function InventorySection({ onNavigateToProducts }: { onNavigateToProduct
   }
 
   async function handleDeleteSupplier(s: Supplier) {
+    if (!isAdmin) {
+      alertService.showToast('error', 'No tienes permisos para esta acción');
+      return;
+    }
     const ok = await alertService.showConfirm('Eliminar proveedor', `¿Eliminar "${s.nom_prov}"?`, 'Eliminar', 'Cancelar');
     if (!ok || !s.cod_prov) return;
     try {
@@ -70,10 +82,6 @@ export function InventorySection({ onNavigateToProducts }: { onNavigateToProduct
       alertService.showToast('error', getErrorMessage(e, 'Error al eliminar'));
     }
   }
-
-
-
-
 
   return (
     <div className="space-y-8">
@@ -87,7 +95,7 @@ export function InventorySection({ onNavigateToProducts }: { onNavigateToProduct
           <h1 className="text-3xl font-extrabold tracking-tight text-[#1a1a1a] sm:text-4xl">Inventario</h1>
           <p className="text-sm text-slate-500 font-medium">Proveedores, movimientos y alertas de stock.</p>
         </div>
-        {subTab === 'proveedores' && (
+        {subTab === 'proveedores' && isAdmin && (
           <button
             onClick={() => { setEditing(null); setForm(EMPTY_SUPPLIER); setDrawerOpen(true); }}
             className="inline-flex items-center gap-2 rounded-xl bg-[#ec131e] px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#ec131e]/20 hover:bg-[#d01019] active:scale-95"
@@ -125,44 +133,63 @@ export function InventorySection({ onNavigateToProducts }: { onNavigateToProduct
         <>
           {/* Suppliers */}
           {subTab === 'proveedores' && (
-            <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50 border-b border-slate-100">
-                  <tr>
-                    {['Nombre', 'Teléfono', 'Correo', 'Dirección', 'Acciones'].map(h => (
-                      <th key={h} className="px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500">{h}</th>
+            <div className="space-y-4">
+              <div className="relative group max-w-md">
+                <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-[#ec131e] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Buscar proveedor..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm font-medium text-slate-800 focus:border-[#ec131e] focus:outline-none focus:ring-4 focus:ring-[#ec131e]/5 transition-all shadow-sm"
+                />
+              </div>
+
+              <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-50 border-b border-slate-100">
+                      <tr>
+                        {['Nombre', 'Teléfono', 'Correo', 'Dirección', 'Acciones'].map(h => (
+                          <th key={h} className="px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {filteredSuppliers.length === 0 ? (
+                        <tr><td colSpan={5} className="py-10 text-center text-slate-400 text-sm">No se encontraron proveedores</td></tr>
+                      ) : filteredSuppliers.map(s => (
+                        <tr key={s.cod_prov} className="hover:bg-slate-50 transition-colors">
+                          <td className="px-5 py-3 font-semibold text-[#111827]">{s.nom_prov}</td>
+                        <td className="px-5 py-3 text-slate-500">{s.tel_prov ?? '—'}</td>
+                        <td className="px-5 py-3 text-slate-500">{s.correo_prov ?? '—'}</td>
+                        <td className="px-5 py-3 text-slate-500">{s.dir_prov ?? '—'}</td>
+                        <td className="px-5 py-3">
+                          <div className="flex gap-2">
+                            {isAdmin && (
+                              <>
+                                <button
+                                  onClick={() => { setEditing(s); setForm({ nom_prov: s.nom_prov, tel_prov: s.tel_prov ?? '', correo_prov: s.correo_prov ?? '', dir_prov: s.dir_prov ?? '' }); setDrawerOpen(true); }}
+                                  className="rounded-lg bg-blue-50 px-3 py-1 text-xs font-bold text-blue-600 hover:bg-blue-100"
+                                >Editar</button>
+                                <button
+                                  onClick={() => void handleDeleteSupplier(s)}
+                                  className="rounded-lg bg-red-50 px-3 py-1 text-xs font-bold text-red-500 hover:bg-red-100"
+                                >Eliminar</button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
                     ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {!Array.isArray(suppliers) || suppliers.length === 0 ? (
-                    <tr><td colSpan={5} className="py-10 text-center text-slate-400 text-sm">Sin proveedores</td></tr>
-                  ) : suppliers.map(s => (
-                    <tr key={s.cod_prov} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-5 py-3 font-semibold text-[#111827]">{s.nom_prov}</td>
-                      <td className="px-5 py-3 text-slate-500">{s.tel_prov ?? '—'}</td>
-                      <td className="px-5 py-3 text-slate-500">{s.correo_prov ?? '—'}</td>
-                      <td className="px-5 py-3 text-slate-500">{s.dir_prov ?? '—'}</td>
-                      <td className="px-5 py-3">
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => { setEditing(s); setForm({ nom_prov: s.nom_prov, tel_prov: s.tel_prov ?? '', correo_prov: s.correo_prov ?? '', dir_prov: s.dir_prov ?? '' }); setDrawerOpen(true); }}
-                            className="rounded-lg bg-blue-50 px-3 py-1 text-xs font-bold text-blue-600 hover:bg-blue-100"
-                          >Editar</button>
-                          <button
-                            onClick={() => void handleDeleteSupplier(s)}
-                            className="rounded-lg bg-red-50 px-3 py-1 text-xs font-bold text-red-500 hover:bg-red-100"
-                          >Eliminar</button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </tbody>
+                </table>
+                </div>
+              </div>
             </div>
           )}
-
-
 
           {/* Low Stock Alerts */}
           {subTab === 'alertas' && (
@@ -173,7 +200,7 @@ export function InventorySection({ onNavigateToProducts }: { onNavigateToProduct
                   <p className="font-semibold text-lg text-emerald-500">¡Todo el stock está OK!</p>
                   <p className="text-sm">No hay productos por debajo del stock mínimo.</p>
                 </div>
-              ) : lowStock.map(item => (
+              ) : (Array.isArray(lowStock) ? lowStock : []).map(item => (
                 <button
                   key={item.cod_prod}
                   onClick={() => onNavigateToProducts?.()}

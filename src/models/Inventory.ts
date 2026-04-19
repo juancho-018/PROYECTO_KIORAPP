@@ -35,3 +35,14 @@ export interface LowStockItem {
   stock_actual: number;
   stock_minimo: number;
 }
+  proveedor?: { nom_prov: string };
+  producto?: { nom_prod: string };
+  alerta_stock_minimo?: boolean;
+}
+
+export interface LowStockItem {
+  cod_prod: number;
+  nom_prod: string;
+  stock_actual: number;
+  stock_minimo: number;
+}

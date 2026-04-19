@@ -1,465 +1,460 @@
-import { useState, useEffect, useCallback } from 'react';
-import { orderService, productService, inventoryService, alertService, authService } from '@/config/setup';
-import type { Order, Invoice, Paginated } from '@/models/Order';
-import type { CreateOrderDto } from '@/services/OrderService';
-import type { Product } from '@/models/Product';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { orderService, alertService, authService, inventoryService, maintenanceService } from '@/config/setup';
+import type { Order, Invoice } from '@/models/Order';
 import type { Movement } from '@/models/Inventory';
+import type { MaintenanceReport } from '@/models/Maintenance';
 import { getErrorMessage } from '@/utils/getErrorMessage';
-
-// Nuevos componentes importados
 import { OrderDetailModal } from './OrderDetailModal';
-import { OrderDrawer } from './OrderDrawer';
 
-type SubTab = 'ventas' | 'facturas' | 'movimientos';
-
-interface SalesSectionProps {
-  orderForm: CreateOrderDto;
-  setOrderForm: React.Dispatch<React.SetStateAction<CreateOrderDto>>;
-  addToCart: (p: Product) => void;
-  removeFromCart: (cod_prod: number) => void;
-  updateQuantity: (cod_prod: number, delta: number) => void;
-  clearCart: () => void;
-  cartKey: string | null;
-}
-
-const EMPTY_ORDER: CreateOrderDto = {
-  metodopago_usu: 'efectivo',
-  items: [],
-};
+type SalesSubTab = 'ventas' | 'facturas' | 'movimientos' | 'incidencias';
 
 const ESTADO_COLORS: Record<string, string> = {
-  pendiente: 'bg-amber-100 text-amber-700',
-  completada: 'bg-emerald-100 text-emerald-700',
-  cancelada: 'bg-red-100 text-red-700',
-  reembolsada: 'bg-purple-100 text-purple-700',
+  completada: 'bg-[#bbf7f2] text-[#008b8b] border-[#e0fbf9]',
+  pendiente: 'bg-amber-100 text-amber-700 border-amber-200',
+  cancelada: 'bg-[#ffdce5] text-[#ec131e] border-[#ffecf1]',
+  reembolsada: 'bg-purple-100 text-purple-700 border-purple-200',
 };
 
-export function SalesSection({
-  orderForm,
-  setOrderForm,
-  addToCart,
-  removeFromCart,
-  updateQuantity,
-  clearCart,
-  cartKey
-}: SalesSectionProps) {
-  const [subTab, setSubTab] = useState<SubTab>('ventas');
-  const [orders, setOrders] = useState<Paginated<Order>>({ data: [] });
-  const [invoices, setInvoices] = useState<Paginated<Invoice>>({ data: [] });
+export function SalesSection({ onOpenPOS }: { onOpenPOS: () => void; isAdmin?: boolean }) {
+  const [subTab, setSubTab] = useState<SalesSubTab>('ventas');
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [movements, setMovements] = useState<Movement[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [reports, setReports] = useState<MaintenanceReport[]>([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [invPage, setInvPage] = useState(1); // Mantenemos para posible paginación de facturas
-
-  // Search in drawer
-  const [prodSearch, setProdSearch] = useState('');
-
-  // Detail modal
+  const [search, setSearch] = useState('');
   const [detailOrder, setDetailOrder] = useState<Order | null>(null);
+  const [isIncidentOpen, setIsIncidentOpen] = useState(false);
+  const [isSavingIncident, setIsSavingIncident] = useState(false);
+  const [incidentForm, setIncidentForm] = useState({
+    observaciones_tecnicas: '',
+    descripcion: '',
+    cod_prod: null as number | null
+  });
 
-  // Create order drawer
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const user = authService.getUser();
+  const isAdmin = user?.rol_usu?.toLowerCase() === 'admin';
 
-  // Export loading
-  const [exporting, setExporting] = useState(false);
-
-  const load = useCallback(async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [ords, invs, prods, movs] = await Promise.all([
-        orderService.getOrders(page),
-        orderService.getInvoices(1), // Assuming invPage might be used later
-        productService.getProducts(),
-        inventoryService.getMovements(),
-      ]);
-      setOrders(ords);
-      setInvoices(invs);
-      setProducts(prods);
-      const mappedMovs = movs.map(m => ({
-        ...m,
-        producto: prods.find(p => p.cod_prod === m.fk_cod_prod) || m.producto
-      }));
-      setMovements(mappedMovs);
+      if (subTab === 'ventas') {
+        const res = await orderService.getOrders();
+        setOrders(Array.isArray(res.data) ? res.data : []);
+      } else if (subTab === 'facturas') {
+        const res = await orderService.getInvoices();
+        setInvoices(Array.isArray(res.data) ? res.data : []);
+      } else if (subTab === 'movimientos') {
+        const data = await inventoryService.getMovements();
+        setMovements(Array.isArray(data) ? data : []);
+      } else if (subTab === 'incidencias') {
+        const data = await maintenanceService.getReports();
+        setReports(Array.isArray(data) ? data : []);
+      }
     } catch (e) {
       alertService.showToast('error', getErrorMessage(e, 'Error al cargar datos'));
     } finally {
       setLoading(false);
     }
-  }, [page]); // invPage excluded as it's not strictly changing right now but good to keep
+  }, [subTab]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void loadData();
+    const handleReload = () => void loadData();
+    window.addEventListener('kiora_reload_orders', handleReload);
+    return () => window.removeEventListener('kiora_reload_orders', handleReload);
+  }, [loadData]);
 
-  async function handleCreateOrder() {
-    if (!orderForm.items.length) { 
-      alertService.showToast('warning', 'El carrito está vacío'); 
-      return; 
-    }
-    setSaving(true);
-    try {
-      await orderService.createOrder(orderForm);
-      alertService.showToast('success', 'Venta registrada exitosamente');
-      setDrawerOpen(false);
-      clearCart();
-      void load();
-    } catch (e) {
-      alertService.showToast('error', getErrorMessage(e, 'Error al registrar venta'));
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleCancelOrder() {
-    const ok = await alertService.showConfirm(
-      '¿Cancelar pedido?',
-      '¿Estás seguro de que deseas cancelar este pedido? Se perderán todos los productos seleccionados.',
-      'Sí, cancelar',
-      'Mantener'
+  const filteredOrders = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return orders;
+    return orders.filter(o => 
+      o.id_vent?.toString().includes(q) || 
+      o.metodopago_usu?.toLowerCase().includes(q) ||
+      o.estado?.toLowerCase().includes(q)
     );
-    if (!ok) return;
+  }, [orders, search]);
 
-    clearCart();
-    alertService.showToast('info', 'Pedido cancelado y carrito vaciado');
-    setDrawerOpen(false);
-  }
-
-  async function handleRefund(id: number) {
-    const confirm = await alertService.showConfirm('¿Solicitar Reembolso?', 'Al reembolsar esta venta, el stock de los productos se devolverá al inventario automáticamente.', 'Sí, reembolsar', 'Mantener');
-    if (confirm) {
-      try {
-        await orderService.updateOrderStatus(id, 'reembolsada' as any);
-        alertService.showToast('success', 'Venta reembolsada y stock restaurado');
-        setDetailOrder(null);
-        void load();
-      } catch (e) {
-        alertService.showToast('error', getErrorMessage(e, 'Error al reembolsar'));
-      }
+  const handleExport = async (type: 'excel' | 'pdf') => {
+    if (!isAdmin) {
+      alertService.showToast('error', 'No tienes permisos para exportar');
+      return;
     }
-  }
-
-  async function handleStatusChange(id: number, estado: 'pendiente' | 'completada' | 'cancelada') {
-    try {
-      await orderService.updateOrderStatus(id, estado);
-      alertService.showToast('success', 'Estado actualizado');
-      void load();
-    } catch (e) {
-      alertService.showToast('error', getErrorMessage(e, 'Error al actualizar estado'));
-    }
-  }
-
-  async function handleDeleteOrder(id: number) {
-    const ok = await alertService.showConfirm('Eliminar venta', '¿Eliminar esta venta y sus items?', 'Eliminar', 'Cancelar');
-    if (!ok) return;
-    try {
-      await orderService.deleteOrder(id);
-      alertService.showToast('success', 'Venta eliminada');
-      void load();
-    } catch (e) {
-      alertService.showToast('error', getErrorMessage(e, 'Error al eliminar'));
-    }
-  }
-
-  async function handleExport(type: 'excel' | 'pdf') {
-    setExporting(true);
     try {
       if (type === 'excel') await orderService.exportExcel();
       else await orderService.exportPdf();
+      alertService.showToast('success', `Reporte ${type.toUpperCase()} generado`);
     } catch (e) {
-      alertService.showToast('error', getErrorMessage(e, 'Error al exportar'));
-    } finally {
-      setExporting(false);
+      alertService.showToast('error', 'Error al exportar reporte');
     }
-  }
+  };
 
-  const filteredProducts = Array.isArray(products) 
-    ? products.filter(p => {
-        const q = prodSearch.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-        const name = (p.nom_prod || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-        const code = String(p.cod_prod || '');
-        if (!q) return true;
-        if (name.includes(q) || code.includes(q)) return true;
-        
-        if (q.length >= 3) {
-          for (let i = 0; i < name.length - q.length + 1; i++) {
-            let diff = 0;
-            for (let j = 0; j < q.length; j++) {
-              if (name[i + j] !== q[j]) diff++;
-              if (diff > 1) break;
-            }
-            if (diff <= 1) return true;
-          }
-        }
-        return false;
-      })
-    : [];
+  const handleViewDetails = async (id: number) => {
+    try {
+      const fullOrder = await orderService.getOrderById(id);
+      setDetailOrder(fullOrder);
+    } catch (e) {
+      alertService.showToast('error', 'Error al obtener el detalle de la venta');
+    }
+  };
 
-  function safePrice(v: unknown): number {
+  const handleStatusChange = async (id: number, newStatus: any) => {
+    try {
+      await orderService.updateOrderStatus(id, newStatus);
+      alertService.showToast('success', `Venta #${id} ahora está ${newStatus}`);
+      void loadData();
+    } catch (e: any) {
+      if (e.message?.includes('409') || e.error?.includes('Stock') || e.status === 409) {
+        alertService.showToast('error', '⚠️ Stock insuficiente para completar esta operación');
+      } else {
+        alertService.showToast('error', getErrorMessage(e, 'Error al actualizar estado'));
+      }
+    }
+  };
+
+  const handleRefund = async (id: number) => {
+    const ok = await alertService.showConfirm(
+      '¿Solicitar Reembolso?',
+      'Esta acción devolverá los productos al inventario y marcará la venta como reembolsada.',
+      'Confirmar Reembolso',
+      'Cancelar'
+    );
+    if (!ok) return;
+    try {
+      await orderService.updateOrderStatus(id, 'reembolsada');
+      alertService.showToast('success', 'Reembolso procesado correctamente');
+      setDetailOrder(null);
+      void loadData();
+    } catch (e: any) {
+      if (e.message?.includes('409') || e.status === 409) {
+        alertService.showToast('error', '⚠️ Error de conflicto de stock al reembolsar');
+      } else {
+        alertService.showToast('error', getErrorMessage(e, 'Error al procesar reembolso'));
+      }
+    }
+  };
+
+  const handleDeleteOrder = async (id: number) => {
+    const ok = await alertService.showConfirm(
+      'Cancelar Venta', 
+      `¿Deseas cambiar el estado de la venta #${id} a "cancelada"?`, 
+      'Confirmar', 'Cerrar'
+    );
+    if (!ok) return;
+    try {
+      await orderService.updateOrderStatus(id, 'cancelada');
+      alertService.showToast('success', 'Venta cancelada exitosamente');
+      void loadData();
+    } catch (e) {
+      alertService.showToast('error', getErrorMessage(e, 'Error al cancelar venta'));
+    }
+  };
+
+  const handleCreateIncident = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!incidentForm.titulo_mant || !incidentForm.descrip_mante) {
+      alertService.showToast('warning', 'Título y descripción son obligatorios');
+      return;
+    }
+    setIsSavingIncident(true);
+    try {
+      await maintenanceService.createReport({
+        observaciones_tecnicas: incidentForm.observaciones_tecnicas,
+        descripcion: incidentForm.descripcion,
+        cod_prod: incidentForm.cod_prod,
+        estado: 'pendiente',
+        prioridad: 'media'
+      });
+      alertService.showToast('success', 'Incidencia reportada correctamente');
+      setIsIncidentOpen(false);
+      setIncidentForm({ observaciones_tecnicas: '', descripcion: '', cod_prod: null });
+      void loadData();
+    } catch (e) {
+      alertService.showToast('error', getErrorMessage(e, 'Error al crear la incidencia'));
+    } finally {
+      setIsSavingIncident(false);
+    }
+  };
+
+  const safePrice = (v: unknown) => {
     const n = Number(v);
-    return isNaN(n) || !isFinite(n) ? 0 : n;
-  }
-
-  const cartTotal = orderForm.items.reduce((acc, i) => acc + i.cantidad * safePrice(i.precio_unit), 0);
+    return isNaN(n) ? 0 : n;
+  };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      {/* Header */}
-      <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between group">
+    <div className="space-y-8">
+      <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
-          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-[#3E2723]/5 border border-[#3E2723]/10 transition-colors group-hover:bg-[#3E2723]/10">
-            <div className="h-1.5 w-1.5 rounded-full bg-[#ec131e] animate-pulse" />
-            <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#3E2723]/60">Comercial</span>
-          </div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-[#1a1a1a] sm:text-4xl transition-all">
-            Ventas <span className="text-[#ec131e]">&</span> Facturas
-          </h1>
-          <p className="text-sm text-slate-500 font-medium max-w-xl">
-            Registro de ventas, facturación contable y exportaciones del historial de tu negocio.
-          </p>
+          <h1 className="text-4xl font-extrabold tracking-tight text-[#1a1a1a]">Ventas <span className="text-[#ec131e]">&</span> Facturas</h1>
+          <p className="text-sm text-slate-500 font-medium tracking-tight">Registro de ventas, facturación contable y exportaciones del historial de tu negocio.</p>
         </div>
-        <div className="flex gap-2 flex-wrap items-center">
+        <div className="flex gap-3">
           <button
             onClick={() => void handleExport('excel')}
-            disabled={exporting}
-            className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-bold text-emerald-700 transition-all hover:bg-emerald-100 focus:ring-4 focus:ring-emerald-100 active:scale-95 disabled:opacity-50 disabled:grayscale"
+            className="inline-flex items-center gap-2 rounded-xl bg-[#ecfdf3] px-5 py-2.5 text-sm font-bold text-[#10b981] border border-[#d1fae5] hover:bg-[#d1fae5] transition-all active:scale-95"
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
             Excel
           </button>
           <button
             onClick={() => void handleExport('pdf')}
-            disabled={exporting}
-            className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-bold text-red-600 transition-all hover:bg-red-100 focus:ring-4 focus:ring-red-100 active:scale-95 disabled:opacity-50 disabled:grayscale"
+            className="inline-flex items-center gap-2 rounded-xl bg-[#fff5f5] px-5 py-2.5 text-sm font-bold text-[#ec131e] border border-[#ffe3e3] hover:bg-[#ffe3e3] transition-all active:scale-95"
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
             PDF
           </button>
           <button
-            onClick={() => { setDrawerOpen(true); }}
-            className="inline-flex items-center gap-2 rounded-xl bg-[#ec131e] px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#ec131e]/20 transition-all hover:bg-[#d01019] focus:ring-4 focus:ring-[#ec131e]/20 active:scale-95"
+            onClick={subTab === 'incidencias' ? () => setIsIncidentOpen(true) : onOpenPOS}
+            className="inline-flex items-center gap-2 rounded-xl bg-[#ec131e] px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#ec131e]/20 hover:bg-[#d01019] active:scale-95 transition-all"
           >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" /></svg>
-            Venta
+            {subTab === 'incidencias' ? '+ Nueva Incidencia' : '+ Nueva Venta'}
           </button>
         </div>
       </header>
 
       {/* Sub Tabs */}
-      <div className="flex gap-1 rounded-2xl bg-slate-100/80 p-1 w-fit border border-slate-200/50 shadow-inner">
-        {(['ventas', 'facturas', 'movimientos'] as SubTab[]).map(t => (
+      <div className="flex gap-1 rounded-2xl bg-white border border-slate-100 p-1.5 w-fit shadow-sm">
+        {[
+          { id: 'ventas', label: 'Ventas' },
+          { id: 'facturas', label: 'Facturas' },
+          { id: 'movimientos', label: 'Movimientos' },
+          { id: 'incidencias', label: 'Incidencias' },
+        ].map(t => (
           <button
-            key={t}
-            onClick={() => setSubTab(t)}
-            className={`rounded-xl px-6 py-2 text-sm font-extrabold transition-all capitalize hover:bg-white/50 hover:text-slate-800 ${
-              subTab === t 
-                ? 'bg-white text-[#ec131e] shadow-sm hover:!bg-white' 
-                : 'text-slate-400'
-            }`}
+            key={t.id}
+            onClick={() => setSubTab(t.id as SalesSubTab)}
+            className={`rounded-xl px-6 py-2.5 text-sm font-black transition-all ${subTab === t.id ? 'bg-[#ec131e]/5 text-[#ec131e] border border-[#ec131e]/10' : 'text-slate-400 hover:text-slate-600'}`}
           >
-            {t}
+            {t.label}
           </button>
         ))}
       </div>
 
+      <div className="relative group max-w-md">
+        <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-[#ec131e] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <input
+          type="text"
+          placeholder="Buscar registros..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full rounded-2xl border border-slate-100 bg-white py-3 pl-10 pr-4 text-sm font-medium text-slate-800 focus:border-[#ec131e] focus:outline-none focus:ring-4 focus:ring-[#ec131e]/5 transition-all shadow-sm"
+        />
+      </div>
+
       {loading ? (
-        <div className="flex justify-center py-32">
-          <div className="relative h-12 w-12">
-            <div className="absolute inset-0 rounded-full border-4 border-slate-100"></div>
-            <div className="absolute inset-0 rounded-full border-4 border-[#ec131e] border-t-transparent animate-spin"></div>
-          </div>
+        <div className="flex justify-center py-20">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-[#ec131e]" />
         </div>
       ) : (
-        <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-          {/* Orders Table */}
-          {subTab === 'ventas' && (
-            <>
-              <div className="overflow-hidden rounded-2xl border border-slate-100/80 bg-white shadow-sm ring-1 ring-slate-900/5">
-                <table className="w-full text-sm">
-                  <thead className="bg-slate-50/80 border-b border-slate-100 backdrop-blur-md">
-                    <tr>
-                      {['#', 'Fecha', 'Método de pago', 'Total', 'Estado', 'Acciones'].map(h => (
-                        <th key={h} className="px-5 py-3.5 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {orders.data.length === 0 ? (
-                      <tr><td colSpan={6} className="py-16 text-center text-slate-400 font-medium">No hay ventas registradas.</td></tr>
-                    ) : orders.data.map(o => (
-                      <tr key={o.id_vent} className="hover:bg-slate-50/60 transition-colors group">
-                        <td className="px-5 py-4 font-black text-slate-400 group-hover:text-slate-500 transition-colors">#{o.id_vent}</td>
-                        <td className="px-5 py-4 text-slate-600 font-medium">{o.fecha_vent ? new Date(o.fecha_vent).toLocaleDateString('es-CO') : '—'}</td>
-                        <td className="px-5 py-4 capitalize text-slate-600 font-bold">{o.metodopago_usu ?? '—'}</td>
-                        <td className="px-5 py-4 font-black text-[#111827] text-base drop-shadow-sm">
-                          <span className="text-xs text-[#ec131e] relative -top-1 mr-0.5">$</span>
-                          {Number(o.montofinal_vent ?? 0).toLocaleString('es-CO')}
+        <div className="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-[#fcfdfe] border-b border-slate-100">
+                <tr>
+                  <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-widest text-slate-400">#</th>
+                  <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-widest text-slate-400">Fecha</th>
+                  <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-widest text-slate-400">Título / Ref</th>
+                  {isAdmin && <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-widest text-slate-400">Prioridad</th>}
+                  <th className="px-5 py-4 text-right text-[11px] font-black uppercase tracking-widest text-slate-400">Importe / Detalle</th>
+                  <th className="px-5 py-4 text-center text-[11px] font-black uppercase tracking-widest text-slate-400">Estado</th>
+                  <th className="px-5 py-4 text-center text-[11px] font-black uppercase tracking-widest text-slate-400">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {subTab === 'ventas' && (
+                  filteredOrders.length === 0 ? (
+                    <tr><td colSpan={6} className="py-10 text-center text-slate-400 font-medium">No hay ventas registradas</td></tr>
+                  ) : (
+                    (Array.isArray(filteredOrders) ? filteredOrders : []).map(o => (
+                      <tr key={o.id_vent} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="px-5 py-4 font-black text-slate-400 text-xs">#{o.id_vent}</td>
+                        <td className="px-5 py-4 text-[#111827] text-xs font-bold">
+                          {o.fecha_vent ? new Date(o.fecha_vent).toLocaleDateString('es-CO') : '—'}
                         </td>
-                        <td className="px-5 py-4">
-                          <div className="relative">
+                        <td className="px-5 py-4 text-slate-500 text-xs font-bold capitalize">
+                          {o.metodopago_usu || 'Efectivo'}
+                        </td>
+                        <td className="px-5 py-4 text-right font-black text-[#ec131e] text-base">
+                          <span className="text-[10px] mr-0.5">$</span>{safePrice(o.montofinal_vent).toLocaleString('es-CO')}
+                        </td>
+                        <td className="px-5 py-4 text-center">
+                          {isAdmin ? (
                             <select
-                              value={o.estado ?? 'pendiente'}
-                              onChange={e => void handleStatusChange(o.id_vent!, e.target.value as 'pendiente' | 'completada' | 'cancelada')}
-                              className={`appearance-none rounded-full px-3 py-1.5 text-[11px] font-black tracking-wide border transition-all cursor-pointer outline-none focus:ring-2 focus:ring-offset-1 focus:ring-slate-200 pr-6 ${
-                                ESTADO_COLORS[o.estado ?? 'pendiente']?.replace('text-', 'text-').replace('bg-', 'bg-').concat(' border-current/10')
-                              }`}
+                              value={o.estado || 'pendiente'}
+                              onChange={(e) => handleStatusChange(o.id_vent!, e.target.value)}
+                              className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider border outline-none cursor-pointer transition-all ${ESTADO_COLORS[o.estado ?? 'pendiente']}`}
                             >
                               <option value="pendiente">Pendiente</option>
                               <option value="completada">Completada</option>
                               <option value="cancelada">Cancelada</option>
+                              <option value="reembolsada">Reembolsada</option>
                             </select>
-                            <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-current opacity-60 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" /></svg>
-                          </div>
+                          ) : (
+                            <div className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider border ${ESTADO_COLORS[o.estado ?? 'pendiente']}`}>
+                              {o.estado}
+                            </div>
+                          )}
                         </td>
-                        <td className="px-5 py-4">
-                          <div className="flex gap-2">
-                            <button
-                              onClick={async () => {
-                                try { const d = await orderService.getOrderById(o.id_vent!); setDetailOrder(d); }
-                                catch (e) { alertService.showToast('error', getErrorMessage(e, 'Error al cargar detalle')); }
-                              }}
-                              className="rounded-xl border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-bold text-slate-600 transition-all hover:bg-slate-50 hover:text-slate-900 focus:ring-2 focus:ring-slate-200"
-                            >Ver</button>
-                            <button
-                              onClick={() => void handleDeleteOrder(o.id_vent!)}
-                              className="rounded-xl border border-red-100 bg-red-50/50 px-3.5 py-1.5 text-xs font-bold text-red-500 transition-all hover:bg-red-100 hover:text-red-700 focus:ring-2 focus:ring-red-100"
-                            >Eliminar</button>
+                        <td className="px-5 py-4 text-center">
+                          <div className="flex items-center justify-center gap-4">
+                            <button onClick={() => o.id_vent && void handleViewDetails(o.id_vent)} className="text-[#2563eb] text-xs font-black hover:underline">Ver Detalle</button>
+                            {o.estado === 'pendiente' ? (
+                               <button 
+                                 onClick={() => o.id_vent && void handleDeleteOrder(o.id_vent)} 
+                                 className="text-[#ec131e] text-xs font-black hover:underline hover:bg-red-50 px-2 py-1 rounded-lg transition-all"
+                               >
+                                 Cancelar
+                               </button>
+                            ) : (
+                               <span className="bg-slate-50 text-slate-400 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter border border-slate-100 italic transition-all hover:bg-slate-100">
+                                 {o.estado === 'cancelada' ? 'Eliminada' : o.estado}
+                               </span>
+                            )}
                           </div>
                         </td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              
-              {/* Pagination */}
-              {orders.pagination && orders.pagination.totalPages > 1 && (
-                <div className="flex justify-center gap-3 mt-6">
-                  <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 active:scale-95">← Anterior</button>
-                  <span className="flex items-center px-4 py-2 text-sm text-slate-500 font-extrabold bg-slate-100/50 rounded-xl">
-                    {page} <span className="mx-2 text-slate-300 font-medium">/</span> {orders.pagination.totalPages}
-                  </span>
-                  <button disabled={page >= orders.pagination.totalPages} onClick={() => setPage(p => p + 1)} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 active:scale-95">Siguiente →</button>
-                </div>
-              )}
-            </>
-          )}
-
-          {/* Invoices Table */}
-          {subTab === 'facturas' && (
-            <div className="overflow-hidden rounded-2xl border border-slate-100/80 bg-white shadow-sm ring-1 ring-slate-900/5">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50/80 border-b border-slate-100 backdrop-blur-md">
-                  <tr>
-                    {['#Factura', 'Venta', 'Usuario', 'Monto Total', 'Fecha'].map(h => (
-                      <th key={h} className="px-5 py-3.5 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {invoices.data.length === 0 ? (
-                    <tr><td colSpan={5} className="py-16 text-center text-slate-400 font-medium">Sin facturas emitidas</td></tr>
-                  ) : invoices.data.map(inv => (
-                    <tr key={inv.id_fac} className="hover:bg-slate-50/60 transition-colors group">
-                      <td className="px-5 py-4 font-black text-slate-400 group-hover:text-slate-500">#{inv.id_fac}</td>
-                      <td className="px-5 py-4 text-slate-600 font-bold">
-                        <span className="bg-slate-100 px-2 py-0.5 rounded text-xs">Venta #{inv.fk_id_vent}</span>
-                      </td>
-                      <td className="px-5 py-4 text-slate-600 font-medium">Usuario <span className="font-bold">#{inv.id_usu}</span></td>
-                      <td className="px-5 py-4 font-black text-emerald-600 text-base drop-shadow-sm">
-                        <span className="text-xs text-emerald-500 relative -top-1 mr-0.5">$</span>
-                        {Number(inv.montototal_vent ?? 0).toLocaleString('es-CO')}
-                      </td>
-                      <td className="px-5 py-4 text-slate-400 text-xs font-bold tracking-wide">{inv.fecha_fac ? new Date(inv.fecha_fac).toLocaleDateString('es-CO') : '—'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* Movements */}
-          {subTab === 'movimientos' && (
-            <div className="overflow-hidden rounded-2xl border border-slate-100/80 bg-white shadow-sm ring-1 ring-slate-900/5">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-slate-50/80 border-b border-slate-100 backdrop-blur-md">
-                    <tr>
-                      {['Tipo', 'Producto', 'Cantidad', 'Descripción', 'Fecha'].map(h => (
-                        <th key={h} className="px-5 py-3.5 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {!Array.isArray(movements) || movements.length === 0 ? (
-                      <tr><td colSpan={5} className="py-16 text-center text-slate-400 font-medium">Sin movimientos registrados</td></tr>
-                    ) : movements.map(m => (
-                      <tr key={m.id_mov} className="hover:bg-slate-50/60 transition-colors group">
-                        <td className="px-5 py-4">
-                          <span className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[10px] font-black uppercase tracking-widest transition-transform group-hover:scale-105 ${
-                             m.tipo_mov === 'entrada' 
-                              ? 'bg-emerald-50 text-emerald-600 border-emerald-200/50 shadow-[0_0_10px_rgba(16,185,129,0.1)]' 
-                              : 'bg-red-50 text-red-600 border-red-200/50 shadow-[0_0_10px_rgba(239,68,68,0.1)]'
-                          }`}>
-                            {m.tipo_mov === 'entrada' ? '↑ Entrada' : '↓ Salida'}
+                    ))
+                  )
+                )}
+                {subTab === 'movimientos' && (
+                  movements.length === 0 ? (
+                    <tr><td colSpan={6} className="py-10 text-center text-slate-400">No hay movimientos registrados</td></tr>
+                  ) : (
+                    movements.map(m => (
+                      <tr key={m.id_mov} className="hover:bg-slate-50/50">
+                        <td className="px-5 py-4 font-black text-slate-400 text-xs">#{m.id_mov}</td>
+                        <td className="px-5 py-4 text-xs font-bold">{new Date(m.fecha_mov!).toLocaleDateString()}</td>
+                        <td className="px-5 py-4 text-xs font-bold">Prod ID: {m.fk_cod_prod}</td>
+                        <td className="px-5 py-4 text-right font-black text-slate-600">{m.cantidad_mov} unidades</td>
+                        <td className="px-5 py-4 text-center">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${m.tipo_mov === 'entrada' ? 'bg-emerald-50 text-emerald-600' : 'bg-orange-50 text-orange-600'}`}>
+                            {m.tipo_mov}
                           </span>
                         </td>
-                        <td className="px-5 py-4">
-                          <div className="flex flex-col">
-                            <span className="font-bold text-[#111827] line-clamp-1">{m.producto?.nom_prod || 'Producto eliminado'}</span>
-                            <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-0.5">Cód: {m.fk_cod_prod}</span>
-                          </div>
+                        <td className="px-5 py-4 text-center text-slate-400 text-[10px] italic">{m.descrip_mov || 'Venta automatizada'}</td>
+                      </tr>
+                    ))
+                  )
+                )}
+                {subTab === 'incidencias' && (
+                  reports.length === 0 ? (
+                    <tr><td colSpan={isAdmin ? 7 : 6} className="py-10 text-center text-slate-400">No hay incidencias reportadas</td></tr>
+                  ) : (
+                    reports.map(r => (
+                      <tr key={r.id_rep} className="hover:bg-slate-50/50">
+                        <td className="px-5 py-4 font-black text-slate-400 text-xs">#{r.id_rep}</td>
+                        <td className="px-5 py-4 text-xs font-bold">{r.fecha_rep ? new Date(r.fecha_rep).toLocaleDateString() : '—'}</td>
+                        <td className="px-5 py-4 text-xs font-bold truncate max-w-[150px]">{r.observaciones_tecnicas || 'Sin título'}</td>
+                        {isAdmin && (
+                          <td className="px-5 py-4">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                              r.prioridad === 'alta' ? 'bg-red-50 text-red-600' : r.prioridad === 'media' ? 'bg-amber-50 text-amber-600' : 'bg-green-50 text-green-600'
+                            }`}>
+                              {r.prioridad}
+                            </span>
+                          </td>
+                        )}
+                        <td className="px-5 py-4 text-right text-xs font-medium max-w-[200px] truncate">
+                           {isAdmin ? (r.descripcion || '—') : '*** Restringido ***'}
                         </td>
-                        <td className="px-5 py-4 text-slate-800 font-black text-sm tabular-nums">
-                           {m.tipo_mov === 'entrada' ? '+' : '-'}{m.cantidad_mov}
+                        <td className="px-5 py-4 text-center">
+                           <div className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider border ${ESTADO_COLORS[r.estado ?? 'pendiente']}`}>
+                             {r.estado}
+                           </div>
                         </td>
-                        <td className="px-5 py-4 text-slate-500 text-xs font-medium leading-relaxed max-w-xs truncate">
-                           {m.desc_mov || '—'}
-                        </td>
-                        <td className="px-5 py-4 text-slate-400 text-[11px] font-bold tracking-wide uppercase">
-                          {m.fecha_mov ? new Date(m.fecha_mov).toLocaleString('es-CO', { 
-                            day: '2-digit', month: 'short', year: 'numeric',
-                            hour: '2-digit', minute: '2-digit'
-                          }) : '—'}
+                        <td className="px-5 py-4 text-center">
+                           <button className="text-[#2563eb] text-xs font-black hover:underline disabled:opacity-30" disabled={!isAdmin}>Gestionar</button>
                         </td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
+                    ))
+                  )
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
-      {/* Order Detail Modal */}
       {detailOrder && (
         <OrderDetailModal
           detailOrder={detailOrder}
           onClose={() => setDetailOrder(null)}
           safePrice={safePrice}
           estadoColors={ESTADO_COLORS}
-          onRefund={handleRefund}
+          onRefund={isAdmin ? handleRefund : undefined}
         />
       )}
 
-      {/* Create Order Drawer - Cart Mode */}
-      <OrderDrawer
-        drawerOpen={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        prodSearch={prodSearch}
-        setProdSearch={setProdSearch}
-        filteredProducts={filteredProducts}
-        addToCart={addToCart}
-        removeFromCart={removeFromCart}
-        updateQuantity={updateQuantity}
-        orderForm={orderForm}
-        setOrderForm={setOrderForm}
-        cartTotal={cartTotal}
-        handleCreateOrder={() => void handleCreateOrder()}
-        onCancelOrder={() => void handleCancelOrder()}
-        saving={saving}
-        safePrice={safePrice}
-      />
+      {/* Incident Drawer */}
+      {isIncidentOpen && (
+        <div className="fixed inset-0 z-[60] flex justify-end">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setIsIncidentOpen(false)} />
+          <div className="relative w-full max-w-md bg-white shadow-2xl animate-in slide-in-from-right duration-500 ease-out">
+            <div className="flex h-full flex-col p-8">
+              <header className="mb-8 flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-black text-slate-800 tracking-tight">Nueva Incidencia</h2>
+                  <p className="mt-1 text-xs font-bold text-slate-400 uppercase tracking-widest">Reporte de Mantenimiento</p>
+                </div>
+                <button onClick={() => setIsIncidentOpen(false)} className="rounded-xl p-2.5 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-all">
+                   <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </header>
+
+              <form onSubmit={handleCreateIncident} className="flex-1 space-y-6 overflow-y-auto pr-2">
+                <div className="space-y-2">
+                  <label className="text-xs font-black uppercase tracking-widest text-slate-400">Título / Resumen</label>
+                  <input
+                    required
+                    type="text"
+                    placeholder="Ej: Falla en impresora térmica"
+                    value={incidentForm.observaciones_tecnicas}
+                    onChange={e => setIncidentForm(f => ({ ...f, observaciones_tecnicas: e.target.value }))}
+                    className="w-full rounded-2xl border border-slate-100 bg-slate-50 px-5 py-3.5 text-sm font-bold text-slate-800 focus:border-[#ec131e] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#ec131e]/5 transition-all"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-black uppercase tracking-widest text-slate-400">Descripción completa del problema</label>
+                  <textarea
+                    required
+                    rows={4}
+                    placeholder="Describe detalladamente lo ocurrido..."
+                    value={incidentForm.descripcion}
+                    onChange={e => setIncidentForm(f => ({ ...f, descripcion: e.target.value }))}
+                    className="w-full rounded-2xl border border-slate-100 bg-slate-50 px-5 py-3.5 text-sm font-bold text-slate-800 focus:border-[#ec131e] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#ec131e]/5 transition-all resize-none"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-black uppercase tracking-widest text-slate-400">ID Producto (Opcional)</label>
+                  <input
+                    type="number"
+                    placeholder="Código del producto afectado"
+                    value={incidentForm.cod_prod || ''}
+                    onChange={e => setIncidentForm(f => ({ ...f, cod_prod: e.target.value ? parseInt(e.target.value) : null }))}
+                    className="w-full rounded-2xl border border-slate-100 bg-slate-50 px-5 py-3.5 text-sm font-bold text-slate-800 focus:border-[#ec131e] focus:bg-white focus:outline-none transition-all"
+                  />
+                </div>
+
+                <div className="pt-8">
+                  <button
+                    type="submit"
+                    disabled={isSavingIncident}
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#ec131e] py-4 text-sm font-black text-white shadow-xl shadow-[#ec131e]/20 transition-all hover:bg-[#d01019] active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
+                  >
+                    {isSavingIncident ? (
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    ) : (
+                      'Reportar Incidencia'
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

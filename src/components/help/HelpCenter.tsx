@@ -11,8 +11,8 @@ export default function HelpCenter() {
 
   const filteredFaqIndices = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
-    if (!q) return HELP_FAQS.map((_, i) => i);
-    return HELP_FAQS.map((faq, i) => ({ faq, i }))
+    if (!q) return (Array.isArray(HELP_FAQS) ? HELP_FAQS : []).map((unused, i) => i);
+    return (Array.isArray(HELP_FAQS) ? HELP_FAQS : []).map((faq, i) => ({ faq, i }))
       .filter(
         ({ faq }) =>
           faq.question.toLowerCase().includes(q) || faq.answer.toLowerCase().includes(q)

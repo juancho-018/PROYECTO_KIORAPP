@@ -8,7 +8,8 @@ export class NotificationService {
     const stored = localStorage.getItem(NotificationService.STORAGE_KEY);
     if (!stored) return [];
     try {
-      return JSON.parse(stored);
+      const parsed = JSON.parse(stored);
+      return Array.isArray(parsed) ? parsed : [];
     } catch {
       return [];
     }

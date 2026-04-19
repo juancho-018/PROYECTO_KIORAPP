@@ -48,18 +48,13 @@ export class InventoryService {
   }
 
   async updateSupplier(id: number, dto: Partial<Supplier>): Promise<Supplier> {
-    const token = this.authService.getToken();
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
-    const rawRes = await fetch(`${this.baseURL}/inventory/suppliers/${id}`, {
-      method: 'PUT',
-      headers,
-      body: JSON.stringify(dto),
-    });
-    const data = (await rawRes.json()) as Record<string, unknown>;
-    if (!rawRes.ok) throw new Error((data?.error ?? data?.message ?? 'Error al actualizar proveedor') as string);
-    return data as unknown as Supplier;
+    const res = await this.httpClient.put<Supplier>(
+      `/inventory/suppliers/${id}`,
+      dto,
+      { headers: this.getAuthHeaders() }
+    );
+    if (!res.ok || !res.data) throw new Error(res.error ?? 'Error al actualizar proveedor');
+    return res.data;
   }
 
   async deleteSupplier(id: number): Promise<void> {

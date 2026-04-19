@@ -3,6 +3,7 @@ export interface OrderItem {
   cantidad: number;
   precio_unit: number;
   nom_prod?: string;
+  url_imagen?: string;
 }
 
 export interface Order {

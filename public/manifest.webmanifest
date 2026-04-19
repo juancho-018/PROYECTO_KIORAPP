@@ -1,0 +1,26 @@
+{
+  "name": "KIORA | Sistema para Kioskos",
+  "short_name": "Kiora",
+  "description": "Sistema integral para la gestión de kioskos y puntos de venta.",
+  "start_url": "/login",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ec131e",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/img/logo-kiora-vectorizado.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
+    },
+    {
+      "src": "/img/logo-kiora-vectorizado.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "screenshots": []
+}

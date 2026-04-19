@@ -29,7 +29,7 @@ export function DashboardSection() {
 
       {/* Stat Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
+        {(Array.isArray(stats) ? stats : []).map((stat) => (
           <article key={stat.label} className="group relative overflow-hidden rounded-2xl border border-slate-200/60 bg-white p-5 shadow-sm transition-all hover:shadow-md">
             <div className="flex items-start justify-between">
               <div className={`flex h-10 w-10 items-center justify-center rounded-xl font-bold ${stat.bg} ${stat.color} shadow-sm`}>
@@ -59,7 +59,7 @@ export function DashboardSection() {
           </select>
         </div>
         <div className="flex h-48 items-end justify-between gap-2 px-4">
-          {trafficData.map((bar) => (
+          {(Array.isArray(trafficData) ? trafficData : []).map((bar) => (
             <div key={bar.hour} className="group flex flex-1 flex-col items-center gap-3">
               <div 
                 className={`w-full max-w-[60px] rounded-t-lg transition-all duration-500 ease-out group-hover:opacity-80 ${bar.highlight ? 'bg-[#ec131e] shadow-lg shadow-[#ec131e]/20' : 'bg-[#ec131e]/20'}`}

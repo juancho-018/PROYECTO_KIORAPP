@@ -144,7 +144,7 @@ export class ProductService {
 
   async updateStock(id: number, cantidad: number): Promise<Product> {
     const cleanId = String(id).trim();
-    const res = await this.httpClient.patch<Product>(
+    const res = await this.httpClient.put<Product>(
       `/products/${cleanId}/stock`,
       { cantidad },
       { headers: this.getAuthHeaders() }
@@ -175,18 +175,13 @@ export class ProductService {
   }
 
   async updateCategory(id: number, nom_cat: string, desc_cat?: string): Promise<Category> {
-    const token = this.authService.getToken();
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
-    const rawRes = await fetch(`${this.baseURL}/categories/${id}`, {
-      method: 'PUT',
-      headers,
-      body: JSON.stringify({ nom_cat, desc_cat }),
-    });
-    const data = (await rawRes.json()) as Record<string, unknown>;
-    if (!rawRes.ok) throw new Error((data?.error ?? data?.message ?? 'Error al actualizar categoría') as string);
-    return data as unknown as Category;
+    const res = await this.httpClient.put<Category>(
+      `/categories/${id}`,
+      { nom_cat, desc_cat },
+      { headers: this.getAuthHeaders() }
+    );
+    if (!res.ok || !res.data) throw new Error(res.error ?? 'Error al actualizar categoría');
+    return res.data;
   }
 
   async deleteCategory(id: number): Promise<void> {

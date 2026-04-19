@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { authService, userService, alertService } from '@/config/setup';
+import { authService, userService, alertService, productService, notificationService, orderService } from '@/config/setup';
 import { SessionManager } from '@/services/SessionManager';
 import type { User } from '@/models/User';
 import type { RegisterUserDto } from '@/services/UserService';
@@ -10,11 +10,12 @@ import { AdminSubNav } from './AdminSubNav';
 import { UserList } from './UserList';
 import { UserDrawer } from './UserDrawer';
 import { ProfileDrawer } from './ProfileDrawer';
-import { RolesSection } from './RolesSection';
 import { ComingSoonSection } from './ComingSoonSection';
 import { DashboardSection } from './DashboardSection';
+import { OrderDrawer } from './OrderDrawer';
 import HelpCenter from '@/components/help/HelpCenter';
 import { getErrorMessage } from '@/utils/getErrorMessage';
+import { fuzzyMatch } from '@/utils/searchUtils';
 import { ProductsSection } from './ProductsSection';
 import { InventorySection } from './InventorySection';
 import { SalesSection } from './SalesSection';
@@ -36,8 +37,7 @@ export default function PanelApp() {
   // Navigation state persists in localStorage
   const [activeTab, setActiveTab] = useState<string>(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('kiora_active_tab');
-      return saved || 'dashboard';
+      return localStorage.getItem('kiora_active_tab') || 'dashboard';
     }
     return 'dashboard';
   });
@@ -63,6 +63,7 @@ export default function PanelApp() {
 
   // Drawers state
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isOrderDrawerOpen, setIsOrderDrawerOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -79,8 +80,11 @@ export default function PanelApp() {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwords, setPasswords] = useState({ current: '', new: '', confirm: '' });
 
-  // --- Cart State (Lifted for Persistence) ---
+  // --- POS / Cart State ---
   const [orderForm, setOrderForm] = useState<CreateOrderDto>(EMPTY_ORDER);
+  const [prodSearch, setProdSearch] = useState('');
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
   const cartKey = user ? `kiora_cart_${user.id_usu}` : null;
 
   // Persistence: Load on mount or user change
@@ -101,16 +105,24 @@ export default function PanelApp() {
 
   // Persistence: Save on changes
   useEffect(() => {
-    if (!cartKey || orderForm === EMPTY_ORDER || (orderForm.items.length === 0 && !localStorage.getItem(cartKey))) return;
+    if (!cartKey || orderForm === EMPTY_ORDER || ((orderForm.items || []).length === 0 && !localStorage.getItem(cartKey))) return;
     localStorage.setItem(cartKey, JSON.stringify(orderForm));
   }, [orderForm, cartKey]);
 
   const addToCart = (p: Product) => {
     const existing = orderForm.items.find(i => i.cod_prod === p.cod_prod);
+    const currentQty = existing ? existing.cantidad : 0;
+    
+    // Check stock limit
+    if (currentQty + 1 > (p.stock_actual ?? 0)) {
+      alertService.showToast('warning', `Stock insuficiente para ${p.nom_prod}. Solo quedan ${p.stock_actual} unidades.`);
+      return;
+    }
+
     if (existing) {
       setOrderForm(f => ({
         ...f,
-        items: f.items.map(i => i.cod_prod === p.cod_prod ? { ...i, cantidad: i.cantidad + 1 } : i)
+        items: (f.items || []).map(i => i.cod_prod === p.cod_prod ? { ...i, cantidad: i.cantidad + 1 } : i)
       }));
     } else {
       setOrderForm(f => ({
@@ -119,7 +131,8 @@ export default function PanelApp() {
           cod_prod: p.cod_prod!, 
           cantidad: 1, 
           precio_unit: p.precio_prod,
-          nom_prod: p.nom_prod 
+          nom_prod: p.nom_prod,
+          url_imagen: p.imagen_prod // Include image for cart display
         }]
       }));
     }
@@ -129,12 +142,19 @@ export default function PanelApp() {
     setOrderForm(f => ({ ...f, items: f.items.filter(i => i.cod_prod !== cod_prod) }));
   };
 
-  const updateQuantity = (cod_prod: number, delta: number) => {
+  const updateQuantity = (cod_prod: number, delta: number, maxStock?: number) => {
+    const item = orderForm.items.find(i => i.cod_prod === cod_prod);
+    if (!item) return;
+
     setOrderForm(f => ({
       ...f,
-      items: f.items.map(i => {
+      items: (f.items || []).map(i => {
         if (i.cod_prod === cod_prod) {
           const newCant = Math.max(1, i.cantidad + delta);
+          if (maxStock !== undefined && newCant > maxStock) {
+            alertService.showToast('warning', `No puedes agregar más. Stock disponible: ${maxStock}`);
+            return i;
+          }
           return { ...i, cantidad: newCant };
         }
         return i;
@@ -145,6 +165,61 @@ export default function PanelApp() {
   const clearCart = () => {
     setOrderForm(EMPTY_ORDER);
     if (cartKey) localStorage.removeItem(cartKey);
+  };
+
+  const cartTotal = useMemo(() => {
+    return (orderForm.items || []).reduce((acc, item) => acc + (item.cantidad * (item.precio_unit || 0)), 0);
+  }, [orderForm.items]);
+
+  const loadAllProducts = async () => {
+    try {
+      const data = await productService.getProducts();
+      setAllProducts(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error('Error loading products for POS:', e);
+    }
+  };
+
+  useEffect(() => {
+    if (isOrderDrawerOpen) {
+      void loadAllProducts();
+    }
+  }, [isOrderDrawerOpen]);
+
+  const filteredPOSProducts = useMemo(() => {
+    const q = prodSearch.trim().toLowerCase();
+    if (!q) return allProducts;
+    return allProducts.filter(p => 
+      fuzzyMatch(p.nom_prod, q) || 
+      p.cod_prod.toString().includes(q)
+    );
+  }, [allProducts, prodSearch]);
+
+  const handleCreateOrder = async () => {
+    if (!orderForm.items || orderForm.items.length === 0) return;
+    setIsSavingOrder(true);
+    try {
+      await orderService.createOrder(orderForm);
+      alertService.showToast('success', 'Venta realizada con éxito');
+      clearCart();
+      setIsOrderDrawerOpen(false);
+      // Reload relevant data if needed (e.g. if we are on Sales tab)
+      if (activeTab === 'ventas') {
+        window.dispatchEvent(new CustomEvent('kiora_reload_orders'));
+      }
+    } catch (e) {
+      alertService.showToast('error', getErrorMessage(e, 'Error al procesar la venta'));
+    } finally {
+      setIsSavingOrder(false);
+    }
+  };
+
+  const handleCancelOrder = async () => {
+    const ok = await alertService.showConfirm('¿Cancelar Pedido?', 'Se borrarán todos los productos del carrito.', 'Sí, cancelar', 'No, continuar');
+    if (ok) {
+      clearCart();
+      setIsOrderDrawerOpen(false);
+    }
   };
   // -------------------------------------------
 
@@ -160,12 +235,62 @@ export default function PanelApp() {
     }
     sessionManager.startMonitoring();
     const currentUser = authService.getUser();
+    const userIsAdmin = String(currentUser?.rol_usu ?? '').toLowerCase() === 'admin';
     if (currentUser) {
       setUser(currentUser);
-      setIsAdmin(String(currentUser.rol_usu ?? '').toLowerCase() === 'admin');
+      setIsAdmin(userIsAdmin);
+      // Sanitize persisted tab — operators cannot land on admin-only tabs
+      if (!userIsAdmin) {
+        const allowed = ['dashboard', 'ventas', 'ajustes'];
+        const saved = localStorage.getItem('kiora_active_tab');
+        if (saved && (Array.isArray(allowed) ? !allowed.includes(saved) : true)) {
+          localStorage.setItem('kiora_active_tab', 'dashboard');
+          setActiveTab('dashboard');
+        }
+      }
     }
+
+    // Navigation Listener
+    const handleNav = (e: any) => {
+      if (e.detail?.tab) {
+        // Enforce RBAC
+        const targetTab = e.detail.tab;
+        const currentIsAdmin = String(authService.getUser()?.rol_usu || '').toLowerCase() === 'admin';
+        if (!currentIsAdmin && !['dashboard', 'ventas', 'ajustes'].includes(targetTab)) {
+          alertService.showToast('warning', 'Acceso denegado. Permisos insuficientes.');
+          return;
+        }
+        setActiveTab(targetTab);
+      }
+    };
+    window.addEventListener('kiora_navigate', handleNav);
+
+    // Initial Low Stock Check — admin only
+    const checkLowStock = async () => {
+      if (!userIsAdmin) return; // Operators don't need inventory notifications
+      try {
+        const lowStock = await productService.getLowStockProducts();
+        const lowStockArray = Array.isArray(lowStock) ? lowStock : [];
+        if (lowStockArray.length > 0) {
+          notificationService.addNotification({
+            title: 'Alerta de Inventario',
+            description: `Hay ${lowStockArray.length} productos con stock bajo o agotado.`,
+            type: 'warning',
+            path: 'productos' // Target tab
+          });
+        }
+      } catch (err) {
+        console.error('Error checking low stock:', err);
+      }
+    };
+    
+    // Check after a short delay
+    const timeout = setTimeout(checkLowStock, 2000);
+
     return () => {
       sessionManager.stopMonitoring();
+      window.removeEventListener('kiora_navigate', handleNav);
+      clearTimeout(timeout);
     };
   }, [sessionManager]);
 
@@ -173,7 +298,8 @@ export default function PanelApp() {
     setIsLoadingUsers(true);
     try {
       const paginated = await userService.fetchUsers(page, LIMIT);
-      const displayUsers = paginated.data.map(u => ({
+      const dataArray = Array.isArray(paginated?.data) ? paginated.data : [];
+      const displayUsers = dataArray.map(u => ({
         ...u,
         isBlocked: userService.isUserBlocked(u)
       }));
@@ -321,13 +447,8 @@ export default function PanelApp() {
           <InventorySection onNavigateToProducts={() => setActiveTab('productos')} />
         ) : activeTab === 'ventas' ? (
           <SalesSection 
-            orderForm={orderForm}
-            setOrderForm={setOrderForm}
-            addToCart={addToCart}
-            removeFromCart={removeFromCart}
-            updateQuantity={updateQuantity}
-            clearCart={clearCart}
-            cartKey={cartKey}
+            onOpenPOS={() => setIsOrderDrawerOpen(true)}
+            isAdmin={isAdmin}
           />
         ) : activeTab === 'mantenimiento' ? (
           <MaintenanceSection />
@@ -373,7 +494,7 @@ export default function PanelApp() {
               pagination={{ currentPage, totalPages, onPageChange: loadUsersList }}
             />
 
-            <RolesSection />
+
           </>
         ) : activeTab === 'ajustes' ? (
           <div className="space-y-8">
@@ -485,7 +606,10 @@ export default function PanelApp() {
         )}
       </main>
 
-      <AdminSubNav activeId={activeTab} onItemClick={setActiveTab} />
+      <AdminSubNav activeId={activeTab} isAdmin={isAdmin} onItemClick={(tab) => {
+        if (!isAdmin && !['dashboard', 'ventas', 'ajustes'].includes(tab)) return;
+        setActiveTab(tab);
+      }} />
 
       <UserDrawer 
         isOpen={isDrawerOpen}
@@ -505,6 +629,24 @@ export default function PanelApp() {
         onPasswordsChange={setPasswords}
         onSubmitPassword={handleUpdatePassword}
         onClose={() => setIsProfileOpen(false)}
+      />
+
+      <OrderDrawer 
+        drawerOpen={isOrderDrawerOpen}
+        onClose={() => setIsOrderDrawerOpen(false)}
+        prodSearch={prodSearch}
+        setProdSearch={setProdSearch}
+        filteredProducts={filteredPOSProducts}
+        addToCart={addToCart}
+        removeFromCart={removeFromCart}
+        updateQuantity={updateQuantity}
+        orderForm={orderForm}
+        setOrderForm={setOrderForm}
+        cartTotal={cartTotal}
+        handleCreateOrder={handleCreateOrder}
+        onCancelOrder={handleCancelOrder}
+        saving={isSavingOrder}
+        safePrice={(v) => (typeof v === 'number' && !isNaN(v)) ? v : Number(v) || 0}
       />
     </div>
   );

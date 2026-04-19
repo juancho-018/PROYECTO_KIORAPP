@@ -53,6 +53,7 @@ export interface IHttpClient {
   baseURL: string;
   get<T>(url: string, headers?: Record<string, string>): Promise<HttpResponse<T>>;
   post<T>(url: string, body?: unknown, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
+  put<T>(url: string, body?: unknown, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
   patch<T>(url: string, body?: unknown, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
   delete<T>(url: string, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
 }
@@ -115,6 +116,19 @@ export class FetchHttpClient implements IHttpClient {
     const { headers, ...rest } = options;
     return this.request<T>(url, {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...headers,
+      },
+      body: body ? JSON.stringify(body) : undefined,
+      ...rest,
+    });
+  }
+
+  async put<T>(url: string, body?: unknown, options: HttpRequestOptions = {}): Promise<HttpResponse<T>> {
+    const { headers, ...rest } = options;
+    return this.request<T>(url, {
+      method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         ...headers,

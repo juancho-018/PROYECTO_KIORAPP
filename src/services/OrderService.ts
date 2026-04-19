@@ -45,7 +45,7 @@ export class OrderService {
     return res.data;
   }
 
-  async updateOrderStatus(id: number, estado: 'pendiente' | 'completada' | 'cancelada'): Promise<Order> {
+  async updateOrderStatus(id: number, estado: 'pendiente' | 'completada' | 'cancelada' | 'reembolsada'): Promise<Order> {
     const res = await this.httpClient.patch<Order>(
       `/orders/${id}/status`,
       { estado },

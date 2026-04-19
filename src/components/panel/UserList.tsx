@@ -110,7 +110,7 @@ export const UserList: React.FC<UserListProps> = ({
             </div>
           ) : (
             <ul className="divide-y divide-slate-100">
-              {users.map((u, i) => (
+              {(Array.isArray(users) ? users : []).map((u, i) => (
                 <li key={u.id_usu || `user-${i}`}>
                   <div className="flex flex-col gap-3 px-4 py-4 transition-colors hover:bg-slate-50/90 sm:flex-row sm:items-center sm:gap-4 sm:px-6 sm:py-3.5">
                     <div className="flex min-w-0 flex-1 items-center gap-3.5">
@@ -183,7 +183,7 @@ export const UserList: React.FC<UserListProps> = ({
                 ← Anterior
               </button>
               <div className="flex flex-wrap justify-center gap-1">
-                {pageItems.map((item, idx) =>
+                {(Array.isArray(pageItems) ? pageItems : []).map((item, idx) =>
                   item === 'ellipsis' ? (
                     <span
                       key={`ellipsis-${idx}`}

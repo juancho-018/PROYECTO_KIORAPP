@@ -16,21 +16,18 @@ export function OrderDetailModal({
   estadoColors,
   onRefund
 }: OrderDetailModalProps) {
-  // Prevent clicks inside the modal from closing it
   const handleModalClick = (e: React.MouseEvent) => {
     e.stopPropagation();
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-all duration-300" 
         onClick={onClose} 
         aria-label="Cerrar modal"
       />
       
-      {/* Modal Content */}
       <div 
         className="relative bg-white rounded-3xl shadow-2xl p-6 sm:p-8 w-full max-w-2xl animate-in zoom-in-95 duration-200 transform transition-all max-h-[90vh] flex flex-col"
         onClick={handleModalClick}
@@ -85,7 +82,7 @@ export function OrderDetailModal({
               </div>
               <span 
                 className={`inline-flex items-center ml-1 rounded-full px-3 py-1 text-xs font-black uppercase tracking-wide border shadow-sm ${
-                 estadoColors[detailOrder.estado ?? 'pendiente']?.replace('bg-', 'bg-').replace('text-', 'text-').concat(' border-current/10')
+                 estadoColors[detailOrder.estado ?? 'pendiente']
                 }`}
               >
                 {detailOrder.estado}
@@ -114,7 +111,6 @@ export function OrderDetailModal({
             )}
           </div>
 
-          {/* Items Table */}
           <div className="rounded-2xl border border-slate-200 overflow-hidden mb-6 shadow-sm bg-white">
             <table className="w-full text-sm">
               <thead className="bg-[#f8f9fa] border-b border-slate-200">

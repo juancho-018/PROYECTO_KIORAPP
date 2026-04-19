@@ -103,7 +103,7 @@ export const AdminSubNav: React.FC<AdminSubNavProps> = ({ activeId, onItemClick 
         className="flex flex-col items-center gap-1.5 rounded-[2rem] bg-[#2C2422]/95 py-3 shadow-[15px_0_40px_rgba(0,0,0,0.15)] backdrop-blur-2xl ring-1 ring-white/10"
         style={{ width: '60px' }}
       >
-        {items.map((item) => {
+        {(Array.isArray(items) ? items : []).map((item) => {
           const active = activeId === item.id;
           return (
             <button
