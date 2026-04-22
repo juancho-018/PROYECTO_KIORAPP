@@ -20,9 +20,9 @@ interface OrderDrawerProps {
   prodSearch: string;
   setProdSearch: (v: string) => void;
   filteredProducts: Product[];
-  categories?: any[];
-  selectedCategories?: number[];
-  setSelectedCategories?: (ids: number[]) => void;
+  categories: Category[];
+  selectedCategoryId: number | null;
+  setSelectedCategoryId: (id: number | null) => void;
   addToCart: (p: Product) => void;
   removeFromCart: (cod_prod: number) => void;
   updateQuantity: (cod_prod: number, delta: number, stock?: number) => void;
@@ -41,6 +41,9 @@ export function OrderDrawer({
   prodSearch,
   setProdSearch,
   filteredProducts,
+  categories,
+  selectedCategoryId,
+  setSelectedCategoryId,
   addToCart,
   removeFromCart,
   updateQuantity,
@@ -61,7 +64,7 @@ export function OrderDrawer({
         onClick={onClose} 
         aria-label="Cerrar nueva venta"
       />
-      <div className="relative ml-auto h-full w-full max-w-4xl bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-500">
+      <div className="relative ml-auto h-full w-full max-w-5xl bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-500">
         
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5 bg-white z-10 relative shadow-sm">
@@ -86,7 +89,7 @@ export function OrderDrawer({
           
           {/* Product Selector Section */}
           <div className="flex-1 flex flex-col border-r border-slate-100 bg-white">
-            <div className="p-4 border-b border-slate-100">
+            <div className="p-4 border-b border-slate-100 space-y-4">
               <div className="relative group">
                 <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-[#ec131e] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -99,9 +102,36 @@ export function OrderDrawer({
                   className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm font-medium text-slate-800 placeholder-slate-400 focus:bg-white focus:border-[#ec131e] focus:outline-none focus:ring-4 focus:ring-[#ec131e]/10 transition-all shadow-sm"
                 />
               </div>
+
+              {/* Category Filter */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+                <button
+                  onClick={() => setSelectedCategoryId(null)}
+                  className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border ${
+                    selectedCategoryId === null 
+                      ? 'bg-slate-900 text-white border-slate-900 shadow-sm' 
+                      : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
+                  }`}
+                >
+                  Todos
+                </button>
+                {categories.map(cat => (
+                  <button
+                    key={cat.cod_cat}
+                    onClick={() => setSelectedCategoryId(cat.cod_cat!)}
+                    className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border ${
+                      selectedCategoryId === cat.cod_cat
+                        ? 'bg-[#ec131e] text-white border-[#ec131e] shadow-sm'
+                        : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    {cat.nom_cat}
+                  </button>
+                ))}
+              </div>
             </div>
             
-            <div className="flex-1 overflow-y-auto p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 content-start">
+            <div className="flex-1 overflow-y-auto p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 content-start">
               {filteredProducts.map((p) => {
                 const stock = p.stock_actual ?? 0;
                 const min = p.stock_minimo ?? 0;
@@ -114,39 +144,36 @@ export function OrderDrawer({
                     disabled={outOfStock}
                     className="group flex flex-col text-left rounded-2xl border border-slate-100 bg-white p-4 shadow-sm hover:shadow-md hover:border-[#ec131e]/30 transition-all focus:outline-none focus:ring-2 focus:ring-[#ec131e]/20 active:scale-[0.98] disabled:opacity-60 disabled:bg-slate-50 disabled:active:scale-100 disabled:hover:border-slate-100 disabled:hover:shadow-sm disabled:cursor-not-allowed"
                   >
-                    {/* Product Image */}
-                    {p.imagen_prod && (
-                      <div className="w-full h-24 rounded-xl overflow-hidden bg-slate-50 mb-2">
+                    {/* Product Image - No zoom/scale */}
+                    <div className="w-full h-28 rounded-xl overflow-hidden bg-white mb-2 border border-slate-50">
+                      {p.imagen_prod ? (
                         <img 
                           src={getImageUrl(p.imagen_prod)} 
                           alt={p.nom_prod}
-                          className="w-full h-full object-cover"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                          className="w-full h-full object-contain p-2"
+                          onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/200x200?text=No+Image'; }}
                         />
-                      </div>
-                    )}
-                    <div className="flex justify-between items-start mb-2">
-                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded-md">COD: {p.cod_prod}</span>
+                      ) : (
+                        <div className="h-full w-full flex items-center justify-center text-slate-100 font-black text-2xl bg-slate-50">?</div>
+                      )}
                     </div>
-                    <h4 className="font-bold text-slate-800 line-clamp-2 group-hover:text-[#ec131e] transition-colors leading-tight min-h-[2.5rem]">
+                    <div className="flex justify-between items-start mb-1">
+                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100">COD: {p.cod_prod}</span>
+                    </div>
+                    <h4 className="font-bold text-slate-800 line-clamp-2 group-hover:text-[#ec131e] transition-colors leading-tight min-h-[2.5rem] text-sm">
                       {p.nom_prod}
                     </h4>
                     <div className="mt-auto flex items-end justify-between pt-3 w-full">
-                      <span className="text-xl font-black text-[#111827]">
-                        <span className="text-sm font-bold text-[#ec131e] mr-0.5">$</span>
+                      <span className="text-lg font-black text-[#111827]">
+                        <span className="text-xs font-bold text-[#ec131e] mr-0.5">$</span>
                         {safePrice(p.precio_prod).toLocaleString('es-CO')}
                       </span>
-                      <span className={`text-[10px] font-black px-2 py-1 rounded-md tracking-wider border flex items-center gap-1 ${
+                      <span className={`text-[9px] font-black px-2 py-1 rounded-md tracking-wider border flex items-center gap-1 ${
                         outOfStock ? 'bg-slate-100 text-slate-500 border-slate-200' :
                         stock <= min ? 'bg-amber-50 text-amber-600 border-amber-200' : 
                         'bg-emerald-50 text-emerald-600 border-emerald-200'
                       }`}>
-                        {outOfStock ? (
-                          <>
-                           <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                           Agotado
-                          </>
-                        ) : `Disponibles: ${stock}`}
+                        {outOfStock ? 'Agotado' : `Stock: ${stock}`}
                       </span>
                     </div>
                   </button>
@@ -158,14 +185,14 @@ export function OrderDrawer({
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                   </div>
                   <p className="text-sm font-bold text-slate-600">No se encontraron productos</p>
-                  <p className="text-xs text-slate-400 mt-1">Intenta con otro término de búsqueda.</p>
+                  <p className="text-xs text-slate-500 mt-1">Intenta cambiar la categoría o el término de búsqueda.</p>
                 </div>
               )}
             </div>
           </div>
 
           {/* Cart Section */}
-          <div className="w-full md:w-[380px] flex flex-col bg-slate-50 border-l border-slate-200 shadow-[-10px_0_30px_rgba(0,0,0,0.03)] z-10">
+          <div className="w-full md:w-[400px] flex flex-col bg-slate-50 border-l border-slate-200 shadow-[-10px_0_30px_rgba(0,0,0,0.03)] z-10">
             <div className="p-4 border-b border-slate-200 bg-white flex items-center justify-between">
               <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
                 <svg className="h-4 w-4 text-[#ec131e]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -193,13 +220,15 @@ export function OrderDrawer({
                 orderForm.items.map((item) => (
                   <div key={item.cod_prod} className="flex gap-3 bg-white p-3 rounded-2xl border border-slate-200 shadow-sm animate-in slide-in-from-right-2 duration-300 transition-all hover:border-slate-300">
                     {/* Item image thumbnail */}
-                    {item.url_imagen && (
-                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-slate-50 shrink-0">
-                        <img src={getImageUrl(item.url_imagen)} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                      </div>
-                    )}
+                    <div className="w-12 h-12 rounded-lg overflow-hidden bg-slate-50 shrink-0 border border-slate-100">
+                      {item.url_imagen ? (
+                        <img src={getImageUrl(item.url_imagen)} alt="" className="w-full h-full object-contain p-1" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-slate-300">?</div>
+                      )}
+                    </div>
                     <div className="flex-1 min-w-0 flex flex-col justify-between">
-                      <h5 className="text-sm font-bold text-slate-800 line-clamp-2 leading-tight mb-2 pr-4">{item.nom_prod}</h5>
+                      <h5 className="text-xs font-bold text-slate-800 line-clamp-2 leading-tight mb-2 pr-4">{item.nom_prod}</h5>
                       <div className="flex items-center justify-between mt-auto">
                         <div className="flex items-center gap-0.5 border border-slate-200 rounded-lg p-0.5 bg-slate-50 w-fit">
                           <button 
@@ -211,7 +240,7 @@ export function OrderDrawer({
                           </button>
                           <span className="w-8 text-center text-xs font-black text-slate-800">{item.cantidad}</span>
                           <button 
-                            onClick={() => updateQuantity(item.cod_prod, 1, filteredProducts.find(x => x.cod_prod === item.cod_prod)?.stock_actual)} 
+                            onClick={() => updateQuantity(item.cod_prod, 1)} 
                             className="w-7 h-7 flex items-center justify-center bg-white rounded-md shadow-sm border border-slate-100 hover:text-[#ec131e] font-black transition-colors focus:outline-none"
                             aria-label="Aumentar cantidad"
                           >

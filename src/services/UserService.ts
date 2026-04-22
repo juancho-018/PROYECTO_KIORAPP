@@ -71,8 +71,12 @@ export class UserService {
   }
 
   async updateUser(id: string | number, dto: Partial<RegisterUserDto>): Promise<void> {
-    const cleanDto: Partial<RegisterUserDto> = { ...dto };
+    const cleanDto: any = { ...dto };
     delete cleanDto.password;
+    // El rol se actualiza por un endpoint separado (/auth/users/:id/role)
+    delete cleanDto.rol_usu;
+    delete cleanDto.rol;
+    
     const response = await this.httpClient.patch<unknown>(`/auth/users/${id}`, cleanDto, {
       headers: this.getAuthHeaders()
     });
@@ -126,7 +130,10 @@ export class UserService {
   }
 
   async adminUpdatePassword(id: string | number, password: string): Promise<void> {
-    const response = await this.httpClient.patch<unknown>(`/auth/users/${id}/password`, { password }, {
+    const response = await this.httpClient.patch<unknown>(`/auth/users/${id}/password`, { 
+      password: password,
+      new_password: password // Algunos microservicios usan este nombre
+    }, {
       headers: this.getAuthHeaders()
     });
     if (!response.ok) {

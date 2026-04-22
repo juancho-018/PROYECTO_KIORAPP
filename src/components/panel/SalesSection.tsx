@@ -76,7 +76,7 @@ export function SalesSection({ onOpenPOS }: { onOpenPOS: () => void; isAdmin?: b
       return;
     }
     try {
-      if (type === 'excel') throw new Error('Exportación a Excel no implementada');
+      if (type === 'excel') await orderService.exportExcel();
       else await orderService.exportPdf();
       alertService.showToast('success', `Reporte ${type.toUpperCase()} generado`);
     } catch (e) {
@@ -94,6 +94,25 @@ export function SalesSection({ onOpenPOS }: { onOpenPOS: () => void; isAdmin?: b
   };
 
   const handleStatusChange = async (id: number, newStatus: any) => {
+    const currentOrder = orders.find(o => o.id_vent === id);
+    if (currentOrder?.estado === 'cancelada') {
+      alertService.showToast('warning', 'No se puede modificar una venta ya cancelada');
+      return;
+    }
+
+    if (newStatus === 'cancelada') {
+      const ok = await alertService.showConfirm(
+        '¿Cancelar Pedido?',
+        'Esta acción no se puede deshacer y la venta quedará bloqueada.',
+        'Sí, cancelar',
+        'Volver'
+      );
+      if (!ok) {
+        void loadData();
+        return;
+      }
+    }
+
     try {
       await orderService.updateOrderStatus(id, newStatus);
       alertService.showToast('success', `Venta #${id} ahora está ${newStatus}`);
@@ -104,6 +123,7 @@ export function SalesSection({ onOpenPOS }: { onOpenPOS: () => void; isAdmin?: b
       } else {
         alertService.showToast('error', getErrorMessage(e, 'Error al actualizar estado'));
       }
+      void loadData();
     }
   };
 
@@ -284,8 +304,9 @@ export function SalesSection({ onOpenPOS }: { onOpenPOS: () => void; isAdmin?: b
                           {isAdmin ? (
                             <select
                               value={o.estado || 'pendiente'}
+                              disabled={o.estado === 'cancelada'}
                               onChange={(e) => handleStatusChange(o.id_vent!, e.target.value)}
-                              className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider border outline-none cursor-pointer transition-all ${ESTADO_COLORS[o.estado ?? 'pendiente']}`}
+                              className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider border outline-none cursor-pointer transition-all disabled:opacity-70 disabled:cursor-not-allowed ${ESTADO_COLORS[o.estado ?? 'pendiente']}`}
                             >
                               <option value="pendiente">Pendiente</option>
                               <option value="completada">Completada</option>

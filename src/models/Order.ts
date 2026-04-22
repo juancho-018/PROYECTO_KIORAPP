@@ -14,6 +14,7 @@ export interface OrderItem {
   precio_unit?: number;
   nom_prod?: string;
   url_imagen?: string;
+  stock_actual?: number;
 }
 
 export interface Order {

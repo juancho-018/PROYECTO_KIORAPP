@@ -1,37 +1,53 @@
 # Seguridad — Kiora Frontend
 
-Este documento describe el **modelo de amenazas del cliente**, límites conocidos y recomendaciones para despliegues reales.
+Este documento describe el modelo de seguridad, controles de acceso y políticas de protección de datos del frontend de Kiora.
 
-## Alcance
+---
 
-La aplicación es un sitio **estático (Astro `output: 'static'`)** con **React en el cliente**. La autorización definitiva debe estar siempre en el **backend** (API): el front solo oculta rutas y UX; **no** sustituye controles de acceso en servidor.
+## 1. Control de Acceso y Roles
 
-## Token JWT y almacenamiento
+El sistema implementa una verificación de roles basada en el JWT:
+- **Admin**: Acceso completo a gestión de usuarios, reseteo de claves, edición de inventario y exportación de reportes contables.
+- **Cliente / Operador**: Acceso limitado al Punto de Venta (POS) y visualización básica. No puede modificar roles ni resetear contraseñas de terceros.
 
-- Hoy el token se guarda en **`localStorage`** (`AuthService`), lo que lo hace accesible a cualquier script en la página.
-- **Riesgo principal:** si se inyecta JavaScript malicioso (XSS), el atacante puede leer el token.
-- **Mitigación recomendada (backend):** sesión con **cookies `HttpOnly` + `Secure` + `SameSite`**, con refresh en servidor; el front solo dispara login/logout y no guarda el JWT en JS.
-- **Mitigación en front:** evitar `dangerouslySetInnerHTML`, sanitizar HTML si se añade contenido rico, y en despliegue configurar **Content-Security-Policy (CSP)** acorde al bundle (sin `'unsafe-inline'` salvo que sea imprescindible).
+**Nota Crítica:** La autorización visual en el frontend es una medida de UX. El **API Gateway** y los microservicios realizan la validación definitiva de permisos en cada petición.
 
-## Sesión e inactividad
+---
 
-- `SessionManager` cierra sesión por inactividad y avisa antes del corte; renueva el token cuando el JWT está cerca de expirar.
-- Los tiempos son **orientativos en cliente**; la API debe rechazar tokens expirados o revocados.
+## 2. Gestión de Credenciales Administrativas
 
-## Variables de entorno
+Se ha implementado un módulo de **Reseteo Administrativo de Contraseñas**:
+- Solo accesible para usuarios con rol `admin`.
+- Requiere una confirmación explícita mediante un diálogo de seguridad antes de proceder.
+- Utiliza un endpoint dedicado (`/auth/users/:id/password`) que no requiere conocer la contraseña anterior del usuario afectado, permitiendo la recuperación de cuentas bloqueadas.
 
-- `PUBLIC_API_URL`: prefijo público; no coloques secretos en variables `PUBLIC_*` de Astro.
-- `PUBLIC_WEGLOT_API_KEY`: clave del widget de traducción Weglot (opcional). Si no está definida, no se carga el script de Weglot. Las claves Weglot están pensadas para uso en cliente; aun así evita compartirlas en repositorios públicos sin control.
+---
 
-## Transporte
+## 3. Integridad de Datos en Ventas
 
-- En producción, servir la app y la API solo por **HTTPS**.
+Para prevenir el fraude o errores operativos, el sistema aplica reglas de integridad:
+- **Estados Inmutables**: Una vez que una venta se marca como `cancelada`, el frontend bloquea cualquier cambio posterior de estado.
+- **Validación de Inventario**: El Punto de Venta (POS) impide la creación de pedidos con cantidades que excedan el stock validado por el servicio de inventario, reduciendo el riesgo de sobreventa.
 
-## Despliegue
+---
 
-- Configurar cabeceras de seguridad en el proveedor (Netlify `_headers`, Vercel, nginx, etc.): al menos **CSP**, **X-Content-Type-Options**, **Referrer-Policy** y **Permissions-Policy** según necesidad.
+## 4. Almacenamiento y Sesión
 
-## Referencias internas
+- **JWT (JSON Web Token)**: Almacenado en `localStorage`. Se recomienda para producción el uso de cookies `HttpOnly` para mitigar riesgos de XSS.
+- **Monitoreo de Inactividad**: El `SessionManager` cierra la sesión automáticamente tras periodos prolongados de inactividad, limpiando los datos sensibles de la memoria del navegador.
+- **Sanitización**: Se evita el uso de `dangerouslySetInnerHTML` para prevenir ataques de inyección de scripts.
 
-- Cliente HTTP: `src/core/http/HttpClient.ts`
-- Autenticación: `src/services/AuthService.ts`
+---
+
+## 5. PWA y Seguridad Local
+
+- **Service Workers**: Configurados para manejar el caché de activos estáticos de forma segura.
+- **Manifest**: Define una identidad única para la aplicación, evitando la suplantación de la interfaz en dispositivos móviles.
+
+---
+
+## 6. Recomendaciones de Despliegue
+
+1.  **HTTPS Obligatorio**: Nunca desplegar la aplicación sobre HTTP.
+2.  **CSP (Content Security Policy)**: Configurar cabeceras CSP estrictas para permitir únicamente conexiones al API Gateway y a los dominios de Stripe.
+3.  **Auditoría de Roles**: Verificar periódicamente que los permisos asignados en el microservicio de usuarios coincidan con las necesidades operativas.

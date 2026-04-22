@@ -1,0 +1,17 @@
+{
+  "name": "Kiora Administrative Panel",
+  "short_name": "Kiora",
+  "description": "Sistema de gestión para negocios de alimentos",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ec131e",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

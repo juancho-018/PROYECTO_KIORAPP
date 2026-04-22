@@ -1,8 +1,9 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import Fuse from 'fuse.js';
 import { authService, userService, alertService, productService, orderService, notificationService } from '@/config/setup';
 import { SessionManager } from '@/services/SessionManager';
 import type { User } from '@/models/User';
-import type { Product } from '@/models/Product';
+import type { Product, Category } from '@/models/Product';
 import type { CreateOrderDto } from '@/services/OrderService';
 import type { RegisterUserDto } from '@/services/UserService';
 
@@ -36,6 +37,8 @@ export default function PanelApp() {
   const [isOrderDrawerOpen, setIsOrderDrawerOpen] = useState(false);
   const [prodSearch, setProdSearch] = useState('');
   const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [orderForm, setOrderForm] = useState<CreateOrderDto>({ items: [], metodopago_usu: 'efectivo' });
   const [isSavingOrder, setIsSavingOrder] = useState(false);
 
@@ -138,26 +141,57 @@ export default function PanelApp() {
   }, [usersList, searchTerm]);
 
   // POS Handlers
-  const loadPOSProducts = async () => {
+  const loadPOSData = async () => {
     try {
-      const res = await productService.getProducts();
-      setAllProducts(Array.isArray(res) ? res : (res?.data || []));
-    } catch (e) { console.error('Error loading POS products:', e); }
+      const [prodRes, catRes] = await Promise.all([
+        productService.getProducts(),
+        productService.getCategories()
+      ]);
+      setAllProducts(Array.isArray(prodRes) ? prodRes : (prodRes?.data || []));
+      setCategories(Array.isArray(catRes) ? catRes : (catRes?.data || []));
+    } catch (e) { console.error('Error loading POS data:', e); }
   };
 
   useEffect(() => {
-    if (isOrderDrawerOpen) void loadPOSProducts();
+    if (isOrderDrawerOpen) void loadPOSData();
   }, [isOrderDrawerOpen]);
 
   const filteredPOSProducts = useMemo(() => {
-    const q = prodSearch.trim().toLowerCase();
-    if (!q) return allProducts;
-    return allProducts.filter(p => p.nom_prod.toLowerCase().includes(q) || String(p.cod_prod).includes(q));
-  }, [allProducts, prodSearch]);
+    let result = allProducts;
+
+    // Filter by Category
+    if (selectedCategoryId) {
+      result = result.filter(p => p.fk_cod_cats?.includes(selectedCategoryId));
+    }
+
+    // Search with Fuse.js (Typo tolerant)
+    const q = prodSearch.trim();
+    if (q) {
+      const fuse = new Fuse(result, { 
+        keys: ['nom_prod', 'cod_prod'], 
+        threshold: 0.3,
+        distance: 100,
+        includeMatches: true
+      });
+      result = fuse.search(q).map(r => r.item);
+    }
+
+    return result;
+  }, [allProducts, prodSearch, selectedCategoryId]);
 
   const addToCart = (p: Product) => {
+    const stock = p.stock_actual || 0;
+    if (stock <= 0) {
+      alertService.showToast('error', 'Producto sin stock disponible');
+      return;
+    }
+
     const existing = orderForm.items.find(i => i.cod_prod === p.cod_prod);
     if (existing) {
+      if (existing.cantidad >= stock) {
+        alertService.showToast('warning', `Solo hay ${stock} unidades disponibles`);
+        return;
+      }
       setOrderForm(f => ({
         ...f,
         items: f.items.map(i => i.cod_prod === p.cod_prod ? { ...i, cantidad: i.cantidad + 1 } : i)
@@ -170,7 +204,8 @@ export default function PanelApp() {
           cantidad: 1, 
           precio_unit: p.precio_prod,
           nom_prod: p.nom_prod,
-          url_imagen: p.imagen_prod
+          url_imagen: p.imagen_prod,
+          stock_actual: stock
         }]
       }));
     }
@@ -185,8 +220,14 @@ export default function PanelApp() {
       ...f,
       items: f.items.map(i => {
         if (i.cod_prod === cod_prod) {
+          const limit = maxStock ?? i.stock_actual ?? 999;
           const newCant = Math.max(1, i.cantidad + delta);
-          if (maxStock !== undefined && newCant > maxStock) return i;
+          
+          if (delta > 0 && newCant > limit) {
+            alertService.showToast('warning', `Límite de stock alcanzado (${limit})`);
+            return i;
+          }
+          
           return { ...i, cantidad: newCant };
         }
         return i;
@@ -202,7 +243,18 @@ export default function PanelApp() {
     if (!orderForm.items.length) return;
     setIsSavingOrder(true);
     try {
-      await orderService.createOrder(orderForm);
+      const order = await orderService.createOrder(orderForm);
+      
+      // Stripe Integration
+      if (orderForm.metodopago_usu === 'tarjeta' && order.id_vent) {
+        alertService.showToast('info', 'Redirigiendo a pasarela de pago...');
+        const { checkoutUrl } = await orderService.createCheckoutSession(order.id_vent);
+        if (checkoutUrl) {
+          window.location.href = checkoutUrl;
+          return;
+        }
+      }
+
       alertService.showToast('success', 'Venta realizada con éxito');
       setOrderForm({ items: [], metodopago_usu: 'efectivo' });
       setIsOrderDrawerOpen(false);
@@ -232,7 +284,14 @@ export default function PanelApp() {
     setIsRegistering(true);
     try {
       if (isEditing && editingUser?.id_usu) {
+        // Actualizar datos básicos (sin el rol en el body del patch principal si el backend lo prohíbe)
         await userService.updateUser(editingUser.id_usu, newUser);
+        
+        // Si el rol cambió, actualizarlo por el endpoint dedicado
+        if (newUser.rol_usu !== editingUser.rol_usu) {
+            await userService.updateRole(editingUser.id_usu, newUser.rol_usu);
+        }
+
         alertService.showToast('success', 'Usuario actualizado');
       } else {
         await userService.registerUser(newUser);
@@ -544,6 +603,9 @@ export default function PanelApp() {
         prodSearch={prodSearch}
         setProdSearch={setProdSearch}
         filteredProducts={filteredPOSProducts}
+        categories={categories}
+        selectedCategoryId={selectedCategoryId}
+        setSelectedCategoryId={setSelectedCategoryId}
         addToCart={addToCart}
         removeFromCart={removeFromCart}
         updateQuantity={updateQuantity}

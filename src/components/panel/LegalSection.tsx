@@ -149,7 +149,6 @@ export function LegalSection({ defaultTab }: { defaultTab?: LegalTab }) {
 
         <div className="mt-12 pt-8 border-t border-slate-100 text-center">
           <p className="text-xs text-slate-400 font-medium">© 2024 Kiora S.A. Todos los derechos reservados.</p>
-          <a href="mailto:legal@kiora.com" className="text-[11px] font-bold text-[#ec131e] hover:underline mt-2 inline-block">legal@kiora.com</a>
         </div>
       </div>
     </div>
