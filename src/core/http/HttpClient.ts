@@ -50,6 +50,7 @@ export interface HttpResponse<T> {
  * Interface abstracting the HTTP client (DIP).
  */
 export interface IHttpClient {
+  baseURL: string;
   get<T>(url: string, headers?: Record<string, string>): Promise<HttpResponse<T>>;
   post<T>(url: string, body?: unknown, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
   put<T>(url: string, body?: unknown, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
@@ -138,6 +139,23 @@ export class FetchHttpClient implements IHttpClient {
     });
   }
 
+  async put<T>(url: string, body?: unknown, options: HttpRequestOptions = {}): Promise<HttpResponse<T>> {
+    const { headers, ...rest } = options;
+    const isFormData = body instanceof FormData;
+    
+    const finalHeaders: Record<string, string> = { ...headers };
+    if (!isFormData) {
+      finalHeaders['Content-Type'] = 'application/json';
+    }
+
+    return this.request<T>(url, {
+      method: 'PUT',
+      headers: finalHeaders,
+      body: isFormData ? (body as any) : (body ? JSON.stringify(body) : undefined),
+      ...rest,
+    });
+  }
+
   async patch<T>(url: string, body?: unknown, options: HttpRequestOptions = {}): Promise<HttpResponse<T>> {
     const { headers, ...rest } = options;
     const isFormData = body instanceof FormData;
@@ -155,22 +173,7 @@ export class FetchHttpClient implements IHttpClient {
     });
   }
 
-  async put<T>(url: string, body?: unknown, options: HttpRequestOptions = {}): Promise<HttpResponse<T>> {
-    const { headers, ...rest } = options;
-    const isFormData = body instanceof FormData;
-    
-    const finalHeaders: Record<string, string> = { ...headers };
-    if (!isFormData) {
-      finalHeaders['Content-Type'] = 'application/json';
-    }
 
-    return this.request<T>(url, {
-      method: 'PUT',
-      headers: finalHeaders,
-      body: isFormData ? (body as any) : (body ? JSON.stringify(body) : undefined),
-      ...rest,
-    });
-  }
 
   async delete<T>(url: string, options: HttpRequestOptions = {}): Promise<HttpResponse<T>> {
     const { headers, ...rest } = options;

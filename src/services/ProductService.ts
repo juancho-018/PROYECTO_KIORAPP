@@ -1,6 +1,16 @@
-import { type IHttpClient } from '../core/http/HttpClient';
-import { type AuthService } from './AuthService';
+import type { IHttpClient } from '../core/http/HttpClient';
+import type { AuthService } from './AuthService';
 import type { Product, Category, PaginatedProducts } from '../models/Product';
+
+export interface CreateProductDto {
+  nom_prod: string;
+  desc_prod?: string;
+  precio_prod: number;
+  stock_actual?: number;
+  stock_minimo?: number;
+  fk_cod_cats?: number[];
+  imagen?: File;
+}
 
 export class ProductService {
   constructor(
@@ -13,43 +23,78 @@ export class ProductService {
     return token ? { Authorization: `Bearer ${token}` } : {};
   }
 
+  private ensureArray<T>(data: any): T[] {
+    if (Array.isArray(data)) return data;
+    if (data && typeof data === 'object' && Array.isArray(data.data)) return data.data;
+    return [];
+  }
+
+  private normalizeProduct(p: any): Product {
+    return {
+      ...p,
+      precio_prod: p.precio_prod ?? p.precio_unitario ?? 0,
+      desc_prod: p.desc_prod ?? p.descrip_prod,
+      imagen_prod: p.imagen_prod ?? p.url_imagen,
+      fk_cod_cats: p.fk_cod_cats || (p.fk_cod_cat ? [p.fk_cod_cat] : [])
+    };
+  }
+
   // Products
-  async getProducts(page: number = 1, limit: number = 20): Promise<PaginatedProducts> {
-    const response = await this.httpClient.get<PaginatedProducts>(
+  async getProducts(page: number = 1, limit: number = 20): Promise<Product[] | PaginatedProducts> {
+    const response = await this.httpClient.get<any>(
       `/products?page=${page}&limit=${limit}`,
       this.getAuthHeaders()
     );
     if (!response.ok || !response.data) throw new Error(response.error || 'Error retrieving products');
-    return response.data;
+    
+    const data = response.data;
+    if (Array.isArray(data)) {
+        return data.map(p => this.normalizeProduct(p));
+    }
+    
+    if (data.data && Array.isArray(data.data)) {
+        return {
+            ...data,
+            data: data.data.map((p: any) => this.normalizeProduct(p))
+        };
+    }
+
+    return [];
   }
 
   async getProductById(id: number): Promise<Product> {
     const response = await this.httpClient.get<Product>(`/products/${id}`, this.getAuthHeaders());
     if (!response.ok || !response.data) throw new Error(response.error || 'Error retrieving product');
-    return response.data;
+    return this.normalizeProduct(response.data);
   }
 
-  async createProduct(product: Partial<Product> | FormData): Promise<Product> {
-    const response = await this.httpClient.post<Product>('/products', product, { headers: this.getAuthHeaders() });
+  async getLowStockProducts(): Promise<Product[]> {
+    const response = await this.httpClient.get<any>('/products/low-stock', this.getAuthHeaders());
+    if (!response.ok || !response.data) throw new Error(response.error || 'Error retrieving low stock products');
+    return this.ensureArray<any>(response.data).map(p => this.normalizeProduct(p));
+  }
+
+  // Alias for backward compatibility with older components
+  async getLowStock(): Promise<{ data: Product[] }> {
+    const data = await this.getLowStockProducts();
+    return { data };
+  }
+
+  async createProduct(dto: CreateProductDto | FormData): Promise<Product> {
+    const response = await this.httpClient.post<Product>('/products', dto, { headers: this.getAuthHeaders() });
     if (!response.ok || !response.data) throw new Error(response.error || 'Error creating product');
-    return response.data;
+    return this.normalizeProduct(response.data);
   }
 
-  async updateProduct(id: number, product: Partial<Product> | FormData): Promise<Product> {
-    const response = await this.httpClient.put<Product>(`/products/${id}`, product, { headers: this.getAuthHeaders() });
+  async updateProduct(id: number, dto: CreateProductDto | FormData): Promise<Product> {
+    const response = await this.httpClient.put<Product>(`/products/${id}`, dto, { headers: this.getAuthHeaders() });
     if (!response.ok || !response.data) throw new Error(response.error || 'Error updating product');
-    return response.data;
+    return this.normalizeProduct(response.data);
   }
 
   async deleteProduct(id: number): Promise<void> {
     const response = await this.httpClient.delete(`/products/${id}`, { headers: this.getAuthHeaders() });
     if (!response.ok) throw new Error(response.error || 'Error deleting product');
-  }
-
-  async getLowStock(): Promise<{ data: Product[] }> {
-    const response = await this.httpClient.get<{ data: Product[] }>('/products/low-stock', this.getAuthHeaders());
-    if (!response.ok || !response.data) throw new Error(response.error || 'Error retrieving low stock products');
-    return response.data;
   }
 
   // Categories

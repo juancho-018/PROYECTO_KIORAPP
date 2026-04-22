@@ -20,7 +20,14 @@ export interface Suministra {
   cod_prod: number;
   stock: number;
   stock_minimo: number;
-  nom_prov?: string; // Joined field
+  nom_prov?: string;
+}
+
+export interface LowStockItem {
+  cod_prod: number;
+  nom_prod: string;
+  stock_actual: number;
+  stock_minimo: number;
 }
 
 export interface PaginatedSuppliers {

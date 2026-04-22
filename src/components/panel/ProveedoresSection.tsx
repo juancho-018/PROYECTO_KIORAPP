@@ -182,12 +182,9 @@ export function ProveedoresSection() {
 
       <SupplierDrawer 
         isOpen={isDrawerOpen}
-        isEditing={isEditing}
-        isSaving={isSaving}
-        supplierData={currentSupplier}
-        onDataChange={setCurrentSupplier}
-        onSubmit={handleSave}
+        supplier={isEditing ? (currentSupplier as Supplier) : null}
         onClose={() => setIsDrawerOpen(false)}
+        onSuccess={loadData}
       />
     </>
   );

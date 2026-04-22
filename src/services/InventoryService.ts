@@ -6,7 +6,7 @@ export class InventoryService {
   constructor(
     private httpClient: IHttpClient,
     private authService: AuthService
-  ) {}
+  ) { }
 
   private getAuthHeaders(): Record<string, string> {
     const token = this.authService.getToken();
@@ -42,7 +42,7 @@ export class InventoryService {
 
   // Movements
   async getMovements(cod_prod?: number, page: number = 1, limit: number = 20): Promise<PaginatedMovements> {
-    const url = cod_prod 
+    const url = cod_prod
       ? `/inventory/movements?cod_prod=${cod_prod}&page=${page}&limit=${limit}`
       : `/inventory/movements?page=${page}&limit=${limit}`;
     const response = await this.httpClient.get<PaginatedMovements>(url, this.getAuthHeaders());

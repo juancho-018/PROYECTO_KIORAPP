@@ -27,7 +27,7 @@ export function OrdersSection() {
     try {
       if (activeSubTab === 'ventas') {
         const res = await orderService.getOrders();
-        if (res && res.data) setOrders(res.data);
+        if (res) setOrders(Array.isArray(res) ? res : (res.data || []));
       } else {
         const res = await orderService.getInvoices();
         if (res && res.data) setInvoices(res.data);
@@ -41,7 +41,7 @@ export function OrdersSection() {
 
   const handleOpenDetail = async (order: Order) => {
     try {
-      const detailed = await orderService.getOrderById(order.id_vent);
+      const detailed = await orderService.getOrderById(order.id_vent!);
       setSelectedOrder(detailed);
       setIsDetailOpen(true);
     } catch (error: any) {
@@ -117,7 +117,7 @@ export function OrdersSection() {
 
   const handleUpdateStatus = async (id: number, status: string) => {
     try {
-      await orderService.updateOrderStatus(id, status);
+      await orderService.updateOrderStatus(id, status as any);
       alertService.showToast('success', `Estado actualizado a ${status}`);
       loadData();
     } catch (error: any) {
@@ -188,13 +188,13 @@ export function OrdersSection() {
                 <tr key={order.id_vent} className="hover:bg-slate-50 transition-colors">
                   <td className="px-6 py-4">
                     <p className="font-black text-gray-900">#{order.id_vent}</p>
-                    <p className="text-[10px] text-gray-400">{new Date(order.fecha_vent).toLocaleDateString()}</p>
+                    <p className="text-[10px] text-gray-400">{order.fecha_vent ? new Date(order.fecha_vent).toLocaleDateString() : '—'}</p>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">ID Usuario: {order.metodopago_usu || 'Cliente'}</td>
                   <td className="px-6 py-4 text-center">
                     <select 
                       value={order.estado}
-                      onChange={(e) => handleUpdateStatus(order.id_vent, e.target.value)}
+                      onChange={(e) => handleUpdateStatus(order.id_vent!, e.target.value)}
                       className={`text-[10px] font-black uppercase px-3 py-1 rounded-full border-none ring-1 appearance-none cursor-pointer text-center ${
                         order.estado === 'completada' ? 'bg-emerald-50 text-emerald-600 ring-emerald-100' : 
                         order.estado === 'cancelada' ? 'bg-red-50 text-red-600 ring-red-100' : 
@@ -212,7 +212,7 @@ export function OrdersSection() {
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
                        <button onClick={() => handleOpenDetail(order)} className="w-8 h-8 rounded-lg bg-red-50 text-[#ec131e] flex items-center justify-center hover:bg-red-100" title="Ver Detalle"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg></button>
-                       <button onClick={() => handleDeleteOrder(order.id_vent)} className="w-8 h-8 rounded-lg bg-gray-50 text-gray-400 flex items-center justify-center hover:bg-gray-100" title="Eliminar"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+                       <button onClick={() => handleDeleteOrder(order.id_vent!)} className="w-8 h-8 rounded-lg bg-gray-50 text-gray-400 flex items-center justify-center hover:bg-gray-100" title="Eliminar"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
                     </div>
                   </td>
                 </tr>

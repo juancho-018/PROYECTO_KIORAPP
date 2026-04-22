@@ -32,7 +32,6 @@ const {
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="theme-color" content="#ec131e" />
     <link rel="apple-touch-icon" href="/favicon.svg" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="mobile-web-app-capable" content="yes" />
     <script>
       if ('serviceWorker' in navigator) {
@@ -40,6 +39,10 @@ const {
           navigator.serviceWorker.register('/sw.js', { scope: '/' })
             .catch(error => console.error('PWA Registration Failed:', error));
         });
+      }
+      // Add is-panel class if on panel route
+      if (window.location.pathname.startsWith('/panel')) {
+        document.body.classList.add('is-panel');
       }
     </script>
     <title>{title}</title>
@@ -59,6 +62,9 @@ const {
             bottom: 1.5rem !important;
             right: 1.5rem !important;
             z-index: 9999 !important;
+          }
+          body.is-panel .weglot-container {
+            display: none !important;
           }
           .wg-default, .wg-default .wg-li {
             background: rgba(255, 255, 255, 0.95) !important;

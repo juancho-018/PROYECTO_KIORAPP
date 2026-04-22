@@ -16,8 +16,8 @@ export const StockProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const refreshLowStock = useCallback(async () => {
     try {
-      const items = await productService.fetchLowStock();
-      setLowStockItems(Array.isArray(items) ? items : []);
+      const items = await productService.getLowStock();
+      setLowStockItems(items && 'data' in items ? (items as any).data : (Array.isArray(items) ? items : []));
     } catch {
       // Keep last successful snapshot to avoid noisy UI resets.
     }

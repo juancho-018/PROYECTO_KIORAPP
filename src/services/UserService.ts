@@ -60,7 +60,7 @@ export class UserService {
     }
   }
 
-  async unlockUser(id: string): Promise<boolean> {
+  async unlockUser(id: string | number): Promise<boolean> {
     const response = await this.httpClient.patch<User>(`/auth/users/${id}/unlock`, undefined, {
       headers: this.getAuthHeaders()
     });

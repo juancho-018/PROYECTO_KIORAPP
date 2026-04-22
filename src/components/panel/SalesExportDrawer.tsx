@@ -13,14 +13,11 @@ export const SalesExportDrawer: React.FC<SalesExportDrawerProps> = ({ isOpen, on
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      const blob = await orderService.downloadExport(format);
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `reporte_ventas_detallado.${format === 'excel' ? 'xlsx' : 'pdf'}`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      if (format === 'excel') {
+        alertService.showToast('warning', 'Exportación a Excel no implementada');
+      } else {
+        await orderService.exportPdf();
+      }
       
       alertService.showToast('success', 'Preparando reporte detallado...');
       onClose();

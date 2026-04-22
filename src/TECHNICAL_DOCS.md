@@ -22,48 +22,56 @@ La aplicación está construida con **Astro v5** y **React v19**. Sigue los prin
 Gestiona todo el flujo de acceso y seguridad:
 - **`LoginForm.tsx`**: Validación de credenciales y establecimiento de sesión.
 - **`RecoverPasswordForm.tsx`**: Proceso de solicitud de recuperación vía email.
-- **`ResetPasswordForm.tsx`**: Formulario seguro para establecer una nueva contraseña mediante tokens.
-- **`EmailSentMessage.tsx`**: Feedback visual tras acciones de recuperación.
+- **`AuthService.ts`**: Lógica de persistencia de tokens JWT.
 
-### 2.2 Módulo Administrativo (`src/components/panel/`)
-El núcleo de gestión del sistema (Refactorizado):
-- **`PanelApp.tsx`**: Orquestador principal del dashboard.
-- **`UserList.tsx`**: Lista paginada de usuarios con filtro **solo sobre la página cargada** (no sustituye búsqueda global en API).
-- **`UserDrawer` / `ProfileDrawer`**: Gestión de datos mediante paneles laterales (Offcanvas).
-- **`AdminNavbar` / `AdminSubNav`**: Sistema de navegación multinivel.
+### 2.2 Módulo de Inventario (`src/components/inventory/`)
+Control de existencias y logística:
+- **`InventoryService.ts`**: API para movimientos de stock, gestión de proveedores y alertas de stock mínimo.
+- **`Movement` / `Supplier`**: Modelos de datos para trazabilidad logística.
 
-### 2.3 Módulo de Ayuda (`src/components/help/`)
-- **`HelpCenter.tsx`**: Centro de soporte para usuarios, con preguntas frecuentes y guías de uso.
+### 2.3 Módulo de Productos (`src/components/products/`)
+Gestión del catálogo comercial:
+- **`ProductService.ts`**: Operaciones CRUD para productos y categorías. Nota: Se corrigió la propiedad `fk_cod_cat` para sincronizar con el backend.
+- **Categorización**: Soporte para filtrado y subida de imágenes (Multer en el BE).
 
-### 2.4 Módulo Global y UI (`src/components/ui/`)
-- **`GlobalControls.tsx`**: Controles transversales a toda la aplicación.
-- **`cargando.jsx`**: Sistema de feedback de carga (Loading overlays).
+### 2.4 Módulo de Ventas y Facturación (`src/services/OrderService.ts`)
+Procesamiento de transacciones:
+- **Flujo de Pago**: Soporte para métodos de pago (Efectivo/Stripe).
+- **Generación de Recibos**: Integración con el `reports-service` para descarga de PDFs dinámicos.
 
----
-
-## 3. Patrones de Diseño Implementados
-
-### SRP (Principio de Responsabilidad Única)
-Cada componente tiene una función clara. Por ejemplo, `AuthService` solo sabe de tokens y logins, mientras que `SessionManager` solo sabe de tiempos de expiración e inactividad.
-
-### DIP (Inversión de Dependencias)
-Los componentes no instancian sus servicios. Los servicios se inyectan o se importan desde una capa de configuración (`src/config/setup.ts`), facilitando el reemplazo de implementaciones (ej. cambiar Fetch por Axios).
-
-### Inmutabilidad y Memoización
-Se utiliza `useMemo` y `useCallback` en el Panel Administrativo para garantizar que el filtrado de grandes listas de usuarios no impacte el rendimiento de la UI.
+### 2.5 Módulo de Incidencias (`src/services/IncidentService.ts`)
+Soporte técnico y reportes:
+- Permite a operadores y administradores crear reportes de fallos en el sistema.
+- Consumido a través de la ruta `/incidents` del Gateway.
 
 ---
 
-## 4. Tecnologías Clave
-- **Astro**: Ruteo de alto rendimiento y optimización de assets.
-- **Tailwind CSS v4**: Estilizado mediante utilidades modernas y variables CSS.
-- **SweetAlert2**: Sistema de notificaciones y confirmaciones de alta calidad.
-- **TypeScript**: Tipado estricto para reducir errores en tiempo de desarrollo.
+## 3. Integración y Gateway
+
+La aplicación se comunica de forma centralizada con el **API Gateway** en el puerto **3000**.
+
+- **URL de Base**: Definida en `setup.ts`.
+- **Estrategia de Sincronización**: El frontend se adapta estrictamente a los contratos del backend (ej. uso de `PUT` para actualización de estados de ventas).
+- **Funciones Pendientes**: Los módulos de Mantenimiento y Exportación masiva están documentados como placeholders hasta que el backend implemente los microservicios correspondientes.
+
+---
+
+## 4. Tecnologías y Estándares
+
+### 4.1 PWA (Progressive Web App)
+La aplicación soporta instalación nativa mediante:
+- **Web Manifest**: Definido en `public/manifest.webmanifest`.
+- **Service Worker**: Gestionado vía Astro para soporte offline básico.
+
+### 4.2 UI y Estilos
+- **Tailwind CSS v4**: Motor de estilos por utilidad de alto rendimiento.
+- **SweetAlert2**: Estandarización de feedbacks y alertas de sistema.
 
 ---
 
 ## 5. Mantenimiento del Proyecto
 
-1. **Evitar Monolitos**: Si un componente React supera las 250 líneas, debe ser dividido en sub-componentes.
-2. **Lógica en Servicios**: Las llamadas a la API (`fetch`) está prohibidas dentro de los componentes. Deben pasar siempre por un `Service`.
-3. **Consistencia Visual**: Utilizar siempre los tokens de color definidos en `global.css` (Ej. `--color-kiora-red`).
+1. **Lógica en Servicios**: Las llamadas a la API (`fetch`) están prohibidas dentro de los componentes. Deben pasar siempre por un `Service`.
+2. **Consistencia Visual**: Utilizar siempre los tokens de color definidos en `global.css`.
+3. **Desarrollo Local**: El servidor de desarrollo corre en el puerto **8080** (configurado en `astro.config.mjs`).
+

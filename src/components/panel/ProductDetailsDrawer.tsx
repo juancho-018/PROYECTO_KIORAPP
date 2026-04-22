@@ -24,8 +24,8 @@ export function ProductDetailsDrawer({ isOpen, onClose, product }: ProductDetail
     if (!product) return;
     setIsLoading(true);
     try {
-      const data = await inventoryService.fetchMovements(product.cod_prod);
-      setMovements(data);
+      const data = await inventoryService.getMovements(product.cod_prod);
+      setMovements(data && 'data' in data ? data.data : (Array.isArray(data) ? data : []));
     } catch (error) {
       console.error('Error fetching movements:', error);
       alertService.showToast('error', 'No se pudieron cargar los movimientos');
@@ -69,7 +69,7 @@ export function ProductDetailsDrawer({ isOpen, onClose, product }: ProductDetail
             <div className="space-y-1">
               <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Precio Unitario</p>
               <p className="text-lg font-black text-slate-900">
-                {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(product.precio_unitario)}
+                {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(product.precio_prod || 0)}
               </p>
             </div>
             <div className="space-y-1">

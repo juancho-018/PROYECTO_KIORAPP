@@ -1,15 +1,15 @@
 export interface Product {
   cod_prod: number;
   nom_prod: string;
-  descrip_prod: string | null;
-  precio_unitario: number;
-  fechaven_prod: string | null;
-  fk_cod_cat: number | null;
-  stock_actual: number; // <-- ADDED
-  stock_minimo: number; // <-- ADDED
-  url_imagen: string | null; // <-- NEW: Imagen del producto
-  nom_cat?: string; // Joined field
-  descrip_cat?: string; // Joined field
+  desc_prod?: string;
+  precio_prod: number;
+  stock_actual: number;
+  stock_minimo: number;
+  imagen_prod?: string;
+  fk_cod_cats?: number[];
+  nom_cat?: string;
+  descrip_cat?: string;
+  alerta_stock_critico?: boolean;
 }
 
 export interface Category {

@@ -1,25 +1,64 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Supplier } from '@/models/Inventory';
+import { inventoryService, alertService } from '@/config/setup';
 
 interface SupplierDrawerProps {
   isOpen: boolean;
-  isEditing: boolean;
-  isSaving: boolean;
-  supplierData: Partial<Supplier>;
-  onDataChange: (data: Partial<Supplier>) => void;
-  onSubmit: (e: React.FormEvent) => void;
+  supplier: Supplier | null;
   onClose: () => void;
+  onSuccess: () => Promise<void> | void;
 }
 
 export const SupplierDrawer: React.FC<SupplierDrawerProps> = ({
   isOpen,
-  isEditing,
-  isSaving,
-  supplierData,
-  onDataChange,
-  onSubmit,
-  onClose
+  supplier,
+  onClose,
+  onSuccess
 }) => {
+  const isEditing = !!supplier;
+  const [isSaving, setIsSaving] = useState(false);
+  const [supplierData, setSupplierData] = useState<Partial<Supplier>>({
+    nom_prov: '',
+    tipoid_prov: 'NIT',
+    id_prov: '',
+    tel_prov: ''
+  });
+
+  useEffect(() => {
+    if (isOpen) {
+      if (supplier) {
+        setSupplierData(supplier);
+      } else {
+        setSupplierData({
+          nom_prov: '',
+          tipoid_prov: 'NIT',
+          id_prov: '',
+          tel_prov: ''
+        });
+      }
+    }
+  }, [isOpen, supplier]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    try {
+      if (isEditing && supplier?.cod_prov) {
+        await inventoryService.updateSupplier(supplier.cod_prov, supplierData);
+        alertService.showToast('success', 'Proveedor actualizado');
+      } else {
+        await inventoryService.createSupplier(supplierData);
+        alertService.showToast('success', 'Proveedor registrado');
+      }
+      onSuccess();
+      onClose();
+    } catch (error) {
+      alertService.showToast('error', 'Error al guardar el proveedor');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div className={`fixed inset-0 z-[99999] transition-all duration-300 ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
       <div className="absolute inset-0 bg-gray-900/30 backdrop-blur-sm" onClick={onClose}></div>
@@ -33,14 +72,14 @@ export const SupplierDrawer: React.FC<SupplierDrawerProps> = ({
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
-          <form onSubmit={onSubmit} id="supplierForm" className="flex flex-col gap-5">
+          <form onSubmit={handleSubmit} id="supplierForm" className="flex flex-col gap-5">
             <div className="flex flex-col gap-1.5">
               <label className="text-[12px] font-bold text-gray-600">Nombre del Proveedor / Empresa</label>
               <input 
                 type="text" 
                 required
                 value={supplierData.nom_prov || ''}
-                onChange={(e) => onDataChange({...supplierData, nom_prov: e.target.value})}
+                onChange={(e) => setSupplierData({...supplierData, nom_prov: e.target.value})}
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-[#ec131e] focus:ring-4 focus:ring-red-50 transition-all text-[0.95rem] bg-white placeholder:text-gray-300" 
                 placeholder="Ej. Distribuidora S.A." 
               />
@@ -51,7 +90,7 @@ export const SupplierDrawer: React.FC<SupplierDrawerProps> = ({
                 <label className="text-[12px] font-bold text-gray-600">Tipo de ID</label>
                 <select 
                   value={supplierData.tipoid_prov || 'NIT'}
-                  onChange={(e) => onDataChange({...supplierData, tipoid_prov: e.target.value})}
+                  onChange={(e) => setSupplierData({...supplierData, tipoid_prov: e.target.value})}
                   className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-[#ec131e] focus:ring-4 focus:ring-red-50"
                 >
                   <option value="NIT">NIT</option>
@@ -67,7 +106,7 @@ export const SupplierDrawer: React.FC<SupplierDrawerProps> = ({
                   value={supplierData.id_prov || ''}
                   onChange={(e) => {
                     const val = e.target.value.replace(/\D/g, '');
-                    onDataChange({...supplierData, id_prov: val});
+                    setSupplierData({...supplierData, id_prov: val});
                   }}
                   className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-[#ec131e] focus:ring-4 focus:ring-red-50" 
                   placeholder="9652000" 
@@ -83,7 +122,7 @@ export const SupplierDrawer: React.FC<SupplierDrawerProps> = ({
                 value={supplierData.tel_prov || ''}
                 onChange={(e) => {
                   const val = e.target.value.replace(/\D/g, '');
-                  onDataChange({...supplierData, tel_prov: val});
+                  setSupplierData({...supplierData, tel_prov: val});
                 }}
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-[#ec131e] focus:ring-4 focus:ring-red-50 transition-all text-[0.95rem] bg-white placeholder:text-gray-300" 
                 placeholder="3000000000" 
@@ -121,3 +160,4 @@ export const SupplierDrawer: React.FC<SupplierDrawerProps> = ({
     </div>
   );
 };
+
