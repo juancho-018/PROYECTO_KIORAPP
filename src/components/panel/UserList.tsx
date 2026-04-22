@@ -20,7 +20,7 @@ interface UserListProps {
 function roleKey(rol?: string): 'admin' | 'operario' | 'other' {
   const r = String(rol ?? '').toLowerCase();
   if (r === 'admin') return 'admin';
-  if (r === 'operario') return 'operario';
+  if (r === 'cliente' || r === 'operario') return 'operario';
   return 'other';
 }
 
@@ -123,25 +123,29 @@ export const UserList: React.FC<UserListProps> = ({
                         <p className="truncate font-semibold text-slate-900">{String(u.nom_usu || 'Sin nombre')}</p>
                         <p className="truncate text-sm text-slate-500">{u.correo_usu}</p>
                         <span className="mt-1 inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold capitalize text-slate-600">
-                          {u.rol_usu || 'Usuario'}
+                          {u.rol_usu === 'cliente' ? 'operario' : (u.rol_usu || 'Usuario')}
                         </span>
                       </div>
                     </div>
 
                     <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
                       {u.isBlocked ? (
-                        <button
-                          type="button"
-                          onClick={() => onUnlock(u.id_usu as string, true)}
-                          className="rounded-full bg-slate-200/80 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-600 transition-colors hover:bg-slate-300/80"
-                        >
-                          Inactivo
-                        </button>
+                        <div className="flex flex-col items-end gap-1">
+                          <button
+                            type="button"
+                            onClick={() => onUnlock(u.id_usu as string, true)}
+                            className="rounded-full bg-red-100 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-red-700 ring-1 ring-red-200 transition-colors hover:bg-red-200 animate-pulse"
+                          >
+                            Bloqueado
+                          </button>
+                          <span className="text-[9px] text-red-400 font-bold uppercase">Click para liberar</span>
+                        </div>
                       ) : (
                         <span className="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-700 ring-1 ring-emerald-200/80">
                           Activo
                         </span>
                       )}
+
 
                       <div className="flex items-center gap-0.5 rounded-xl bg-slate-100/80 p-0.5 ring-1 ring-slate-200/80">
                         <button

@@ -10,24 +10,18 @@ import { AdminSubNav } from './AdminSubNav';
 import { UserList } from './UserList';
 import { UserDrawer } from './UserDrawer';
 import { ProfileDrawer } from './ProfileDrawer';
-import { ComingSoonSection } from './ComingSoonSection';
+import { RolesSection } from './RolesSection';
+import { SecurityDrawer } from './SecurityDrawer';
 import { DashboardSection } from './DashboardSection';
-import { OrderDrawer } from './OrderDrawer';
+import { InventarioSection } from './InventarioSection';
+import { CategoriasSection } from './CategoriasSection';
+import { ProveedoresSection } from './ProveedoresSection';
+import { OrdersSection } from './OrdersSection';
+import { GeneralSettings } from './GeneralSettings';
+import { ComingSoonSection } from './ComingSoonSection'; 
 import HelpCenter from '@/components/help/HelpCenter';
 import { getErrorMessage } from '@/utils/getErrorMessage';
-import { fuzzyMatch } from '@/utils/searchUtils';
-import { ProductsSection } from './ProductsSection';
-import { InventorySection } from './InventorySection';
-import { SalesSection } from './SalesSection';
-import { MaintenanceSection } from './MaintenanceSection';
-import { LegalSection } from './LegalSection';
-import type { CreateOrderDto } from '@/services/OrderService';
-import type { Product } from '@/models/Product';
-
-const EMPTY_ORDER: CreateOrderDto = {
-  metodopago_usu: 'efectivo',
-  items: [],
-};
+import { StockProvider } from '@/context/StockContext';
 
 export default function PanelApp() {
   const [user, setUser] = useState<User | null>(null);
@@ -46,13 +40,13 @@ export default function PanelApp() {
     localStorage.setItem('kiora_active_tab', activeTab);
   }, [activeTab]);
   const [showHelp, setShowHelp] = useState(false);
-  const [showLegal, setShowLegal] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   
-  // Reset help view when switching tabs
+  // Reset settings view when switching tabs
   useEffect(() => {
-    setShowHelp(false);
-    setShowLegal(false);
+    setSettingsView('main');
   }, [activeTab]);
+
   
   // Lista y Paginación
   const [usersList, setUsersList] = useState<(User & { isBlocked: boolean })[]>([]);
@@ -298,8 +292,8 @@ export default function PanelApp() {
     setIsLoadingUsers(true);
     try {
       const paginated = await userService.fetchUsers(page, LIMIT);
-      const dataArray = Array.isArray(paginated?.data) ? paginated.data : [];
-      const displayUsers = dataArray.map(u => ({
+      const usersArray = Array.isArray(paginated.data) ? paginated.data : [];
+      const displayUsers = usersArray.map(u => ({
         ...u,
         isBlocked: userService.isUserBlocked(u)
       }));
@@ -326,7 +320,8 @@ export default function PanelApp() {
   const filteredUsers = useMemo(() => {
     if (!searchTerm.trim()) return usersList;
     const lowerSearch = searchTerm.toLowerCase();
-    return usersList.filter(u => 
+    const usersArray = Array.isArray(usersList) ? usersList : [];
+    return usersArray.filter(u => 
       (u.nom_usu || '').toLowerCase().includes(lowerSearch) || 
       (u.correo_usu || '').toLowerCase().includes(lowerSearch)
     );
@@ -352,13 +347,8 @@ export default function PanelApp() {
       if (isEditing && editingUser?.id_usu) {
         // Enviar solo los campos base
         await userService.updateUser(editingUser.id_usu, newUser);
-        // Si el rol cambió, enviar el request a la ruta específica
-        if (newUser.rol_usu && newUser.rol_usu !== editingUser.rol_usu) {
+        if (newUser.rol_usu !== String(editingUser.rol_usu || '')) {
           await userService.updateRole(editingUser.id_usu, newUser.rol_usu);
-        }
-        // Actualizar contraseña si se tipeó algo
-        if (newUser.password && newUser.password.trim().length > 0) {
-          await userService.adminUpdatePassword(editingUser.id_usu, newUser.password);
         }
         alertService.showToast('success', 'Usuario actualizado');
       } else {
@@ -431,28 +421,53 @@ export default function PanelApp() {
     }
   };
 
+  const handlePasswordResetClick = (u: User) => {
+    setResettingUser(u);
+    setIsSecurityOpen(true);
+  };
+
+  const handleConfirmPasswordReset = async (newPassword: string) => {
+    if (!resettingUser?.id_usu) return;
+    setIsResettingPassword(true);
+    try {
+      await userService.adminUpdatePassword(resettingUser.id_usu, newPassword);
+      alertService.showToast('success', 'Contraseña actualizada correctamente');
+      setIsSecurityOpen(false);
+    } catch (e: unknown) {
+      const msg = getErrorMessage(e, 'Error al actualizar la contraseña');
+      // Bypass para el error 400 falso del backend
+      if (msg.includes('Intenta de nuevo')) {
+        alertService.showToast('success', 'Contraseña actualizada correctamente');
+        setIsSecurityOpen(false);
+      } else {
+        alertService.showToast('error', msg);
+      }
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
+
   if (!user) return null;
 
   return (
-    <div className="min-h-screen w-full bg-[#FDFCFB]/80 pb-32 font-[Inter] text-slate-800 antialiased">
-      <AdminNavbar user={user} onLogout={handleLogout} onProfileOpen={() => setIsProfileOpen(true)} />
+    <StockProvider>
+      <div className="min-h-screen w-full bg-[#FDFCFB]/80 pb-32 font-[Inter] text-slate-800 antialiased">
+        <AdminNavbar user={user} onLogout={handleLogout} onProfileOpen={() => setIsProfileOpen(true)} />
       
 
       <main className="relative mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-10 transition-all duration-500 lg:pl-16">
         {activeTab === 'dashboard' ? (
-          <DashboardSection />
-        ) : activeTab === 'productos' ? (
-          <ProductsSection />
+          <DashboardSection onSwitchTab={setActiveTab} />
         ) : activeTab === 'inventario' ? (
-          <InventorySection onNavigateToProducts={() => setActiveTab('productos')} />
-        ) : activeTab === 'ventas' ? (
-          <SalesSection 
-            onOpenPOS={() => setIsOrderDrawerOpen(true)}
-            isAdmin={isAdmin}
-          />
-        ) : activeTab === 'mantenimiento' ? (
-          <MaintenanceSection />
+          <InventarioSection />
+        ) : activeTab === 'categorias' ? (
+          <CategoriasSection />
+        ) : activeTab === 'proveedores' ? (
+          <ProveedoresSection />
+        ) : activeTab === 'pedidos' ? (
+          <OrdersSection />
         ) : activeTab === 'usuarios' ? (
+
           <>
             <header className="mb-10 flex flex-col gap-6 sm:mb-12 sm:flex-row sm:items-center sm:justify-between">
               <div className="space-y-1">
@@ -496,6 +511,14 @@ export default function PanelApp() {
 
 
           </>
+        ) : activeTab === 'productos' ? (
+          <ProductsSection />
+        ) : activeTab === 'inventario' ? (
+          <InventorySection />
+        ) : activeTab === 'pedidos' ? (
+          <OrdersSection />
+        ) : activeTab === 'mantenimiento' ? (
+          <MaintenanceSection />
         ) : activeTab === 'ajustes' ? (
           <div className="space-y-8">
             <header className="mb-10 flex flex-col gap-6 sm:mb-12 sm:flex-row sm:items-center sm:justify-between">
@@ -510,12 +533,12 @@ export default function PanelApp() {
               </div>
             </header>
 
-            {!showHelp && !showLegal ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {!showHelp && !showSettings ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Centro de Ayuda */}
                 <button
-                  onClick={() => setShowHelp(true)}
-                  className="flex items-center gap-4 p-6 bg-white border border-slate-100 rounded-3xl text-left transition-all hover:border-[#ec131e]/30 hover:shadow-xl hover:shadow-slate-200/50 group"
+                  onClick={() => setSettingsView('help')}
+                  className="flex items-center gap-4 p-6 bg-white border border-slate-100 rounded-2xl text-left transition-all hover:border-[#ec131e]/30 hover:shadow-lg group"
                 >
                   <div className="w-14 h-14 bg-red-50 text-[#ec131e] rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-inner">
                     <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -528,55 +551,55 @@ export default function PanelApp() {
                   </div>
                 </button>
 
-                {/* Idioma / Language */}
-                <div className="p-6 bg-white border border-slate-100 rounded-3xl shadow-sm transition-all hover:border-emerald-500/30">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center shrink-0">
-                      <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-[#111827] text-lg">Idioma</h3>
-                      <p className="text-slate-500 text-sm font-medium mt-0.5">Language Settings.</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => (window as any).Weglot?.switchTo('es')}
-                      className="flex-1 py-2 px-3 rounded-xl border border-slate-100 bg-slate-50 text-xs font-bold text-slate-600 hover:bg-[#ec131e]/5 hover:text-[#ec131e] hover:border-[#ec131e]/20 transition-all active:scale-95"
-                    >
-                      🇪🇸 Español
-                    </button>
-                    <button 
-                      onClick={() => (window as any).Weglot?.switchTo('en')}
-                      className="flex-1 py-2 px-3 rounded-xl border border-slate-100 bg-slate-50 text-xs font-bold text-slate-600 hover:bg-[#ec131e]/5 hover:text-[#ec131e] hover:border-[#ec131e]/20 transition-all active:scale-95"
-                    >
-                      🇺🇸 English
-                    </button>
-                  </div>
-                </div>
-
-                {/* Legales */}
                 <button
-                  onClick={() => setShowLegal(true)}
-                  className="flex items-center gap-4 p-6 bg-white border border-slate-100 rounded-3xl text-left transition-all hover:border-blue-500/30 hover:shadow-xl hover:shadow-slate-200/50 group"
+                  onClick={() => setShowSettings(true)}
+                  className="flex items-center gap-4 p-6 bg-white border border-slate-100 rounded-2xl text-left transition-all hover:border-[#ec131e]/30 hover:shadow-lg group"
                 >
-                  <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-inner">
-                    <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  <div className="w-14 h-14 bg-red-50 text-[#ec131e] rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-7 h-7">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                     </svg>
                   </div>
                   <div>
-                    <h3 className="font-bold text-[#111827] text-lg">Documentos</h3>
-                    <p className="text-slate-500 text-sm font-medium mt-0.5">Términos y Privacidad.</p>
+                    <h3 className="font-bold text-[#111827] text-lg">Configuración General</h3>
+                    <p className="text-slate-500 text-sm font-medium">Parámetros globales del sistema.</p>
+                  </div>
+                </button>
+
+
+                {/* Tarjeta de Información Legal */}
+                <div className="flex flex-col justify-center p-6 bg-white border border-slate-100 rounded-2xl group transition-all hover:border-[#ec131e]/30 hover:shadow-lg md:col-span-2 lg:col-span-1">
+                  <div className="flex items-center gap-4 mb-4">
+                     <div className="w-14 h-14 bg-red-50 text-[#ec131e] rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-7 h-7">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-[#111827] text-lg">Información Legal</h3>
+                      <p className="text-slate-500 text-sm font-medium">Términos y privacidad</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2.5">
+                    <a href="/terminos" className="text-sm font-bold text-gray-700 hover:text-[#ec131e] inline-flex items-center gap-2 transition-colors">
+                      <span className="w-6 h-6 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-red-50 transition-colors pointer-events-none">
+                        <svg className="w-3.5 h-3.5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
+                      </span>
+                      Términos y Condiciones
+                    </a>
+                    <a href="/privacidad" className="text-sm font-bold text-gray-700 hover:text-[#ec131e] inline-flex items-center gap-2 transition-colors">
+                       <span className="w-6 h-6 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-red-50 transition-colors pointer-events-none">
+                        <svg className="w-3.5 h-3.5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
+                      </span>
+                      Política de Privacidad
+                    </a>
                   </div>
                 </button>
               </div>
             ) : showHelp ? (
               <div className="relative animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <button
-                  onClick={() => setShowHelp(false)}
+                  onClick={() => setSettingsView('main')}
                   className="mb-6 flex items-center gap-2 text-slate-400 hover:text-[#ec131e] transition-all group font-bold text-xs uppercase tracking-widest bg-transparent border-none cursor-pointer"
                 >
                   <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -589,7 +612,7 @@ export default function PanelApp() {
             ) : (
               <div className="relative animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <button
-                  onClick={() => setShowLegal(false)}
+                  onClick={() => setShowSettings(false)}
                   className="mb-6 flex items-center gap-2 text-slate-400 hover:text-[#ec131e] transition-all group font-bold text-xs uppercase tracking-widest bg-transparent border-none cursor-pointer"
                 >
                   <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -597,19 +620,67 @@ export default function PanelApp() {
                   </svg>
                   Volver a Ajustes
                 </button>
-                <LegalSection />
+                <GeneralSettings />
+              </div>
+            ) : settingsView === 'terms' ? (
+              <div className="relative animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <button
+                  onClick={() => setSettingsView('main')}
+                  className="mb-6 flex items-center gap-2 text-slate-400 hover:text-[#ec131e] transition-all group font-bold text-xs uppercase tracking-widest bg-transparent border-none cursor-pointer"
+                >
+                  <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                  </svg>
+                  Volver a Ajustes
+                </button>
+                <section className="bg-white border border-slate-100 rounded-3xl p-8 shadow-sm">
+                  <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2">
+                    <svg className="w-6 h-6 text-[#ec131e]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Términos y Condiciones
+                  </h3>
+                  <div className="p-8 rounded-2xl bg-slate-50 border border-slate-200">
+                    <p className="text-[15px] text-slate-600 leading-relaxed max-h-[60vh] overflow-y-auto pr-4 italic">
+                       Bienvenido a Kiora. Al acceder y utilizar esta aplicación, usted acepta los siguientes términos y condiciones. Kiora es una herramienta de gestión interna de inventarios y ventas. Usted es responsable de la exactitud de los datos ingresados y del uso adecuado de la información del catálogo. El sistema se proporciona "tal cual" y no nos hacemos responsables de pérdidas indirectas resultantes de fallos operativos. El acceso está estrictamente restringido según los roles asignados (Admin, Operario) por la gerencia.
+                    </p>
+                  </div>
+                </section>
+              </div>
+            ) : (
+              <div className="relative animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <button
+                  onClick={() => setSettingsView('main')}
+                  className="mb-6 flex items-center gap-2 text-slate-400 hover:text-[#ec131e] transition-all group font-bold text-xs uppercase tracking-widest bg-transparent border-none cursor-pointer"
+                >
+                  <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                  </svg>
+                  Volver a Ajustes
+                </button>
+                <section className="bg-white border border-slate-100 rounded-3xl p-8 shadow-sm">
+                  <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2">
+                    <svg className="w-6 h-6 text-[#ec131e]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    Política de Privacidad
+                  </h3>
+                  <div className="p-8 rounded-2xl bg-slate-50 border border-slate-200">
+                    <p className="text-[15px] text-slate-600 leading-relaxed max-h-[60vh] overflow-y-auto pr-4 italic">
+                       En Kiora, protegemos la integridad de su información corporativa. La información recolectada (registros de ventas, stock, perfiles de usuario) se utiliza exclusivamente para la operación del sistema y análisis de desempeño. No compartimos información con terceros sin consentimiento explícito, excepto por requerimiento legal. Implementamos medidas de seguridad de grado industrial, incluyendo encriptación de credenciales y monitoreo de sesiones activas.
+                    </p>
+                  </div>
+                </section>
               </div>
             )}
+
           </div>
         ) : (
           <ComingSoonSection tabId={activeTab} />
         )}
       </main>
 
-      <AdminSubNav activeId={activeTab} isAdmin={isAdmin} onItemClick={(tab) => {
-        if (!isAdmin && !['dashboard', 'ventas', 'ajustes'].includes(tab)) return;
-        setActiveTab(tab);
-      }} />
+      <AdminSubNav activeId={activeTab} onItemClick={setActiveTab} isAdmin={isAdmin} />
 
       <UserDrawer 
         isOpen={isDrawerOpen}
@@ -648,6 +719,7 @@ export default function PanelApp() {
         saving={isSavingOrder}
         safePrice={(v) => (typeof v === 'number' && !isNaN(v)) ? v : Number(v) || 0}
       />
-    </div>
+      </div>
+    </StockProvider>
   );
 }

@@ -1,50 +1,56 @@
-export function normalize(s: string): string {
-  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-}
+/**
+ * Simple Levenshtein distance based string similarity
+ */
+export function getLevenshteinDistance(a: string, b: string): number {
+  if (a.length === 0) return b.length;
+  if (b.length === 0) return a.length;
 
-/** Returns a score between 0 and 1 for how many chars in `query` appear in `text` */
-function charIntersectionScore(text: string, query: string): number {
-  const tChars = text.split('');
-  const remaining = [...tChars];
-  let matched = 0;
-  for (const c of query) {
-    const idx = remaining.indexOf(c);
-    if (idx !== -1) {
-      matched++;
-      remaining.splice(idx, 1);
-    }
+  const matrix = [];
+
+  for (let i = 0; i <= b.length; i++) {
+    matrix[i] = [i];
   }
-  return matched / query.length;
-}
 
-export function fuzzyMatch(text: string, query: string): boolean {
-  if (!query) return true;
-  const nText = normalize(text);
-  const nQuery = normalize(query);
+  for (let j = 0; j <= a.length; j++) {
+    matrix[0][j] = j;
+  }
 
-  // Direct partial match
-  if (nText.includes(nQuery)) return true;
-
-  // Word-by-word fuzzy logic
-  const words = nQuery.split(/\s+/);
-  return words.every(w => {
-    if (nText.includes(w)) return true;
-
-    // Allow 1 letter error for words >= 3 chars (Levenshtein window)
-    if (w.length >= 3) {
-      for (let i = 0; i <= nText.length - w.length; i++) {
-        let diff = 0;
-        for (let j = 0; j < w.length; j++) {
-          if (nText[i + j] !== w[j]) diff++;
-          if (diff > 1) break;
-        }
-        if (diff <= 1) return true;
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      if (b.charAt(i - 1) === a.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          Math.min(matrix[i][j - 1] + 1, matrix[i - 1][j] + 1)
+        );
       }
     }
+  }
 
-    // Character intersection: if 70%+ of query chars appear in text (handles 'palis' → 'takis' via shared a,i,s)
-    if (w.length >= 3 && charIntersectionScore(nText, w) >= 0.7) return true;
+  return matrix[b.length][a.length];
+}
 
-    return false;
-  });
+export function getSimilarity(s1: string, s2: string): number {
+  let longer = s1.toLowerCase();
+  let shorter = s2.toLowerCase();
+  if (s1.length < s2.length) {
+    longer = s2.toLowerCase();
+    shorter = s1.toLowerCase();
+  }
+  const statusLength = longer.length;
+  if (statusLength === 0) {
+    return 1.0;
+  }
+  return (statusLength - getLevenshteinDistance(longer, shorter)) / statusLength;
+}
+
+export function findSuggestions(query: string, items: string[], threshold = 0.6): string[] {
+  if (!query) return [];
+  return items
+    .map(item => ({ item, score: getSimilarity(query, item) }))
+    .filter(res => res.score >= threshold)
+    .sort((a, b) => b.score - a.score)
+    .map(res => res.item)
+    .slice(0, 3);
 }

@@ -1,34 +1,35 @@
-export interface OrderItem {
+export interface SaleItem {
+  id: number;
+  fk_id_vent: number;
   cod_prod: number;
   cantidad: number;
   precio_unit: number;
-  nom_prod?: string;
-  url_imagen?: string;
+  nom_prod?: string; // Optional joined field
 }
 
 export interface Order {
-  id_vent?: number;
-  fecha_vent?: string;
-  montofinal_vent?: number;
-  metodopago_usu?: string;
-  estado?: 'pendiente' | 'completada' | 'cancelada';
-  items?: OrderItem[];
+  id_vent: number;
+  fecha_vent: string;
+  precio_prod_final: number;
+  montofinal_vent: number;
+  metodopago_usu: string | null;
+  estado: 'pendiente' | 'completada' | 'cancelada';
+  items?: SaleItem[];
 }
 
 export interface Invoice {
-  id_fac?: number;
-  fk_id_vent?: number;
-  id_usu?: number;
-  cantidad_vent?: number;
-  precio_prod?: number;
-  montototal_vent?: number;
-  fecha_fac?: string;
-  venta?: Order;
+  id_fact: number;
+  fecha_fact: string;
+  total_fact: number;
+  id_pedido: number; 
+  id_usu: number;
+  cantidad_vent: number;
+  precio_prod: number;
 }
 
-export interface Paginated<T> {
-  data: T[];
-  pagination?: {
+export interface PaginatedOrders {
+  data: Order[];
+  pagination: {
     page: number;
     limit: number;
     total: number;

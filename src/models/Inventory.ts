@@ -1,48 +1,44 @@
 export interface Supplier {
-  cod_prov?: number;
+  cod_prov: number;
+  id_prov: string | null;
   nom_prov: string;
-  tel_prov?: string;
-  correo_prov?: string;
-  dir_prov?: string;
+  tel_prov: string | null;
+  tipoid_prov: string | null;
 }
 
 export interface Movement {
-  id_mov?: number;
-  tipo_mov: 'entrada' | 'salida';
-  cantidad_mov: number;
-  fecha_mov?: string;
-  desc_mov?: string;
-  fk_cod_prod?: number;
-  fk_cod_prov?: number;
-  producto?: { nom_prod: string };
-  proveedor?: { nom_prov: string };
+  id_mov: number;
+  tipo_mov: string;
+  fecha_mov: string;
+  cantidad: number;
+  cod_prod: number;
 }
 
 export interface Suministra {
-  id_sum?: number;
+  id: number;
   fk_cod_prov: number;
   cod_prod: number;
   stock: number;
   stock_minimo: number;
-  proveedor?: { nom_prov: string };
-  producto?: { nom_prod: string };
-  alerta_stock_minimo?: boolean;
+  nom_prov?: string; // Joined field
 }
 
-export interface LowStockItem {
-  cod_prod: number;
-  nom_prod: string;
-  stock_actual: number;
-  stock_minimo: number;
-}
-  proveedor?: { nom_prov: string };
-  producto?: { nom_prod: string };
-  alerta_stock_minimo?: boolean;
+export interface PaginatedSuppliers {
+  data: Supplier[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
-export interface LowStockItem {
-  cod_prod: number;
-  nom_prod: string;
-  stock_actual: number;
-  stock_minimo: number;
+export interface PaginatedMovements {
+  data: Movement[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }

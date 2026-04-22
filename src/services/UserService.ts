@@ -71,9 +71,11 @@ export class UserService {
   }
 
   async updateUser(id: string | number, dto: Partial<RegisterUserDto>): Promise<void> {
-    const cleanDto: Partial<RegisterUserDto> = { ...dto };
-    delete cleanDto.password;
-    delete cleanDto.rol_usu;
+    const cleanDto: any = {};
+    if (dto.nom_usu) cleanDto.nom_usu = dto.nom_usu;
+    if (dto.correo_usu) cleanDto.correo_usu = dto.correo_usu;
+    if (dto.tel_usu) cleanDto.tel_usu = dto.tel_usu;
+
     const response = await this.httpClient.patch<unknown>(`/auth/users/${id}`, cleanDto, {
       headers: this.getAuthHeaders()
     });

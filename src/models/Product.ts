@@ -1,19 +1,29 @@
-export interface Category {
-  cod_cat?: number;
-  nom_cat: string;
-  desc_cat?: string;
+export interface Product {
+  cod_prod: number;
+  nom_prod: string;
+  descrip_prod: string | null;
+  precio_unitario: number;
+  fechaven_prod: string | null;
+  fk_cod_cat: number | null;
+  stock_actual: number; // <-- ADDED
+  stock_minimo: number; // <-- ADDED
+  url_imagen: string | null; // <-- NEW: Imagen del producto
+  nom_cat?: string; // Joined field
+  descrip_cat?: string; // Joined field
 }
 
-export interface Product {
-  cod_prod?: number;
-  nom_prod: string;
-  desc_prod?: string;
-  precio_prod: number;
-  stock_actual?: number;
-  stock_minimo?: number;
-  imagen_prod?: string;
-  fk_cod_cat?: number;
-  tipos_prod?: string[];
-  categoria?: Category;
-  alerta_stock_critico?: boolean;
+export interface Category {
+  cod_cat: number;
+  nom_cat: string;
+  descrip_cat: string | null;
+}
+
+export interface PaginatedProducts {
+  data: Product[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }

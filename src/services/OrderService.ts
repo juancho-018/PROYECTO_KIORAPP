@@ -1,11 +1,6 @@
-import type { IHttpClient } from '../core/http/HttpClient';
-import type { AuthService } from './AuthService';
-import type { Order, Invoice, Paginated } from '../models/Order';
-
-export interface CreateOrderDto {
-  metodopago_usu: string;
-  items: { cod_prod: number; cantidad: number; precio_unit: number; nom_prod?: string }[];
-}
+import { type IHttpClient } from '../core/http/HttpClient';
+import { type AuthService } from './AuthService';
+import type { Order, PaginatedOrders, Invoice } from '../models/Order';
 
 export class OrderService {
   constructor(
@@ -18,100 +13,49 @@ export class OrderService {
     return token ? { Authorization: `Bearer ${token}` } : {};
   }
 
-  private get baseURL(): string {
-    return this.httpClient.baseURL;
-  }
-
-  // ── Orders ──────────────────────────────────────────────────────────────────
-
-  async getOrders(page = 1, limit = 20): Promise<Paginated<Order>> {
-    const res = await this.httpClient.get<Paginated<Order>>(
+  // Orders (Sales)
+  async getOrders(page: number = 1, limit: number = 20): Promise<PaginatedOrders> {
+    const response = await this.httpClient.get<PaginatedOrders>(
       `/orders?page=${page}&limit=${limit}`,
       this.getAuthHeaders()
     );
-    if (!res.ok) throw new Error(res.error ?? 'Error al obtener ventas');
-    return res.data ?? { data: [] };
+    if (!response.ok || !response.data) throw new Error(response.error || 'Error retrieving orders');
+    return response.data;
   }
 
   async getOrderById(id: number): Promise<Order> {
-    const res = await this.httpClient.get<Order>(`/orders/${id}`, this.getAuthHeaders());
-    if (!res.ok || !res.data) throw new Error(res.error ?? 'Venta no encontrada');
-    return res.data;
+    const response = await this.httpClient.get<Order>(`/orders/${id}`, this.getAuthHeaders());
+    if (!response.ok || !response.data) throw new Error(response.error || 'Error retrieving order details');
+    return response.data;
   }
 
-  async createOrder(dto: CreateOrderDto): Promise<Order> {
-    const res = await this.httpClient.post<Order>('/orders', dto, { headers: this.getAuthHeaders() });
-    if (!res.ok || !res.data) throw new Error(res.error ?? 'Error al crear venta');
-    return res.data;
+  async createOrder(id_usu: number, items: any[] = []): Promise<Order> {
+    const response = await this.httpClient.post<Order>('/orders', { id_usu, items }, { headers: this.getAuthHeaders() });
+    if (!response.ok || !response.data) throw new Error(response.error || 'Error creating order');
+    return response.data;
   }
 
-  async updateOrderStatus(id: number, estado: 'pendiente' | 'completada' | 'cancelada' | 'reembolsada'): Promise<Order> {
-    const res = await this.httpClient.patch<Order>(
-      `/orders/${id}/status`,
-      { estado },
-      { headers: this.getAuthHeaders() }
-    );
-    if (!res.ok || !res.data) throw new Error(res.error ?? 'Error al actualizar estado');
-    return res.data;
+  async updateOrderStatus(id: number, estado: string): Promise<Order> {
+    const response = await this.httpClient.put<Order>(`/orders/${id}/status`, { estado }, { headers: this.getAuthHeaders() });
+    if (!response.ok || !response.data) throw new Error(response.error || 'Error updating order status');
+    return response.data;
   }
 
   async deleteOrder(id: number): Promise<void> {
-    const res = await this.httpClient.delete(`/orders/${id}`, { headers: this.getAuthHeaders() });
-    if (!res.ok) throw new Error(res.error ?? 'Error al eliminar venta');
+    const response = await this.httpClient.delete(`/orders/${id}`, { headers: this.getAuthHeaders() });
+    if (!response.ok) throw new Error(response.error || 'Error deleting order');
   }
 
-  // ── Export ──────────────────────────────────────────────────────────────────
-
-  private async downloadBlob(path: string, fileName: string): Promise<void> {
-    const token = this.authService.getToken();
-    const headers: Record<string, string> = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
-    const res = await fetch(`${this.baseURL}${path}`, { headers });
-    if (!res.ok) throw new Error('Error al exportar archivo');
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    a.click();
-    URL.revokeObjectURL(url);
+  // Invoices
+  async getInvoices(page: number = 1, limit: number = 50): Promise<{ data: Invoice[], pagination: any }> {
+    const response = await this.httpClient.get<any>(`/invoices?page=${page}&limit=${limit}`, this.getAuthHeaders());
+    if (!response.ok || !response.data) throw new Error(response.error || 'Error retrieving invoices');
+    return response.data;
   }
 
-  async exportExcel(): Promise<void> {
-    await this.downloadBlob('/orders/export/excel', `ventas_${new Date().toISOString().slice(0, 10)}.xlsx`);
-  }
-
-  async exportPdf(): Promise<void> {
-    await this.downloadBlob('/orders/export/pdf', `ventas_${new Date().toISOString().slice(0, 10)}.pdf`);
-  }
-
-  // ── Invoices ─────────────────────────────────────────────────────────────────
-
-  async getInvoices(page = 1, limit = 20): Promise<Paginated<Invoice>> {
-    const res = await this.httpClient.get<Paginated<Invoice>>(
-      `/invoices?page=${page}&limit=${limit}`,
-      this.getAuthHeaders()
-    );
-    if (!res.ok) throw new Error(res.error ?? 'Error al obtener facturas');
-    return res.data ?? { data: [] };
-  }
-
-  async getInvoiceById(id: number): Promise<Invoice> {
-    const res = await this.httpClient.get<Invoice>(`/invoices/${id}`, this.getAuthHeaders());
-    if (!res.ok || !res.data) throw new Error(res.error ?? 'Factura no encontrada');
-    return res.data;
-  }
-
-  async createInvoice(dto: {
-    fk_id_vent: number;
-    id_usu: number;
-    cantidad_vent: number;
-    precio_prod: number;
-    montototal_vent: number;
-  }): Promise<Invoice> {
-    const res = await this.httpClient.post<Invoice>('/invoices', dto, { headers: this.getAuthHeaders() });
-    if (!res.ok || !res.data) throw new Error(res.error ?? 'Error al emitir factura');
-    return res.data;
+  async createInvoice(id_pedido: number, total_fact: number): Promise<Invoice> {
+    const response = await this.httpClient.post<Invoice>('/invoices', { id_pedido, total_fact }, { headers: this.getAuthHeaders() });
+    if (!response.ok || !response.data) throw new Error(response.error || 'Error creating invoice');
+    return response.data;
   }
 }

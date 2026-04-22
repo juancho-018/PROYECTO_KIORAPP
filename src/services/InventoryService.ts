@@ -1,6 +1,6 @@
-import type { IHttpClient } from '../core/http/HttpClient';
-import type { AuthService } from './AuthService';
-import type { Supplier, Movement, Suministra, LowStockItem } from '../models/Inventory';
+import { type IHttpClient } from '../core/http/HttpClient';
+import { type AuthService } from './AuthService';
+import type { Supplier, Movement, PaginatedSuppliers, PaginatedMovements, Suministra } from '../models/Inventory';
 
 export class InventoryService {
   constructor(
@@ -13,112 +13,65 @@ export class InventoryService {
     return token ? { Authorization: `Bearer ${token}` } : {};
   }
 
-  private get baseURL(): string {
-    return this.httpClient.baseURL;
-  }
-
-  private ensureArray<T>(data: any): T[] {
-    if (Array.isArray(data)) return data;
-    if (data && typeof data === 'object' && Array.isArray(data.data)) return data.data;
-    return [];
-  }
-
-  // ── Suppliers ───────────────────────────────────────────────────────────────
-
-  async getSuppliers(): Promise<Supplier[]> {
-    const res = await this.httpClient.get<any>('/inventory/suppliers', this.getAuthHeaders());
-    if (!res.ok) throw new Error(res.error ?? 'Error al obtener proveedores');
-    return this.ensureArray<Supplier>(res.data);
-  }
-
-  async getSupplierById(id: number): Promise<Supplier> {
-    const res = await this.httpClient.get<Supplier>(`/inventory/suppliers/${id}`, this.getAuthHeaders());
-    if (!res.ok || !res.data) throw new Error(res.error ?? 'Proveedor no encontrado');
-    return res.data;
-  }
-
-  async createSupplier(dto: Omit<Supplier, 'cod_prov'>): Promise<Supplier> {
-    const res = await this.httpClient.post<Supplier>(
-      '/inventory/suppliers',
-      dto,
-      { headers: this.getAuthHeaders() }
+  // Suppliers
+  async getSuppliers(page: number = 1, limit: number = 20): Promise<PaginatedSuppliers> {
+    const response = await this.httpClient.get<PaginatedSuppliers>(
+      `/inventory/suppliers?page=${page}&limit=${limit}`,
+      this.getAuthHeaders()
     );
-    if (!res.ok || !res.data) throw new Error(res.error ?? 'Error al crear proveedor');
-    return res.data;
+    if (!response.ok || !response.data) throw new Error(response.error || 'Error retrieving suppliers');
+    return response.data;
   }
 
-  async updateSupplier(id: number, dto: Partial<Supplier>): Promise<Supplier> {
-    const res = await this.httpClient.put<Supplier>(
-      `/inventory/suppliers/${id}`,
-      dto,
-      { headers: this.getAuthHeaders() }
-    );
-    if (!res.ok || !res.data) throw new Error(res.error ?? 'Error al actualizar proveedor');
-    return res.data;
+  async createSupplier(supplier: Partial<Supplier>): Promise<Supplier> {
+    const response = await this.httpClient.post<Supplier>('/inventory/suppliers', supplier, { headers: this.getAuthHeaders() });
+    if (!response.ok || !response.data) throw new Error(response.error || 'Error creating supplier');
+    return response.data;
+  }
+
+  async updateSupplier(id: number, supplier: Partial<Supplier>): Promise<Supplier> {
+    const response = await this.httpClient.put<Supplier>(`/inventory/suppliers/${id}`, supplier, { headers: this.getAuthHeaders() });
+    if (!response.ok || !response.data) throw new Error(response.error || 'Error updating supplier');
+    return response.data;
   }
 
   async deleteSupplier(id: number): Promise<void> {
-    const res = await this.httpClient.delete(`/inventory/suppliers/${id}`, { headers: this.getAuthHeaders() });
-    if (!res.ok) throw new Error(res.error ?? 'Error al eliminar proveedor');
+    const response = await this.httpClient.delete(`/inventory/suppliers/${id}`, { headers: this.getAuthHeaders() });
+    if (!response.ok) throw new Error(response.error || 'Error deleting supplier');
   }
 
-  // ── Movements ───────────────────────────────────────────────────────────────
-
-  async getMovements(cod_prod?: number): Promise<Movement[]> {
-    const query = cod_prod ? `?cod_prod=${cod_prod}` : '';
-    const res = await this.httpClient.get<any>(`/inventory/movements${query}`, this.getAuthHeaders());
-    if (!res.ok) throw new Error(res.error ?? 'Error al obtener movimientos');
-    return this.ensureArray<any>(res.data).map(m => ({
-      ...m,
-      fk_cod_prod: m.cod_prod,
-      cantidad_mov: m.cantidad
-    }));
+  // Movements
+  async getMovements(cod_prod?: number, page: number = 1, limit: number = 20): Promise<PaginatedMovements> {
+    const url = cod_prod 
+      ? `/inventory/movements?cod_prod=${cod_prod}&page=${page}&limit=${limit}`
+      : `/inventory/movements?page=${page}&limit=${limit}`;
+    const response = await this.httpClient.get<PaginatedMovements>(url, this.getAuthHeaders());
+    if (!response.ok || !response.data) throw new Error(response.error || 'Error retrieving movements');
+    return response.data;
   }
 
-  async createMovement(dto: Omit<Movement, 'id_mov' | 'fecha_mov'>): Promise<Movement> {
-    const backendDto = {
-       ...dto,
-       cod_prod: dto.fk_cod_prod,
-       cantidad: dto.cantidad_mov
-    };
-    const res = await this.httpClient.post<Movement>(
-      '/inventory/movements',
-      backendDto,
-      { headers: this.getAuthHeaders() }
-    );
-    if (!res.ok || !res.data) throw new Error(res.error ?? 'Error al registrar movimiento');
-    return res.data;
+  async createMovement(movement: Partial<Movement>): Promise<Movement> {
+    const response = await this.httpClient.post<Movement>('/inventory/movements', movement, { headers: this.getAuthHeaders() });
+    if (!response.ok || !response.data) throw new Error(response.error || 'Error creating movement');
+    return response.data;
   }
 
-  // ── Low Stock ───────────────────────────────────────────────────────────────
-
-  async getLowStock(): Promise<LowStockItem[]> {
-    const res = await this.httpClient.get<any>('/inventory/low-stock', this.getAuthHeaders());
-    if (!res.ok) throw new Error(res.error ?? 'Error al obtener items con bajo stock');
-    return this.ensureArray<LowStockItem>(res.data);
+  // Low Stock & Suministra
+  async getLowStock(): Promise<{ data: Suministra[] }> {
+    const response = await this.httpClient.get<{ data: Suministra[] }>('/inventory/low-stock', this.getAuthHeaders());
+    if (!response.ok || !response.data) throw new Error(response.error || 'Error retrieving low stock');
+    return response.data;
   }
 
-  // ── Suministra ──────────────────────────────────────────────────────────────
-
-  async getSuministra(): Promise<Suministra[]> {
-    const res = await this.httpClient.get<any>('/inventory/suministra', this.getAuthHeaders());
-    if (!res.ok) throw new Error(res.error ?? 'Error al obtener suministra');
-    return this.ensureArray<Suministra>(res.data);
+  async upsertSuministra(suministra: Partial<Suministra>): Promise<Suministra> {
+    const response = await this.httpClient.post<Suministra>('/inventory/suministra', suministra, { headers: this.getAuthHeaders() });
+    if (!response.ok || !response.data) throw new Error(response.error || 'Error upserting suministra');
+    return response.data;
   }
 
-  async getSuministraById(id: number): Promise<Suministra> {
-    const res = await this.httpClient.get<Suministra>(`/inventory/suministra/${id}`, this.getAuthHeaders());
-    if (!res.ok || !res.data) throw new Error(res.error ?? 'Suministra no encontrado');
-    return res.data;
-  }
-
-  async upsertSuministra(dto: { fk_cod_prov: number; cod_prod: number; stock: number; stock_minimo: number }): Promise<Suministra> {
-    const res = await this.httpClient.post<Suministra>(
-      '/inventory/suministra',
-      dto,
-      { headers: this.getAuthHeaders() }
-    );
-    if (!res.ok || !res.data) throw new Error(res.error ?? 'Error al guardar suministra');
-    return res.data;
+  async getSuministra(page: number = 1, limit: number = 50): Promise<{ data: Suministra[], pagination: any }> {
+    const response = await this.httpClient.get<any>(`/inventory/suministra?page=${page}&limit=${limit}`, this.getAuthHeaders());
+    if (!response.ok || !response.data) throw new Error(response.error || 'Error retrieving suministra records');
+    return response.data;
   }
 }
