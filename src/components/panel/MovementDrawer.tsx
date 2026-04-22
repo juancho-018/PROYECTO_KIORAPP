@@ -33,7 +33,8 @@ export const MovementDrawer: React.FC<MovementDrawerProps> = ({ isOpen, onClose,
         productService.getProducts(1, 100),
         inventoryService.getSuppliers()
       ]);
-      if (resProd?.data) setProducts(resProd.data);
+      const prodList = Array.isArray(resProd) ? resProd : (resProd?.data || []);
+      setProducts(prodList);
       if (resSup?.data) setSuppliers(resSup.data);
     } catch (error) {
       console.error('Error cargando catálogos', error);
@@ -53,7 +54,6 @@ export const MovementDrawer: React.FC<MovementDrawerProps> = ({ isOpen, onClose,
         tipo_mov: formData.tipo_mov,
         cod_prod: Number(formData.cod_prod),
         cantidad: Number(formData.cantidad),
-        fk_cod_prov: formData.fk_cod_prov ? Number(formData.fk_cod_prov) : undefined,
         fecha_mov: new Date().toISOString() as any
       }) as any;
 

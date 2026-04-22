@@ -24,8 +24,9 @@ describe('OrderService', () => {
     mockHttpClient.get.mockResolvedValue({ ok: true, data });
 
     const result = await orderService.getOrders();
-    expect(result.data).toHaveLength(1);
-    expect(result.data[0].id_vent).toBe(1);
+    const dataArray = Array.isArray(result) ? result : result.data;
+    expect(dataArray).toHaveLength(1);
+    expect(dataArray[0].id_vent).toBe(1);
   });
 
   it('should fetch invoices correctly', async () => {
@@ -33,7 +34,8 @@ describe('OrderService', () => {
     mockHttpClient.get.mockResolvedValue({ ok: true, data });
 
     const result = await orderService.getInvoices();
-    expect(result.data).toHaveLength(1);
+    const dataArray = Array.isArray(result) ? result : (result as any).data;
+    expect(dataArray).toHaveLength(1);
   });
 
   it('should delete order', async () => {

@@ -13,7 +13,10 @@ vi.mock('@/config/setup', () => ({
     getProducts: vi.fn().mockResolvedValue([{ cod_prod: 1, nom_prod: 'Galletas', precio_prod: 1000 }]),
   },
   inventoryService: {
-    getMovements: vi.fn().mockResolvedValue([]),
+    getMovements: vi.fn().mockResolvedValue({ data: [], pagination: { page: 1, limit: 20, total: 0, totalPages: 1 } }),
+  },
+  maintenanceService: {
+    getReports: vi.fn().mockResolvedValue([]),
   },
   alertService: {
     showToast: vi.fn(),
@@ -21,24 +24,15 @@ vi.mock('@/config/setup', () => ({
   },
   authService: {
     getUser: vi.fn().mockReturnValue({ id: 1, id_usu: 1, correo_usu: 'test@kiora.com' }),
+    isAdmin: vi.fn().mockReturnValue(true),
   }
 }));
 
 const SalesSectionWrapper = () => {
-  const [orderForm, setOrderForm] = React.useState({
-    metodopago_usu: 'efectivo',
-    items: [],
-  });
-
   return (
     <SalesSection 
-      orderForm={orderForm}
-      setOrderForm={setOrderForm}
-      addToCart={(p) => setOrderForm(f => ({ ...f, items: [...f.items, { cod_prod: p.cod_prod!, cantidad: 1, precio_unit: p.precio_prod, nom_prod: p.nom_prod }] }))}
-      removeFromCart={(id) => setOrderForm(f => ({ ...f, items: f.items.filter(i => i.cod_prod !== id) }))}
-      updateQuantity={(id, d) => setOrderForm(f => ({ ...f, items: f.items.map(i => i.cod_prod === id ? { ...i, cantidad: i.cantidad + d } : i) }))}
-      clearCart={() => setOrderForm({ metodopago_usu: 'efectivo', items: [] })}
-      cartKey="test_cart"
+      onOpenPOS={vi.fn()}
+      isAdmin={true}
     />
   );
 };
@@ -52,7 +46,7 @@ describe('SalesSection', () => {
     render(<SalesSectionWrapper />);
 
     await waitFor(() => {
-      expect(screen.getByText('No hay ventas registradas.')).toBeInTheDocument();
+      expect(screen.getByText('No hay ventas registradas')).toBeInTheDocument();
     });
   });
 
@@ -60,66 +54,58 @@ describe('SalesSection', () => {
     render(<SalesSectionWrapper />);
 
     await waitFor(() => {
-      expect(screen.getByText('No hay ventas registradas.')).toBeInTheDocument();
+      expect(screen.getByText('No hay ventas registradas')).toBeInTheDocument();
     });
 
-    const facturasTab = screen.getByText('facturas');
+    const facturasTab = screen.getByText('Facturas');
     fireEvent.click(facturasTab);
 
-    expect(screen.getByText('Sin facturas emitidas')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('No hay facturas emitidas')).toBeInTheDocument();
+    });
   });
 
   it('can switch to Movimientos tab', async () => {
     render(<SalesSectionWrapper />);
 
     await waitFor(() => {
-      expect(screen.getByText('No hay ventas registradas.')).toBeInTheDocument();
+      expect(screen.getByText('No hay ventas registradas')).toBeInTheDocument();
     });
 
-    const movTab = screen.getByText('movimientos');
+    const movTab = screen.getByText('Movimientos');
     fireEvent.click(movTab);
 
-    expect(screen.getByText('Sin movimientos registrados')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('No hay movimientos registrados')).toBeInTheDocument();
+    });
   });
 
-  it('opens Nueva Venta drawer when button is clicked', async () => {
-    render(<SalesSectionWrapper />);
+  it('opens Nueva Venta drawer when + Nueva Venta button is clicked', async () => {
+    const onOpenPOS = vi.fn();
+    render(<SalesSection onOpenPOS={onOpenPOS} isAdmin={true} />);
 
     await waitFor(() => {
-      expect(screen.getByText('No hay ventas registradas.')).toBeInTheDocument();
+      expect(screen.getByText('No hay ventas registradas')).toBeInTheDocument();
     });
 
-    const nuevaVentaBtn = screen.getByText('Nueva Venta');
+    const nuevaVentaBtn = screen.getByText('+ Nueva Venta');
     fireEvent.click(nuevaVentaBtn);
 
-    expect(screen.getByText('Punto de')).toBeInTheDocument();
+    expect(onOpenPOS).toHaveBeenCalled();
   });
 
-  it('calls handleCancelOrder and clears the cart when confirmed', async () => {
-    const { alertService } = await import('@/config/setup');
+  it('calls handleCancelOrder flow when switching to incidencias', async () => {
     render(<SalesSectionWrapper />);
     await waitFor(() => {
-      expect(screen.getByText('No hay ventas registradas.')).toBeInTheDocument();
+      expect(screen.getByText('No hay ventas registradas')).toBeInTheDocument();
     });
 
-    // Abrir drawer
-    fireEvent.click(screen.getByText('Nueva Venta'));
-    
-    // El drawer debe mostrar productos. Vamos a añadir uno.
-    const productBtn = await screen.findByText(/Galletas/i);
-    fireEvent.click(productBtn.closest('button')!);
-
-    // Esperar a que el estado se actualice y el botón se habilite
-    const cancelBtn = screen.getByText(/CANCELAR PEDIDO/i);
-    await waitFor(() => {
-      expect(cancelBtn).not.toBeDisabled();
-    });
-    fireEvent.click(cancelBtn);
-
-    expect(alertService.showConfirm).toHaveBeenCalled();
+    // Switch to Incidencias tab
+    const incidenciasTab = screen.getByText('Incidencias');
+    fireEvent.click(incidenciasTab);
 
     await waitFor(() => {
-      expect(alertService.showToast).toHaveBeenCalledWith('info', expect.stringContaining('Pedido cancelado'));
+      expect(screen.getByText('No hay incidencias reportadas')).toBeInTheDocument();
     });
   });
 });

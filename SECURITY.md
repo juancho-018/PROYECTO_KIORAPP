@@ -1,37 +1,37 @@
 # Seguridad — Kiora Frontend
 
-Este documento describe el **modelo de amenazas del cliente**, límites conocidos y recomendaciones para despliegues reales.
+Este documento describe el **modelo de amenazas del cliente**, límites conocidos y recomendaciones para despliegues reales en el ecosistema Kiora.
 
 ## Alcance
 
-La aplicación es un sitio **estático (Astro `output: 'static'`)** con **React en el cliente**. La autorización definitiva debe estar siempre en el **backend** (API): el front solo oculta rutas y UX; **no** sustituye controles de acceso en servidor.
+La aplicación es un sitio **estático (Astro `output: 'static'`)** con **React en el cliente**. La autorización definitiva reside en el **API Gateway (Puerto 3000)** y los microservicios individuales. El frontend gestiona la experiencia de usuario y oculta rutas según el rol, pero no sustituye la validación del lado del servidor.
 
 ## Token JWT y almacenamiento
 
-- Hoy el token se guarda en **`localStorage`** (`AuthService`), lo que lo hace accesible a cualquier script en la página.
-- **Riesgo principal:** si se inyecta JavaScript malicioso (XSS), el atacante puede leer el token.
-- **Mitigación recomendada (backend):** sesión con **cookies `HttpOnly` + `Secure` + `SameSite`**, con refresh en servidor; el front solo dispara login/logout y no guarda el JWT en JS.
-- **Mitigación en front:** evitar `dangerouslySetInnerHTML`, sanitizar HTML si se añade contenido rico, y en despliegue configurar **Content-Security-Policy (CSP)** acorde al bundle (sin `'unsafe-inline'` salvo que sea imprescindible).
+- Actualmente el token se almacena en **`localStorage`** para facilitar el soporte de PWA y la persistencia entre recargas.
+- **Riesgo:** El acceso por JavaScript (XSS) podría exponer el token.
+- **Mitigación:** Se utiliza un cliente HTTP centralizado (`HttpClient.ts`) que adjunta automáticamente las cabeceras de autorización y maneja la expiración de forma proactiva.
+- **Recomendación:** Implementar políticas de CSP estrictas en el servidor web (Nginx) para mitigar intentos de inyección.
 
-## Sesión e inactividad
+## Integración con el API Gateway
 
-- `SessionManager` cierra sesión por inactividad y avisa antes del corte; renueva el token cuando el JWT está cerca de expirar.
-- Los tiempos son **orientativos en cliente**; la API debe rechazar tokens expirados o revocados.
+- Todas las peticiones pasan por el **API Gateway**.
+- La identidad del usuario se propaga mediante cabeceras `Authorization: Bearer <token>`.
+- El frontend no almacena secretos del backend ni claves de API sensibles (Weglot es la única excepción y está limitada al dominio cliente).
 
-## Variables de entorno
+## Módulo de Incidencias y Reportes
 
-- `PUBLIC_API_URL`: prefijo público; no coloques secretos en variables `PUBLIC_*` de Astro.
-- `PUBLIC_WEGLOT_API_KEY`: clave del widget de traducción Weglot (opcional). Si no está definida, no se carga el script de Weglot. Las claves Weglot están pensadas para uso en cliente; aun así evita compartirlas en repositorios públicos sin control.
+- Los reportes técnicos enviados por los usuarios son tratados como datos sensibles de operación.
+- La comunicación se realiza exclusivamente por canales cifrados (HTTPS recomendado para producción).
 
-## Transporte
+## Transporte y Despliegue
 
-- En producción, servir la app y la API solo por **HTTPS**.
-
-## Despliegue
-
-- Configurar cabeceras de seguridad en el proveedor (Netlify `_headers`, Vercel, nginx, etc.): al menos **CSP**, **X-Content-Type-Options**, **Referrer-Policy** y **Permissions-Policy** según necesidad.
+- **HTTPS**: Es obligatorio servir tanto la aplicación como la API por canales seguros.
+- **Cabeceras**: La configuración de Nginx (`nginx.conf`) incluye protecciones contra Sniffing de tipos MIME y manejo dinámico de caché para evitar que datos sensibles queden en el disco del cliente más tiempo del necesario.
 
 ## Referencias internas
 
 - Cliente HTTP: `src/core/http/HttpClient.ts`
+- Gestión de Incidencias: `src/services/IncidentService.ts`
 - Autenticación: `src/services/AuthService.ts`
+

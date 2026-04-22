@@ -7,6 +7,7 @@ interface OrderDetailModalProps {
   safePrice: (v: unknown) => number;
   estadoColors: Record<string, string>;
   onRefund?: (id: number) => void;
+  onDownloadReceipt?: (id: number) => void;
 }
 
 export function OrderDetailModal({
@@ -14,7 +15,8 @@ export function OrderDetailModal({
   onClose,
   safePrice,
   estadoColors,
-  onRefund
+  onRefund,
+  onDownloadReceipt
 }: OrderDetailModalProps) {
   const handleModalClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -163,19 +165,31 @@ export function OrderDetailModal({
             </p>
           </div>
 
-          {detailOrder.estado === 'completada' && onRefund && (
-            <div className="mt-6 flex justify-end px-2 border-t border-slate-100 pt-6">
+          <div className="mt-6 flex flex-wrap justify-end gap-3 px-2 border-t border-slate-100 pt-6">
+            {detailOrder.estado === 'completada' && onDownloadReceipt && (
+              <button
+                onClick={() => onDownloadReceipt(detailOrder.id_vent!)}
+                className="flex items-center gap-2 px-5 py-2.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white rounded-xl font-bold transition-all border border-emerald-100 hover:border-emerald-600 shadow-sm"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+                Descargar Factura
+              </button>
+            )}
+
+            {detailOrder.estado === 'completada' && onRefund && (
               <button
                 onClick={() => onRefund(detailOrder.id_vent!)}
-                className="flex items-center gap-2 px-5 py-2.5 bg-purple-50 text-purple-700 hover:bg-purple-600 hover:text-white rounded-xl font-bold transition-colors border border-purple-100 hover:border-purple-600"
+                className="flex items-center gap-2 px-5 py-2.5 bg-purple-50 text-purple-700 hover:bg-purple-600 hover:text-white rounded-xl font-bold transition-all border border-purple-100 hover:border-purple-600 shadow-sm"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z" />
                 </svg>
                 Solicitar Reembolso
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>

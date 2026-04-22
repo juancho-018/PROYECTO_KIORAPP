@@ -32,21 +32,20 @@ export function SalesSection({ onOpenPOS }: { onOpenPOS: () => void; isAdmin?: b
     cod_prod: null as number | null
   });
 
-  const user = authService.getUser();
-  const isAdmin = user?.rol_usu?.toLowerCase() === 'admin';
+  const isAdmin = authService.isAdmin();
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
       if (subTab === 'ventas') {
         const res = await orderService.getOrders();
-        setOrders(Array.isArray(res.data) ? res.data : []);
+        setOrders(Array.isArray(res) ? res : (res.data || []));
       } else if (subTab === 'facturas') {
         const res = await orderService.getInvoices();
         setInvoices(Array.isArray(res.data) ? res.data : []);
       } else if (subTab === 'movimientos') {
         const data = await inventoryService.getMovements();
-        setMovements(Array.isArray(data) ? data : []);
+        setMovements(Array.isArray(data) ? data : (data?.data || []));
       } else if (subTab === 'incidencias') {
         const data = await maintenanceService.getReports();
         setReports(Array.isArray(data) ? data : []);
@@ -81,7 +80,7 @@ export function SalesSection({ onOpenPOS }: { onOpenPOS: () => void; isAdmin?: b
       return;
     }
     try {
-      if (type === 'excel') await orderService.exportExcel();
+      if (type === 'excel') throw new Error('Exportación a Excel no implementada');
       else await orderService.exportPdf();
       alertService.showToast('success', `Reporte ${type.toUpperCase()} generado`);
     } catch (e) {
@@ -152,7 +151,7 @@ export function SalesSection({ onOpenPOS }: { onOpenPOS: () => void; isAdmin?: b
 
   const handleCreateIncident = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!incidentForm.titulo_mant || !incidentForm.descrip_mante) {
+    if (!incidentForm.observaciones_tecnicas || !incidentForm.descripcion) {
       alertService.showToast('warning', 'Título y descripción son obligatorios');
       return;
     }
@@ -161,7 +160,7 @@ export function SalesSection({ onOpenPOS }: { onOpenPOS: () => void; isAdmin?: b
       await maintenanceService.createReport({
         observaciones_tecnicas: incidentForm.observaciones_tecnicas,
         descripcion: incidentForm.descripcion,
-        cod_prod: incidentForm.cod_prod,
+        cod_prod: incidentForm.cod_prod || undefined,
         estado: 'pendiente',
         prioridad: 'media'
       });
@@ -179,6 +178,15 @@ export function SalesSection({ onOpenPOS }: { onOpenPOS: () => void; isAdmin?: b
   const safePrice = (v: unknown) => {
     const n = Number(v);
     return isNaN(n) ? 0 : n;
+  };
+
+  const handleDownloadReceipt = async (id: number) => {
+    try {
+      await orderService.downloadReceipt(id);
+      alertService.showToast('success', 'Factura descargada');
+    } catch (e) {
+      alertService.showToast('error', 'Error al descargar factura');
+    }
   };
 
   return (
@@ -254,7 +262,7 @@ export function SalesSection({ onOpenPOS }: { onOpenPOS: () => void; isAdmin?: b
                   <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-widest text-slate-400">#</th>
                   <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-widest text-slate-400">Fecha</th>
                   <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-widest text-slate-400">Título / Ref</th>
-                  {isAdmin && <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-widest text-slate-400">Prioridad</th>}
+                  {subTab === 'incidencias' && isAdmin && <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-widest text-slate-400">Prioridad</th>}
                   <th className="px-5 py-4 text-right text-[11px] font-black uppercase tracking-widest text-slate-400">Importe / Detalle</th>
                   <th className="px-5 py-4 text-center text-[11px] font-black uppercase tracking-widest text-slate-400">Estado</th>
                   <th className="px-5 py-4 text-center text-[11px] font-black uppercase tracking-widest text-slate-400">Acciones</th>
@@ -271,8 +279,8 @@ export function SalesSection({ onOpenPOS }: { onOpenPOS: () => void; isAdmin?: b
                         <td className="px-5 py-4 text-[#111827] text-xs font-bold">
                           {o.fecha_vent ? new Date(o.fecha_vent).toLocaleDateString('es-CO') : '—'}
                         </td>
-                        <td className="px-5 py-4 text-slate-500 text-xs font-bold capitalize">
-                          {o.metodopago_usu || 'Efectivo'}
+                        <td className="px-5 py-4 text-slate-500 text-xs font-bold capitalize max-w-[200px] truncate">
+                          {o.productos_resumen || (o.metodopago_usu === 'tarjeta' ? 'Pago con Tarjeta' : 'Venta Directa')}
                         </td>
                         <td className="px-5 py-4 text-right font-black text-[#ec131e] text-base">
                           <span className="text-[10px] mr-0.5">$</span>{safePrice(o.montofinal_vent).toLocaleString('es-CO')}
@@ -296,21 +304,53 @@ export function SalesSection({ onOpenPOS }: { onOpenPOS: () => void; isAdmin?: b
                           )}
                         </td>
                         <td className="px-5 py-4 text-center">
-                          <div className="flex items-center justify-center gap-4">
-                            <button onClick={() => o.id_vent && void handleViewDetails(o.id_vent)} className="text-[#2563eb] text-xs font-black hover:underline">Ver Detalle</button>
+                          <div className="flex items-center justify-center gap-2">
+                            <button onClick={() => o.id_vent && void handleViewDetails(o.id_vent)} className="text-[#2563eb] text-xs font-black hover:underline">Ver</button>
+                            {o.estado === 'completada' && (
+                              <button onClick={() => o.id_vent && void handleDownloadReceipt(o.id_vent)} className="text-emerald-600 text-xs font-black hover:underline">Factura</button>
+                            )}
                             {o.estado === 'pendiente' ? (
                                <button 
                                  onClick={() => o.id_vent && void handleDeleteOrder(o.id_vent)} 
-                                 className="text-[#ec131e] text-xs font-black hover:underline hover:bg-red-50 px-2 py-1 rounded-lg transition-all"
+                                 className="text-[#ec131e] text-xs font-black hover:underline"
                                >
                                  Cancelar
                                </button>
-                            ) : (
-                               <span className="bg-slate-50 text-slate-400 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter border border-slate-100 italic transition-all hover:bg-slate-100">
-                                 {o.estado === 'cancelada' ? 'Eliminada' : o.estado}
-                               </span>
-                            )}
+                            ) : null}
                           </div>
+                        </td>
+                      </tr>
+                    ))
+                  )
+                )}
+                {subTab === 'facturas' && (
+                  invoices.length === 0 ? (
+                    <tr><td colSpan={6} className="py-10 text-center text-slate-400">No hay facturas emitidas</td></tr>
+                  ) : (
+                    invoices.map(f => (
+                      <tr key={f.id_fact} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="px-5 py-4 font-black text-slate-400 text-xs">#{f.id_fact}</td>
+                        <td className="px-5 py-4 text-[#111827] text-xs font-bold">
+                          {f.fecha_fact ? new Date(f.fecha_fact).toLocaleDateString('es-CO') : '—'}
+                        </td>
+                        <td className="px-5 py-4 text-slate-500 text-xs font-bold">
+                          Venta #{f.id_pedido}
+                        </td>
+                        <td className="px-5 py-4 text-right font-black text-[#1a1a1a] text-sm">
+                          ${safePrice(f.total_fact).toLocaleString('es-CO')}
+                        </td>
+                        <td className="px-5 py-4 text-center">
+                          <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-[10px] font-black uppercase text-blue-600 border border-blue-100">
+                            EMITIDA
+                          </span>
+                        </td>
+                        <td className="px-5 py-4 text-center">
+                          <button 
+                            onClick={() => void handleDownloadReceipt(f.id_pedido)}
+                            className="text-emerald-600 text-xs font-black hover:underline"
+                          >
+                            Descargar
+                          </button>
                         </td>
                       </tr>
                     ))
@@ -324,14 +364,24 @@ export function SalesSection({ onOpenPOS }: { onOpenPOS: () => void; isAdmin?: b
                       <tr key={m.id_mov} className="hover:bg-slate-50/50">
                         <td className="px-5 py-4 font-black text-slate-400 text-xs">#{m.id_mov}</td>
                         <td className="px-5 py-4 text-xs font-bold">{new Date(m.fecha_mov!).toLocaleDateString()}</td>
-                        <td className="px-5 py-4 text-xs font-bold">Prod ID: {m.fk_cod_prod}</td>
-                        <td className="px-5 py-4 text-right font-black text-slate-600">{m.cantidad_mov} unidades</td>
+                        <td className="px-5 py-4">
+                          <p className="text-xs font-bold text-[#111827]">Prod ID: {m.cod_prod}</p>
+                          <p className="text-[10px] text-slate-400 italic truncate max-w-[150px]">{(m as any).desc_mov || 'Venta automatizada'}</p>
+                        </td>
+                        <td className="px-5 py-4 text-right font-black text-slate-600">{m.cantidad} uds</td>
                         <td className="px-5 py-4 text-center">
                           <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${m.tipo_mov === 'entrada' ? 'bg-emerald-50 text-emerald-600' : 'bg-orange-50 text-orange-600'}`}>
                             {m.tipo_mov}
                           </span>
                         </td>
-                        <td className="px-5 py-4 text-center text-slate-400 text-[10px] italic">{m.descrip_mov || 'Venta automatizada'}</td>
+                        <td className="px-5 py-4 text-center">
+                          <button 
+                            onClick={() => window.dispatchEvent(new CustomEvent('kiora_show_product', { detail: m.cod_prod }))}
+                            className="text-[10px] font-black text-indigo-600 hover:text-indigo-800 uppercase tracking-widest"
+                          >
+                            Detalle
+                          </button>
+                        </td>
                       </tr>
                     ))
                   )
@@ -382,6 +432,7 @@ export function SalesSection({ onOpenPOS }: { onOpenPOS: () => void; isAdmin?: b
           safePrice={safePrice}
           estadoColors={ESTADO_COLORS}
           onRefund={isAdmin ? handleRefund : undefined}
+          onDownloadReceipt={handleDownloadReceipt}
         />
       )}
 

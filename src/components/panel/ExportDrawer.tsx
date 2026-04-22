@@ -13,14 +13,11 @@ export const ExportDrawer: React.FC<ExportDrawerProps> = ({ isOpen, onClose }) =
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      const blob = await maintenanceService.downloadExport(format);
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `reporte_fallos.${format === 'excel' ? 'xlsx' : 'pdf'}`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      if (format === 'excel') {
+        await maintenanceService.exportExcel();
+      } else {
+        await maintenanceService.exportPdf();
+      }
       
       alertService.showToast('success', 'Exportación iniciada correctamente');
       onClose();

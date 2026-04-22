@@ -24,7 +24,7 @@ export const OrderDetailDrawer: React.FC<OrderDetailDrawerProps> = ({
           </button>
           <div className="text-center">
             <h2 className="text-[15px] font-black text-gray-900">Detalle de Venta #{order.id_vent}</h2>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{new Date(order.fecha_vent).toLocaleString()}</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{order.fecha_vent ? new Date(order.fecha_vent).toLocaleString() : '—'}</p>
           </div>
           <div className="w-9" />
         </div>
@@ -60,7 +60,7 @@ export const OrderDetailDrawer: React.FC<OrderDetailDrawerProps> = ({
                         <p className="text-xs text-gray-500 font-medium">{item.cantidad} unidad(es) x ${Number(item.precio_unit).toLocaleString()}</p>
                       </div>
                       <div className="text-right">
-                         <p className="text-sm font-black text-[#ec131e]">${(item.cantidad * item.precio_unit).toLocaleString()}</p>
+                         <p className="text-sm font-black text-[#ec131e]">${(item.cantidad * (item.precio_unit ?? 0)).toLocaleString()}</p>
                       </div>
                     </div>
                   ))
@@ -74,7 +74,7 @@ export const OrderDetailDrawer: React.FC<OrderDetailDrawerProps> = ({
           <div className="mt-auto space-y-3 bg-red-50/50 p-6 rounded-3xl border border-red-100/50">
              <div className="flex justify-between items-center text-gray-500 text-sm font-bold">
                 <span>Subtotal</span>
-                <span>${Number(order.precio_prod_final || 0).toLocaleString()}</span>
+                <span>${Number((order as any).precio_prod_final || 0).toLocaleString()}</span>
              </div>
              <div className="flex justify-between items-center text-gray-500 text-sm font-bold">
                 <span>Impuestos / Descuentos</span>

@@ -61,9 +61,9 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({ user, onLogout, onProf
       <nav className="flex items-center justify-between px-6 py-3">
         {/* Left Section: Branding */}
         <div className="flex items-center gap-4">
-          <img 
-            src="/img/logo-kiora-vectorizado-blanco.png" 
-            alt="Kiora Logo" 
+          <img
+            src="/img/logo-kiora-vectorizado-blanco.png"
+            alt="Kiora Logo"
             className="h-8 w-auto hover:opacity-90 transition-opacity cursor-pointer"
             onClick={() => window.location.reload()}
           />
@@ -76,7 +76,7 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({ user, onLogout, onProf
         <div className="flex items-center gap-6">
           {/* Notifications */}
           <div className="relative">
-            <button 
+            <button
               onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
               className="relative p-2 text-white/80 transition-all hover:scale-110 hover:text-white rounded-full hover:bg-white/5 active:scale-95"
             >
@@ -113,7 +113,7 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({ user, onLogout, onProf
                     <h3 className="text-xs font-black text-gray-900 uppercase tracking-widest">Alertas de Stock</h3>
                     <span className="px-2 py-0.5 bg-red-100 text-[#ec131e] text-[9px] font-black rounded-full uppercase tracking-tighter">Bajo Stock</span>
                   </div>
-                  
+
                   <div className="max-h-96 overflow-y-auto">
                     {isLoading ? (
                       <div className="p-10 flex justify-center"><div className="w-6 h-6 border-2 border-red-100 border-t-[#ec131e] rounded-full animate-spin"></div></div>
@@ -137,16 +137,16 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({ user, onLogout, onProf
                     ) : (
                       <div className="p-12 text-center flex flex-col items-center">
                         <div className="mb-3 p-3 bg-emerald-50 rounded-full text-emerald-600">
-                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"/></svg>
+                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>
                         </div>
                         <p className="text-sm text-gray-600 font-bold">¡Todo en orden!</p>
                         <p className="text-xs text-gray-400 font-medium">No hay productos con stock bajo.</p>
                       </div>
                     )}
                   </div>
-                  
+
                   {alerts.length > 0 && (
-                    <button 
+                    <button
                       onClick={() => {
                         window.location.hash = 'inventario';
                         setIsNotificationsOpen(false);
@@ -163,7 +163,7 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({ user, onLogout, onProf
 
           {/* User Profile */}
           <div className="flex items-center gap-3">
-             <button
+            <button
               onClick={onProfileOpen}
               className="group flex items-center transition-all hover:opacity-90 active:scale-95"
             >
@@ -172,8 +172,8 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({ user, onLogout, onProf
               </div>
             </button>
             <button
-               onClick={onLogout}
-               className="ml-2 rounded-full bg-white/10 px-4 py-1.5 text-xs font-semibold text-white transition-all hover:bg-white/15 active:bg-white/20"
+              onClick={onLogout}
+              className="ml-2 rounded-full bg-white/10 px-4 py-1.5 text-xs font-semibold text-white transition-all hover:bg-white/15 active:bg-white/20"
             >
               Salir
             </button>
@@ -181,7 +181,7 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({ user, onLogout, onProf
         </div>
       </nav>
 
-      <NotificationSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+
     </header>
   );
 };

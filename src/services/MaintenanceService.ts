@@ -1,51 +1,97 @@
-import { type IHttpClient } from '../core/http/HttpClient';
-import { type AuthService } from './AuthService';
-import { type PaginatedResponse } from '../models/Pagination';
-import type { MaintenanceReport, CreateReportDto } from '../models/Maintenance';
+import type { IHttpClient } from '../core/http/HttpClient';
+import type { AuthService } from './AuthService';
+import type { MaintenanceReport } from '../models/Maintenance';
 
 export class MaintenanceService {
   constructor(
     private httpClient: IHttpClient,
     private authService: AuthService
-  ) {}
+  ) { }
 
   private getAuthHeaders(): Record<string, string> {
     const token = this.authService.getToken();
     return token ? { Authorization: `Bearer ${token}` } : {};
   }
 
-  async fetchReports(page: number = 1, limit: number = 20): Promise<PaginatedResponse<MaintenanceReport>> {
-    const response = await this.httpClient.get<PaginatedResponse<MaintenanceReport>>(
-      `/maintenance?page=${page}&limit=${limit}`,
-      this.getAuthHeaders()
-    );
-    if (!response.ok || !response.data) throw new Error(response.error ?? 'Error al cargar reportes');
-    return response.data;
+  private get baseURL(): string {
+    return this.httpClient.baseURL;
   }
 
-  async createReport(dto: CreateReportDto): Promise<MaintenanceReport> {
-    const response = await this.httpClient.post<MaintenanceReport>('/maintenance', dto, {
-      headers: this.getAuthHeaders()
-    });
-    if (!response.ok || !response.data) throw new Error(response.error ?? 'Error al crear reporte');
-    return response.data;
+  private ensureArray<T>(data: any): T[] {
+    if (Array.isArray(data)) return data;
+    if (data && typeof data === 'object' && Array.isArray(data.data)) return data.data;
+    return [];
+  }
+
+  // ── Reports ─────────────────────────────────────────────────────────────────
+
+  async getReports(): Promise<MaintenanceReport[]> {
+    // NOTE: Backend for /maintenance/reports is not implemented yet.
+    // const res = await this.httpClient.get<any>('/maintenance/reports', this.getAuthHeaders());
+    // if (!res.ok) throw new Error(res.error ?? 'Error al obtener reportes');
+    // return this.ensureArray<MaintenanceReport>(res.data);
+    console.warn('Backend de reportes de mantenimiento no implementado');
+    return [];
+  }
+
+  async getReportById(id: number): Promise<MaintenanceReport> {
+    const res = await this.httpClient.get<MaintenanceReport>(`/maintenance/reports/${id}`, this.getAuthHeaders());
+    if (!res.ok || !res.data) throw new Error(res.error ?? 'Reporte no encontrado');
+    return res.data;
+  }
+
+  async createReport(dto: Partial<MaintenanceReport>): Promise<MaintenanceReport> {
+    const res = await this.httpClient.post<MaintenanceReport>(
+      '/maintenance/reports',
+      dto,
+      { headers: this.getAuthHeaders() }
+    );
+    if (!res.ok || !res.data) throw new Error(res.error ?? 'Error al crear reporte');
+    return res.data;
   }
 
   async updateReport(id: number, dto: Partial<MaintenanceReport>): Promise<MaintenanceReport> {
-    const response = await this.httpClient.patch<MaintenanceReport>(`/maintenance/${id}`, dto, {
-      headers: this.getAuthHeaders()
-    });
-    if (!response.ok || !response.data) throw new Error(response.error ?? 'Error al actualizar reporte');
-    return response.data;
+    const res = await this.httpClient.put<MaintenanceReport>(
+      `/maintenance/reports/${id}`,
+      dto,
+      { headers: this.getAuthHeaders() }
+    );
+    if (!res.ok || !res.data) throw new Error(res.error ?? 'Error al actualizar reporte');
+    return res.data;
   }
 
-  getExportUrl(format: 'pdf' | 'excel'): string {
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
-    return `${baseUrl}/maintenance/export/${format === 'excel' ? 'excel' : 'pdf'}`;
+  async deleteReport(id: number): Promise<void> {
+    const res = await this.httpClient.delete(`/maintenance/reports/${id}`, { headers: this.getAuthHeaders() });
+    if (!res.ok) throw new Error(res.error ?? 'Error al eliminar reporte');
   }
 
-  async downloadExport(format: 'pdf' | 'excel'): Promise<Blob> {
-    const url = `/maintenance/export/${format === 'excel' ? 'excel' : 'pdf'}`;
-    return this.httpClient.download(url, this.getAuthHeaders());
+  // ── Export ──────────────────────────────────────────────────────────────────
+
+  private async downloadBlob(path: string, fileName: string): Promise<void> {
+    const token = this.authService.getToken();
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch(`${this.baseURL}${path}`, { headers });
+    if (!res.ok) throw new Error('Error al exportar archivo');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async exportExcel(): Promise<void> {
+    // NOTE: Backend does not support /maintenance/export/excel
+    // await this.downloadBlob('/maintenance/export/excel', `mantenimientos_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    throw new Error('Exportación de mantenimiento no implementada en el servidor');
+  }
+
+  async exportPdf(): Promise<void> {
+    // NOTE: Backend does not support /maintenance/export/pdf
+    // await this.downloadBlob('/maintenance/export/pdf', `mantenimientos_${new Date().toISOString().slice(0, 10)}.pdf`);
+    throw new Error('Exportación de mantenimiento no implementada en el servidor');
   }
 }

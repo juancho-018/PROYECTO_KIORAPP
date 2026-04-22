@@ -17,6 +17,3 @@ export interface User {
   /** Metadatos adicionales no mapeados aún (evitar depender de esto en lógica de negocio). */
   meta?: Record<string, unknown>;
 }
-  /** Metadatos adicionales no mapeados aún (evitar depender de esto en lógica de negocio). */
-  meta?: Record<string, unknown>;
-}
