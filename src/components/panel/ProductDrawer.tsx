@@ -18,7 +18,20 @@ const EMPTY_PRODUCT = {
   stock_actual: 0,
   stock_minimo: 0,
   fk_cod_cats: [] as number[],
+  tipo_prod: 'alimento',
 };
+
+const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000/api';
+const IMG_BASE = API_URL.replace('/api', '');
+
+function getImageUrl(path?: string): string {
+  if (!path) return '';
+  if (path.startsWith('http')) return path;
+  if (path.startsWith('data:')) return path;
+  const cleanBase = IMG_BASE.endsWith('/') ? IMG_BASE.slice(0, -1) : IMG_BASE;
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  return `${cleanBase}${cleanPath}`;
+}
 
 export function ProductDrawer({ isOpen, onClose, product, onSuccess }: ProductDrawerProps) {
   const [form, setForm] = useState(EMPTY_PRODUCT);
@@ -48,8 +61,9 @@ export function ProductDrawer({ isOpen, onClose, product, onSuccess }: ProductDr
         stock_actual: product.stock_actual || 0,
         stock_minimo: product.stock_minimo || 0,
         fk_cod_cats: product.fk_cod_cats || [],
+        tipo_prod: product.tipo_prod || 'alimento',
       });
-      setImagePreview(product.imagen_prod || null);
+      setImagePreview(product.imagen_prod ? getImageUrl(product.imagen_prod) : null);
     } else {
       setForm(EMPTY_PRODUCT);
       setImagePreview(null);
@@ -248,6 +262,18 @@ export function ProductDrawer({ isOpen, onClose, product, onSuccess }: ProductDr
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tipo de Producto</label>
+                  <select
+                    value={form.tipo_prod}
+                    onChange={e => setForm(f => ({ ...f, tipo_prod: e.target.value }))}
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium focus:border-[#ec131e] focus:outline-none focus:ring-4 focus:ring-[#ec131e]/5 transition-all"
+                  >
+                    <option value="alimento">Alimento</option>
+                    <option value="bebida">Bebida</option>
+                    <option value="otro">Otro</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Precio ($) *</label>
                   <input
                     type="number"
@@ -257,31 +283,32 @@ export function ProductDrawer({ isOpen, onClose, product, onSuccess }: ProductDr
                     className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium focus:border-[#ec131e] focus:outline-none focus:ring-4 focus:ring-[#ec131e]/5 transition-all"
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Categorías (Puedes escoger varias)</label>
-                  <div className="flex flex-wrap gap-2">
-                    {categories.map(c => (
-                      <button
-                        key={c.cod_cat}
-                        type="button"
-                        onClick={() => {
-                          const id = c.cod_cat!;
-                          setForm(f => ({
-                            ...f,
-                            fk_cod_cats: f.fk_cod_cats?.includes(id)
-                              ? f.fk_cod_cats.filter(t => t !== id)
-                              : [...(f.fk_cod_cats || []), id]
-                          }));
-                        }}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all capitalize border ${form.fk_cod_cats?.includes(c.cod_cat!)
-                          ? 'bg-slate-800 text-white border-slate-800 shadow-sm'
-                          : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
-                          }`}
-                      >
-                        {c.nom_cat}
-                      </button>
-                    ))}
-                  </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Categorías (Selección Múltiple)</label>
+                <div className="flex flex-wrap gap-2">
+                  {categories.map(c => (
+                    <button
+                      key={c.cod_cat}
+                      type="button"
+                      onClick={() => {
+                        const id = c.cod_cat!;
+                        setForm(f => ({
+                          ...f,
+                          fk_cod_cats: f.fk_cod_cats?.includes(id)
+                            ? f.fk_cod_cats.filter(t => t !== id)
+                            : [...(f.fk_cod_cats || []), id]
+                        }));
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all capitalize border ${form.fk_cod_cats?.includes(c.cod_cat!)
+                        ? 'bg-slate-800 text-white border-slate-800 shadow-sm'
+                        : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
+                        }`}
+                    >
+                      {c.nom_cat}
+                    </button>
+                  ))}
                 </div>
               </div>
 

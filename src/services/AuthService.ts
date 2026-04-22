@@ -117,4 +117,9 @@ export class AuthService {
       throw new Error(response.error ?? 'Error al restablecer la contraseña');
     }
   }
+
+  isAdmin(): boolean {
+    const user = this.getUser();
+    return !!user && String(user.rol_usu || '').toLowerCase() === 'admin';
+  }
 }

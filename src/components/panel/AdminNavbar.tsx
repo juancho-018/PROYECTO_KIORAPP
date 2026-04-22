@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import type { User } from '@/models/User';
+import { productService } from '@/config/setup';
 
 interface AdminNavbarProps {
   user: User;
@@ -8,46 +9,23 @@ interface AdminNavbarProps {
 }
 
 export const AdminNavbar: React.FC<AdminNavbarProps> = ({ user, onLogout, onProfileOpen }) => {
-<<<<<<< Updated upstream
-=======
-  const [alerts, setAlerts] = useState<Product[]>([]);
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [alerts, setAlerts] = useState<any[]>([]);
 
   useEffect(() => {
-    let lastAlertCount = 0;
     let failCount = 0;
-
     const fetchAlerts = async () => {
       if (failCount >= 3) return;
       try {
         const res = await productService.getLowStock();
         failCount = 0;
-        if (res && res.data) {
-          setAlerts(res.data);
-          if (res.data.length > lastAlertCount) {
-            alertService.showToast('warning', `⚠️ Stock bajo detectado`);
-          }
-          lastAlertCount = res.data.length;
-        }
-      } catch (err) {
-        failCount++;
-      }
+        if (res && res.data) setAlerts(res.data);
+      } catch (err) { failCount++; }
     };
-
     fetchAlerts();
     const interval = setInterval(fetchAlerts, 120000);
-
-    const handleManualRefresh = () => { failCount = 0; fetchAlerts(); };
-    window.addEventListener('kiora-refresh-alerts', handleManualRefresh);
-
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('kiora-refresh-alerts', handleManualRefresh);
-    };
+    return () => clearInterval(interval);
   }, []);
 
->>>>>>> Stashed changes
   const getInitials = (name: string) => {
     if (!name) return 'UN';
     const parts = name.trim().split(' ');

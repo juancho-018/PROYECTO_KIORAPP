@@ -7,11 +7,7 @@ import { getErrorMessage } from '@/utils/getErrorMessage';
 
 type SubTab = 'proveedores' | 'alertas' | 'movimientos';
 
-interface InventorySectionProps {
-  onNavigateToProducts?: () => void;
-}
-
-export function InventorySection({ onNavigateToProducts }: InventorySectionProps) {
+export function InventorySection() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [lowStock, setLowStock] = useState<any[]>([]);
   const [movements, setMovements] = useState<any[]>([]);
@@ -60,19 +56,25 @@ export function InventorySection({ onNavigateToProducts }: InventorySectionProps
           <h2 className="text-2xl font-bold text-slate-900">Control de Inventario</h2>
           <p className="text-sm text-slate-500 font-medium">Historial, proveedores y alertas críticas.</p>
         </div>
-        <div className="flex gap-1 rounded-full bg-slate-100 p-1">
+        <div className="flex gap-2 rounded-2xl bg-slate-50 p-1.5 border border-slate-100/50">
           {(['movimientos', 'proveedores', 'alertas'] as SubTab[]).map(t => (
-            <button key={t} onClick={() => setActiveSubTab(t)} className={`px-5 py-2 rounded-full text-xs font-bold transition-all capitalize ${activeSubTab === t ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:bg-white/50'}`}>{t}</button>
+            <button 
+              key={t} 
+              onClick={() => setActiveSubTab(t)} 
+              className={`px-6 py-2 rounded-xl text-xs font-bold transition-all capitalize ${activeSubTab === t ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-100' : 'text-slate-400 hover:text-slate-600'}`}
+            >
+              {t}
+            </button>
           ))}
         </div>
       </header>
 
       <main>
         {activeSubTab === 'movimientos' ? (
-          <div className="bg-white border rounded-3xl overflow-hidden shadow-sm">
+          <div className="bg-white rounded-[2.5rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.04)] ring-1 ring-slate-100/50">
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
-                <thead className="bg-slate-50 text-[10px] font-black uppercase text-slate-400">
+                <thead className="bg-slate-50/50 text-[10px] font-black uppercase text-slate-400 tracking-widest">
                   <tr>
                     <th className="px-6 py-4">Fecha</th>
                     <th className="px-6 py-4">Producto</th>
@@ -81,7 +83,7 @@ export function InventorySection({ onNavigateToProducts }: InventorySectionProps
                     <th className="px-6 py-4">Justificación</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y border-t">
+                <tbody className="divide-y divide-slate-50">
                   {movements.map(m => {
                     const p = products.find(prod => prod.cod_prod === m.cod_prod);
                     return (
@@ -107,7 +109,7 @@ export function InventorySection({ onNavigateToProducts }: InventorySectionProps
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {suppliers.map(s => (
-                <div key={s.cod_prov} className="bg-white border rounded-3xl p-6 shadow-sm hover:shadow-md transition-all">
+                <div key={s.cod_prov} className="bg-white rounded-[2.5rem] p-8 shadow-[0_20px_50px_rgba(0,0,0,0.04)] ring-1 ring-slate-100/50 hover:shadow-xl hover:-translate-y-1 transition-all duration-500">
                   <div className="flex justify-between items-start mb-4">
                     <div className="h-12 w-12 rounded-2xl bg-slate-50 flex items-center justify-center text-[#ec131e]"><svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg></div>
                     <div className="flex gap-2">
@@ -122,7 +124,7 @@ export function InventorySection({ onNavigateToProducts }: InventorySectionProps
             </div>
           </div>
         ) : (
-          <div className="bg-white border rounded-3xl p-10 text-center space-y-4">
+          <div className="bg-white rounded-[2.5rem] p-16 text-center space-y-6 shadow-[0_20px_50px_rgba(0,0,0,0.04)] ring-1 ring-slate-100/50">
              <div className="mx-auto w-16 h-16 rounded-full bg-red-50 flex items-center justify-center text-[#ec131e]"><svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg></div>
              <h3 className="text-lg font-bold text-slate-900">Módulo de Alertas Críticas</h3>
              <p className="text-sm text-slate-500 max-w-sm mx-auto">Esta sección muestra productos que requieren atención inmediata del proveedor seleccionado.</p>

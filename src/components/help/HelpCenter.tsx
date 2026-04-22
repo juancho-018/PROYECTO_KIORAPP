@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { HELP_FAQS, HELP_TOPICS } from './helpContent';
+import { RolesSection } from '../panel/RolesSection';
 
 export default function HelpCenter() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
@@ -127,6 +128,10 @@ export default function HelpCenter() {
             })}
           </div>
         )}
+      </section>
+
+      <section className="mt-16 pt-12 border-t border-slate-100">
+        <RolesSection />
       </section>
 
       <button

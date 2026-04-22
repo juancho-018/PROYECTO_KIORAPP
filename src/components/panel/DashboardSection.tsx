@@ -1,16 +1,7 @@
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-import React from 'react';
-=======
-=======
->>>>>>> Stashed changes
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import Fuse from 'fuse.js';
-import { productService, orderService, alertService } from '@/config/setup';
+import { productService, orderService } from '@/config/setup';
 import type { Product } from '@/models/Product';
 import type { Order } from '@/models/Order';
-
-import { SystemAlerts } from './SystemAlerts';
 
 interface DashboardSectionProps {
   onSwitchTab: (tab: string) => void;
@@ -26,6 +17,7 @@ export function DashboardSection({ onSwitchTab }: DashboardSectionProps) {
   const loadDashboardData = useCallback(async () => {
     setIsLoading(true);
     try {
+      const today = new Date().toDateString();
       const [stockRes, orderRes] = await Promise.all([
         productService.getLowStock().catch(() => null),
         orderService.getOrders(1, 100).catch(() => null)
@@ -39,25 +31,20 @@ export function DashboardSection({ onSwitchTab }: DashboardSectionProps) {
         const ordersArr = Array.isArray(orderRes) ? orderRes : (orderRes.data || []);
         setOrders(ordersArr);
         
-        // Calculate today sales only if todayDate is set
-        if (todayDate) {
-          const todayOrders = ordersArr.filter((o: Order) => o.fecha_vent && new Date(o.fecha_vent).toDateString() === todayDate);
-          const total = todayOrders.reduce((acc: number, o: Order) => acc + (Number(o.montofinal_vent) || 0), 0);
-          setTodaySales(total);
-        }
+        const todayOrders = ordersArr.filter((o: Order) => o.fecha_vent && new Date(o.fecha_vent).toDateString() === today);
+        const total = todayOrders.reduce((acc: number, o: Order) => acc + (Number(o.montofinal_vent) || 0), 0);
+        setTodaySales(total);
       }
     } catch (error) {
       console.error('Error loading dashboard:', error);
     } finally {
       setIsLoading(false);
     }
-  }, [todayDate]);
+  }, []);
 
   useEffect(() => {
     setTodayDate(new Date().toDateString());
     void loadDashboardData();
-<<<<<<< Updated upstream
-=======
 
     const handleRefresh = () => void loadDashboardData();
     window.addEventListener('kiora-refresh-alerts', handleRefresh);
@@ -69,34 +56,40 @@ export function DashboardSection({ onSwitchTab }: DashboardSectionProps) {
     };
   }, [loadDashboardData]);
 
-  const todayOrders = useMemo(() => {
-    if (!todayDate) return [];
-    return orders.filter(o => o.fecha_vent && new Date(o.fecha_vent).toDateString() === todayDate);
-  }, [orders, todayDate]);
->>>>>>> Stashed changes
-
-    const handleRefresh = () => void loadDashboardData();
-    window.addEventListener('kiora-refresh-alerts', handleRefresh);
-    const poll = setInterval(() => void loadDashboardData(), 60000);
-
-    return () => {
-      window.removeEventListener('kiora-refresh-alerts', handleRefresh);
-      clearInterval(poll);
-    };
-  }, [loadDashboardData]);
-
-  const todayOrders = useMemo(() => {
-    if (!todayDate) return [];
-    return orders.filter(o => o.fecha_vent && new Date(o.fecha_vent).toDateString() === todayDate);
-  }, [orders, todayDate]);
->>>>>>> Stashed changes
-
-export function DashboardSection() {
   const stats = [
-    { label: 'Ventas de Hoy', value: '$1,245,000', icon: 'money', color: 'text-emerald-500', bg: 'bg-emerald-50', iconSvg: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
-    { label: 'Pedidos Kiosco', value: '84', icon: 'clipboard', color: 'text-blue-500', bg: 'bg-blue-50', iconSvg: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' },
-    { label: 'Upselling (IA)', value: '18%', icon: 'sparkles', color: 'text-purple-500', bg: 'bg-purple-50', growth: '+12%', iconSvg: 'M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-7.714 2.143L11 21l-2.286-6.857L1 12l7.714-2.143L11 3z' },
-    { label: 'Stock Bajo', value: '2 Productos', icon: 'alert', color: 'text-red-500', bg: 'bg-red-50', iconSvg: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z' },
+    { 
+      label: 'Ventas de Hoy', 
+      value: `$${todaySales.toLocaleString('es-CO')}`, 
+      icon: 'money', 
+      color: 'text-emerald-500', 
+      bg: 'bg-emerald-50', 
+      iconSvg: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' 
+    },
+    { 
+      label: 'Pedidos Hoy', 
+      value: orders.filter(o => o.fecha_vent && new Date(o.fecha_vent).toDateString() === todayDate).length.toString(), 
+      icon: 'clipboard', 
+      color: 'text-blue-500', 
+      bg: 'bg-blue-50', 
+      iconSvg: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' 
+    },
+    { 
+      label: 'Productos Críticos', 
+      value: `${criticalStock.length} Items`, 
+      icon: 'alert', 
+      color: 'text-red-500', 
+      bg: 'bg-red-50', 
+      iconSvg: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z' 
+    },
+    { 
+      label: 'Tendencia', 
+      value: 'Sugerida', 
+      icon: 'sparkles', 
+      color: 'text-purple-500', 
+      bg: 'bg-purple-50', 
+      growth: '+12%', 
+      iconSvg: 'M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-7.714 2.143L11 21l-2.286-6.857L1 12l7.714-2.143L11 3z' 
+    },
   ];
 
   const trafficData = [
@@ -109,7 +102,6 @@ export function DashboardSection() {
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      {/* Resumen Header */}
       <header className="flex items-center justify-between">
         <h2 className="text-2xl font-bold tracking-tight text-slate-900">Resumen de Hoy</h2>
         <div className="flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-600 ring-1 ring-emerald-200">
@@ -118,10 +110,9 @@ export function DashboardSection() {
         </div>
       </header>
 
-      {/* Stat Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
-          <article key={stat.label} className="group relative overflow-hidden rounded-2xl border border-slate-200/60 bg-white p-5 shadow-sm transition-all hover:shadow-md">
+          <article key={stat.label} className="group relative overflow-hidden rounded-[2rem] bg-white p-6 shadow-[0_20px_50px_rgba(0,0,0,0.04)] ring-1 ring-slate-100/50 transition-all hover:shadow-xl hover:-translate-y-1 duration-500">
             <div className="flex items-start justify-between">
               <div className={`flex h-10 w-10 items-center justify-center rounded-xl font-bold ${stat.bg} ${stat.color} shadow-sm`}>
                 <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -140,8 +131,7 @@ export function DashboardSection() {
         ))}
       </div>
 
-      {/* Traffic Chart */}
-      <section className="rounded-3xl border border-slate-200/60 bg-white p-6 shadow-sm">
+      <section className="rounded-[2.5rem] bg-white p-10 shadow-[0_20px_50px_rgba(0,0,0,0.04)] ring-1 ring-slate-100/50">
         <div className="mb-8 flex items-center justify-between">
           <h3 className="text-lg font-bold text-slate-800">Tráfico de Pedidos</h3>
           <select className="rounded-lg bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600 outline-none ring-1 ring-slate-200">
@@ -162,7 +152,6 @@ export function DashboardSection() {
         </div>
       </section>
 
-      {/* AI Insights Section */}
       <section className="space-y-4">
         <div className="flex items-center gap-2">
            <svg className="h-5 w-5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
@@ -172,7 +161,6 @@ export function DashboardSection() {
         </div>
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          {/* Pico Insight */}
           <div className="flex items-start gap-4 rounded-2xl bg-amber-50/50 p-6 ring-1 ring-amber-200/50">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-100 text-orange-600">
               <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -182,12 +170,11 @@ export function DashboardSection() {
             <div>
               <h4 className="font-bold text-slate-900">Pico Detectado</h4>
               <p className="mt-1 text-sm leading-relaxed text-slate-600 font-medium">
-                Alta demanda de "Merengón de Fresa" hoy. Sugerimos preparar <span className="text-[#ec131e] font-bold underline">15 unidades extra</span> para la tarde.
+                Alta demanda de productos. Sugerimos revisar inventario para la tarde.
               </p>
             </div>
           </div>
 
-          {/* Stock Insight */}
           <div className="flex items-start gap-4 rounded-2xl bg-red-50/50 p-6 ring-1 ring-red-200/50">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-600">
                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -197,9 +184,12 @@ export function DashboardSection() {
             <div className="flex-1">
               <h4 className="font-bold text-slate-900">Inventario Crítico</h4>
               <p className="mt-1 text-sm text-slate-600 font-medium">
-                Quedan solo <span className="text-red-600 font-bold">5 Panelitas de Leche</span>. ¿Registrar entrada en inventario?
+                Hay {criticalStock.length} productos con stock bajo.
               </p>
-              <button className="mt-4 w-full rounded-xl bg-red-100/80 py-2.5 text-xs font-bold uppercase tracking-wider text-red-700 transition-all hover:bg-red-200">
+              <button 
+                onClick={() => onSwitchTab('productos')}
+                className="mt-4 w-full rounded-xl bg-red-100/80 py-2.5 text-xs font-bold uppercase tracking-wider text-red-700 transition-all hover:bg-red-200"
+              >
                 Actualizar Stock
               </button>
             </div>
