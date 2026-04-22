@@ -1,4 +1,74 @@
+<<<<<<< Updated upstream
 import React from 'react';
+=======
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import Fuse from 'fuse.js';
+import { productService, orderService, alertService } from '@/config/setup';
+import type { Product } from '@/models/Product';
+import type { Order } from '@/models/Order';
+
+import { SystemAlerts } from './SystemAlerts';
+
+interface DashboardSectionProps {
+  onSwitchTab: (tab: string) => void;
+}
+
+export function DashboardSection({ onSwitchTab }: DashboardSectionProps) {
+  const [criticalStock, setCriticalStock] = useState<Product[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [todaySales, setTodaySales] = useState(0);
+  const [todayDate, setTodayDate] = useState<string | null>(null);
+
+  const loadDashboardData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const [stockRes, orderRes] = await Promise.all([
+        productService.getLowStock().catch(() => null),
+        orderService.getOrders(1, 100).catch(() => null)
+      ]);
+
+      if (stockRes && stockRes.data && Array.isArray(stockRes.data)) {
+        setCriticalStock(stockRes.data);
+      }
+
+      if (orderRes) {
+        const ordersArr = Array.isArray(orderRes) ? orderRes : (orderRes.data || []);
+        setOrders(ordersArr);
+        
+        // Calculate today sales only if todayDate is set
+        if (todayDate) {
+          const todayOrders = ordersArr.filter((o: Order) => o.fecha_vent && new Date(o.fecha_vent).toDateString() === todayDate);
+          const total = todayOrders.reduce((acc: number, o: Order) => acc + (Number(o.montofinal_vent) || 0), 0);
+          setTodaySales(total);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading dashboard:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [todayDate]);
+
+  useEffect(() => {
+    setTodayDate(new Date().toDateString());
+    void loadDashboardData();
+
+    const handleRefresh = () => void loadDashboardData();
+    window.addEventListener('kiora-refresh-alerts', handleRefresh);
+    const poll = setInterval(() => void loadDashboardData(), 60000);
+
+    return () => {
+      window.removeEventListener('kiora-refresh-alerts', handleRefresh);
+      clearInterval(poll);
+    };
+  }, [loadDashboardData]);
+
+  const todayOrders = useMemo(() => {
+    if (!todayDate) return [];
+    return orders.filter(o => o.fecha_vent && new Date(o.fecha_vent).toDateString() === todayDate);
+  }, [orders, todayDate]);
+>>>>>>> Stashed changes
 
 export function DashboardSection() {
   const stats = [

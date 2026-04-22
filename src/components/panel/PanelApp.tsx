@@ -9,21 +9,57 @@ import { AdminNavbar } from './AdminNavbar';
 import { AdminSubNav } from './AdminSubNav';
 import { UserList } from './UserList';
 import { UserDrawer } from './UserDrawer';
+import { LegalSection } from './LegalSection';
 import { ProfileDrawer } from './ProfileDrawer';
 import { RolesSection } from './RolesSection';
 import { SecurityDrawer } from './SecurityDrawer';
 import { ComingSoonSection } from './ComingSoonSection';
 import { DashboardSection } from './DashboardSection';
+<<<<<<< Updated upstream
+=======
+import { InventarioSection } from './InventarioSection';
+import { InventorySection } from './InventorySection';
+import { CategoriasSection } from './CategoriasSection';
+import { ProveedoresSection } from './ProveedoresSection';
+import { OrdersSection } from './OrdersSection';
+import { GeneralSettings } from './GeneralSettings';
+import { ComingSoonSection } from './ComingSoonSection'; 
+import { ProductsSection } from './ProductsSection';
+import { MaintenanceSection } from './MaintenanceSection';
+import { SalesSection } from './SalesSection';
+import { OrderDrawer } from './OrderDrawer';
+>>>>>>> Stashed changes
 import HelpCenter from '@/components/help/HelpCenter';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 
 export default function PanelApp() {
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [pollingFailCount, setPollingFailCount] = useState(0);
   
   // Tab switching
+<<<<<<< Updated upstream
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showHelp, setShowHelp] = useState(false);
+=======
+  const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('kiora_active_tab');
+    if (saved) setActiveTab(saved);
+    setIsHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (isHydrated) {
+      localStorage.setItem('kiora_active_tab', activeTab);
+    }
+  }, [activeTab, isHydrated]);
+
+  // Settings view state
+  const [settingsView, setSettingsView] = useState<'main' | 'help' | 'terms' | 'privacy' | 'general'>('main');
+>>>>>>> Stashed changes
   
   // Reset help view when switching tabs
   useEffect(() => {
@@ -68,6 +104,131 @@ export default function PanelApp() {
       window.location.href = '/login';
       return;
     }
+<<<<<<< Updated upstream
+=======
+    if (existing) {
+      setOrderForm(f => ({
+        ...f,
+        items: f.items.map(i => i.cod_prod === p.cod_prod ? { ...i, cantidad: i.cantidad + 1 } : i)
+      }));
+    } else {
+      setOrderForm(f => ({
+        ...f,
+        items: [...f.items, { 
+          cod_prod: p.cod_prod!, 
+          cantidad: 1, 
+          precio_unit: p.precio_prod,
+          nom_prod: p.nom_prod,
+          url_imagen: p.imagen_prod
+        }]
+      }));
+    }
+  };
+
+  const removeFromCart = (cod_prod: number) => {
+    setOrderForm(f => ({ ...f, items: f.items.filter(i => i.cod_prod !== cod_prod) }));
+  };
+
+  const updateQuantity = (cod_prod: number, delta: number, maxStock?: number) => {
+    setOrderForm(f => ({
+      ...f,
+      items: f.items.map(i => {
+        if (i.cod_prod === cod_prod) {
+          const newCant = Math.max(1, i.cantidad + delta);
+          if (maxStock !== undefined && newCant > maxStock) return i;
+          return { ...i, cantidad: newCant };
+        }
+        return i;
+      })
+    }));
+  };
+
+  const clearCart = () => {
+    setOrderForm(EMPTY_ORDER);
+    if (cartKey) localStorage.removeItem(cartKey);
+  };
+
+  const cartTotal = useMemo(() => {
+    return (orderForm.items || []).reduce((acc, item) => acc + (item.cantidad * (item.precio_unit || 0)), 0);
+  }, [orderForm.items]);
+
+  const loadAllProducts = async () => {
+    try {
+      const [productsData, categoriesData] = await Promise.all([
+        productService.getProducts(),
+        productService.getCategories()
+      ]);
+      setAllProducts(Array.isArray(productsData) ? productsData : (productsData?.data || []));
+      setCategories(categoriesData?.data || []);
+    } catch (e) { console.error('Error loading products/categories:', e); }
+  };
+
+  useEffect(() => {
+    if (isOrderDrawerOpen) void loadAllProducts();
+  }, [isOrderDrawerOpen]);
+
+  const filteredPOSProducts = useMemo(() => {
+    let source = allProducts;
+    if (selectedPOSCategories.length > 0) {
+      source = source.filter(p => p.fk_cod_cats && p.fk_cod_cats.some(id => selectedPOSCategories.includes(id)));
+    }
+    const q = prodSearch.trim().toLowerCase();
+    if (!q) return source;
+    const fuse = new Fuse(source, { keys: ['nom_prod', 'cod_prod'], threshold: 0.4 });
+    return fuse.search(q).map(result => result.item);
+  }, [allProducts, prodSearch, selectedPOSCategories]);
+
+  const handleCreateOrder = async () => {
+    if (!orderForm.items.length) return;
+    setIsSavingOrder(true);
+    try {
+      const order = await orderService.createOrder(orderForm);
+      if (orderForm.metodopago_usu === 'tarjeta' && order.id_vent) {
+        const { checkoutUrl } = await orderService.createCheckoutSession(order.id_vent);
+        clearCart();
+        window.location.href = checkoutUrl;
+        return;
+      }
+      alertService.showToast('success', 'Venta realizada con éxito');
+      clearCart();
+      setIsOrderDrawerOpen(false);
+      window.dispatchEvent(new CustomEvent('kiora_reload_inventory'));
+    } catch (e) {
+      alertService.showToast('error', getErrorMessage(e, 'Error al procesar la venta'));
+    } finally {
+      setIsSavingOrder(false);
+    }
+  };
+
+  const handleCancelOrder = async () => {
+    const ok = await alertService.showConfirm('¿Cancelar?', 'Se borrará el carrito.', 'Sí', 'No');
+    if (ok) { clearCart(); setIsOrderDrawerOpen(false); }
+  };
+
+  // --- Session & Security ---
+  const sessionManager = useMemo(() => new SessionManager(authService, alertService), []);
+  const userIsAdmin = authService.isAdmin();
+
+  const checkLowStock = async () => {
+    if (!userIsAdmin || pollingFailCount >= 3) return;
+    try {
+      const lowStock = await productService.getLowStockProducts();
+      setPollingFailCount(0);
+      if (Array.isArray(lowStock) && lowStock.length > 0) {
+        notificationService.addNotification({
+          title: 'Alerta de Inventario',
+          description: `Hay ${lowStock.length} productos con stock bajo.`,
+          type: 'warning'
+        });
+      }
+    } catch (err) {
+      setPollingFailCount(prev => prev + 1);
+    }
+  };
+
+  useEffect(() => {
+    if (!authService.isAuthenticated()) { window.location.href = '/login'; return; }
+>>>>>>> Stashed changes
     sessionManager.startMonitoring();
     const currentUser = authService.getUser();
     if (currentUser) {
@@ -225,9 +386,10 @@ export default function PanelApp() {
     }
   };
 
-  if (!user) return null;
+  if (!isHydrated || !user) return null;
 
   return (
+<<<<<<< Updated upstream
     <div className="min-h-screen w-full bg-[#FDFCFB]/80 pb-32 font-[Inter] text-slate-800 antialiased">
       <AdminNavbar user={user} onLogout={handleLogout} onProfileOpen={() => setIsProfileOpen(true)} />
       
@@ -242,6 +404,36 @@ export default function PanelApp() {
                 <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-[#3E2723]/5 border border-[#3E2723]/10">
                   <div className="h-1.5 w-1.5 rounded-full bg-[#ec131e] animate-pulse"></div>
                   <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#3E2723]/60">Gestión de Usuarios</span>
+=======
+    <StockProvider>
+      <div className="min-h-screen w-full bg-[#FDFCFB]/80 pb-32 font-[Inter] text-slate-800 antialiased">
+        <AdminNavbar user={user} onLogout={handleLogout} onProfileOpen={() => setIsProfileOpen(true)} />
+      
+        <main className="relative mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-10 transition-all duration-500 pl-24">
+          <div className="mx-auto max-w-5xl px-6 py-8 sm:px-8 sm:py-10">
+          {activeTab === 'dashboard' ? (
+            <DashboardSection onSwitchTab={setActiveTab} />
+          ) : activeTab === 'inventario' ? (
+            <InventorySection onNavigateToProducts={() => setActiveTab('productos')} />
+          ) : activeTab === 'productos' ? (
+            <ProductsSection />
+          ) : activeTab === 'categorias' ? (
+            <CategoriasSection />
+          ) : activeTab === 'proveedores' ? (
+            <ProveedoresSection />
+          ) : activeTab === 'pedidos' ? (
+            <OrdersSection />
+          ) : activeTab === 'mantenimiento' ? (
+            <MaintenanceSection />
+          ) : activeTab === 'ventas' ? (
+            <SalesSection onOpenPOS={() => setIsOrderDrawerOpen(true)} isAdmin={isAdmin} />
+          ) : activeTab === 'usuarios' ? (
+            <>
+              <header className="mb-10 flex flex-col gap-6 sm:mb-12 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-1">
+                  <h1 className="text-3xl font-extrabold text-[#1a1a1a]">Usuarios & Roles</h1>
+                  <p className="text-slate-500 font-medium">Gestiona accesos y permisos.</p>
+>>>>>>> Stashed changes
                 </div>
                 <h1 className="text-3xl font-extrabold tracking-tight text-[#1a1a1a] sm:text-4xl">
                   Usuarios <span className="text-[#ec131e]">&</span> Roles
@@ -323,6 +515,7 @@ export default function PanelApp() {
                     <p className="text-slate-500 text-sm font-medium">Próximamente.</p>
                   </div>
                 </div>
+<<<<<<< Updated upstream
               </div>
             ) : (
               <div className="relative animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -345,6 +538,37 @@ export default function PanelApp() {
       </main>
 
       <AdminSubNav activeId={activeTab} onItemClick={setActiveTab} />
+=======
+              ) : settingsView === 'help' ? (
+                <div className="animate-in fade-in slide-in-from-bottom-4">
+                  <button onClick={() => setSettingsView('main')} className="mb-6 flex items-center gap-2 text-slate-400 font-bold hover:text-[#ec131e] transition-colors"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>Volver</button>
+                  <HelpCenter />
+                </div>
+              ) : settingsView === 'general' ? (
+                <div className="animate-in fade-in slide-in-from-bottom-4">
+                  <button onClick={() => setSettingsView('main')} className="mb-6 flex items-center gap-2 text-slate-400 font-bold hover:text-[#ec131e] transition-colors"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>Volver</button>
+                  <GeneralSettings />
+                </div>
+              ) : (
+                <div className="animate-in fade-in slide-in-from-bottom-4">
+                  <button onClick={() => setSettingsView('main')} className="mb-6 flex items-center gap-2 text-slate-400 font-bold hover:text-[#ec131e] transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>Volver</button>
+                  <LegalSection />
+                </div>
+              )}
+            </div>
+          ) : (
+            <ComingSoonSection tabId={activeTab} />
+          )}
+          </div>
+        </main>
+
+        <AdminSubNav activeId={activeTab} isAdmin={isAdmin} onItemClick={(tab) => {
+          if (!isAdmin && !['dashboard', 'ventas', 'ajustes'].includes(tab)) return;
+          setActiveTab(tab);
+        }} />
+
+
+>>>>>>> Stashed changes
 
       <UserDrawer 
         isOpen={isDrawerOpen}
