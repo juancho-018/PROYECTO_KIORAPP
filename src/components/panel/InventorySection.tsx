@@ -83,11 +83,11 @@ export function InventorySection() {
                     <th className="px-6 py-4">Justificación</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50">
+                <tbody className="bg-white">
                   {movements.map(m => {
                     const p = products.find(prod => prod.cod_prod === m.cod_prod);
                     return (
-                      <tr key={m.id_mov} className="hover:bg-slate-50/50">
+                      <tr key={m.id_mov} className="group hover:bg-slate-50/80 transition-all duration-300">
                         <td className="px-6 py-4 font-medium text-slate-500">{new Date(m.fecha_mov).toLocaleString()}</td>
                         <td className="px-6 py-4 font-bold text-slate-900">{p?.nom_prod || `ID: ${m.cod_prod}`}</td>
                         <td className="px-6 py-4">

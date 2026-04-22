@@ -131,71 +131,115 @@ export function DashboardSection({ onSwitchTab }: DashboardSectionProps) {
         ))}
       </div>
 
-      <section className="rounded-[2.5rem] bg-white p-10 shadow-[0_20px_50px_rgba(0,0,0,0.04)] ring-1 ring-slate-100/50">
-        <div className="mb-8 flex items-center justify-between">
-          <h3 className="text-lg font-bold text-slate-800">Tráfico de Pedidos</h3>
-          <select className="rounded-lg bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600 outline-none ring-1 ring-slate-200">
-            <option>Hoy</option>
-            <option>Semana</option>
-          </select>
-        </div>
-        <div className="flex h-48 items-end justify-between gap-2 px-4">
-          {trafficData.map((bar) => (
-            <div key={bar.hour} className="group flex flex-1 flex-col items-center gap-3">
-              <div 
-                className={`w-full max-w-[60px] rounded-t-lg transition-all duration-500 ease-out group-hover:opacity-80 ${bar.highlight ? 'bg-[#ec131e] shadow-lg shadow-[#ec131e]/20' : 'bg-[#ec131e]/20'}`}
-                style={{ height: bar.height }}
-              ></div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{bar.hour}</span>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left Col: Chart & Orders */}
+        <div className="lg:col-span-2 space-y-8">
+          <section className="rounded-[2.5rem] bg-white p-10 shadow-[0_20px_50px_rgba(0,0,0,0.04)] ring-1 ring-slate-100/50 transition-all hover:shadow-xl duration-500">
+            <div className="mb-8 flex items-center justify-between">
+              <h3 className="text-lg font-black text-slate-800 uppercase tracking-widest">Tráfico de Pedidos</h3>
+              <select className="rounded-xl bg-slate-50 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 outline-none ring-1 ring-slate-200">
+                <option>Hoy</option>
+                <option>Semana</option>
+              </select>
             </div>
-          ))}
-        </div>
-      </section>
+            <div className="flex h-48 items-end justify-between gap-2 px-4">
+              {trafficData.map((bar) => (
+                <div key={bar.hour} className="group flex flex-1 flex-col items-center gap-3">
+                  <div 
+                    className={`w-full max-w-[40px] rounded-t-2xl transition-all duration-700 ease-out group-hover:scale-105 ${bar.highlight ? 'bg-[#ec131e] shadow-xl shadow-[#ec131e]/20' : 'bg-[#ec131e]/10'}`}
+                    style={{ height: bar.height }}
+                  ></div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{bar.hour}</span>
+                </div>
+              ))}
+            </div>
+          </section>
 
-      <section className="space-y-4">
-        <div className="flex items-center gap-2">
-           <svg className="h-5 w-5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2l4.454.647a1 1 0 01.554 1.706l-3.222 3.141.76 4.437a1 1 0 01-1.45 1.054L11.25 15.1l-3.992 2.099a1 1 0 01-1.45-1.054l.76-4.437L3.346 9.553a1 1 0 01.554-1.706l4.454-.647 1.212-4.456A1 1 0 0111.25 2z" clipRule="evenodd" />
-          </svg>
-          <h3 className="text-lg font-bold text-slate-800">Kiora Insights (IA)</h3>
+          <section className="bg-white rounded-[2.5rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.04)] ring-1 ring-slate-100/50">
+            <div className="p-8 border-b border-slate-50 flex items-center justify-between bg-slate-50/50">
+              <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">Ventas Recientes</h3>
+              <button onClick={() => onSwitchTab('ventas')} className="text-[10px] font-bold text-[#ec131e] hover:underline uppercase tracking-widest">Ver Todas</button>
+            </div>
+            <div className="divide-y divide-slate-50">
+              {orders.slice(0, 5).map(order => (
+                <div key={order.id_vent} className="p-5 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className="h-10 w-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+                    </div>
+                    <div>
+                      <p className="text-sm font-black text-slate-800">Orden #{order.id_vent}</p>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase">{order.metodopago_usu} • {order.fecha_vent ? new Date(order.fecha_vent).toLocaleTimeString() : '—'}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-black text-slate-900">${Number(order.montofinal_vent).toLocaleString()}</p>
+                    <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-md ${order.estado === 'completada' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>{order.estado}</span>
+                  </div>
+                </div>
+              ))}
+              {orders.length === 0 && (
+                <div className="py-12 text-center text-slate-400 text-xs font-bold italic">No hay actividad reciente.</div>
+              )}
+            </div>
+          </section>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <div className="flex items-start gap-4 rounded-2xl bg-amber-50/50 p-6 ring-1 ring-amber-200/50">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-100 text-orange-600">
-              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+        {/* Right Col: AI Insights & Stock */}
+        <div className="space-y-8">
+          <section className="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform duration-700">
+               <svg className="w-32 h-32" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-1.516-1.555-3.497z" clipRule="evenodd" />
               </svg>
             </div>
-            <div>
-              <h4 className="font-bold text-slate-900">Pico Detectado</h4>
-              <p className="mt-1 text-sm leading-relaxed text-slate-600 font-medium">
-                Alta demanda de productos. Sugerimos revisar inventario para la tarde.
-              </p>
+            <div className="relative z-10 space-y-6">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-lg bg-white/10 flex items-center justify-center backdrop-blur-md">
+                   <svg className="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1a1 1 0 112 0v1a1 1 0 11-2 0zM13 16v-1a1 1 0 112 0v1a1 1 0 11-2 0zM14.586 11.05a1 1 0 00-1.414 1.414l.707.707a1 1 0 001.414-1.414l-.707-.707z" /></svg>
+                </div>
+                <h3 className="font-black text-xs uppercase tracking-[0.2em]">Kiora Insights AI</h3>
+              </div>
+              <div className="space-y-4">
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
+                  <p className="text-xs font-bold text-white/90 leading-relaxed italic">
+                    "Hoy es un día de alta rotación. El producto <span className="text-[#ec131e] font-black">X</span> está subiendo en tendencia. Considera un descuento flash."
+                  </p>
+                </div>
+                <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+                  <p className="text-[11px] font-bold text-emerald-400">Rendimiento: +18% vs semana pasada</p>
+                </div>
+              </div>
             </div>
-          </div>
+          </section>
 
-          <div className="flex items-start gap-4 rounded-2xl bg-red-50/50 p-6 ring-1 ring-red-200/50">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-600">
-               <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-            </div>
-            <div className="flex-1">
-              <h4 className="font-bold text-slate-900">Inventario Crítico</h4>
-              <p className="mt-1 text-sm text-slate-600 font-medium">
-                Hay {criticalStock.length} productos con stock bajo.
-              </p>
-              <button 
-                onClick={() => onSwitchTab('productos')}
-                className="mt-4 w-full rounded-xl bg-red-100/80 py-2.5 text-xs font-bold uppercase tracking-wider text-red-700 transition-all hover:bg-red-200"
-              >
-                Actualizar Stock
-              </button>
-            </div>
-          </div>
+          <section className="bg-white rounded-[2.5rem] p-8 shadow-[0_20px_50px_rgba(0,0,0,0.04)] ring-1 ring-slate-100/50">
+             <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">Alertas de Inventario</h3>
+                <span className="h-5 w-5 rounded-full bg-red-50 text-red-500 flex items-center justify-center text-[10px] font-black">{criticalStock.length}</span>
+             </div>
+             <div className="space-y-3">
+                {criticalStock.slice(0, 3).map(p => (
+                  <div key={p.cod_prod} className="flex items-center gap-3 p-3 rounded-2xl bg-red-50/50 border border-red-100/50">
+                    <div className="h-8 w-8 rounded-lg bg-white flex items-center justify-center text-red-500 font-black text-[10px] shadow-sm">
+                      {p.stock_actual}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-black text-slate-800 truncate">{p.nom_prod}</p>
+                      <p className="text-[9px] text-red-400 font-bold uppercase tracking-wider">Reponer pronto</p>
+                    </div>
+                  </div>
+                ))}
+                <button 
+                  onClick={() => onSwitchTab('productos')}
+                  className="w-full mt-4 py-3 rounded-2xl bg-slate-50 text-slate-400 text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all"
+                >
+                  Ver Todo el Inventario
+                </button>
+             </div>
+          </section>
         </div>
-      </section>
+      </div>
     </div>
   );
 }

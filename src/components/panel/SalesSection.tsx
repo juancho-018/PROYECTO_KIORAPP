@@ -6,7 +6,7 @@ import type { MaintenanceReport } from '@/models/Maintenance';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { OrderDetailModal } from './OrderDetailModal';
 
-type SalesSubTab = 'ventas' | 'facturas' | 'movimientos' | 'incidencias';
+type SalesSubTab = 'ventas' | 'movimientos' | 'incidencias';
 
 const ESTADO_COLORS: Record<string, string> = {
   completada: 'bg-[#bbf7f2] text-[#008b8b] border-[#e0fbf9]',
@@ -18,7 +18,6 @@ const ESTADO_COLORS: Record<string, string> = {
 export function SalesSection({ onOpenPOS }: { onOpenPOS: () => void; isAdmin?: boolean }) {
   const [subTab, setSubTab] = useState<SalesSubTab>('ventas');
   const [orders, setOrders] = useState<Order[]>([]);
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [movements, setMovements] = useState<Movement[]>([]);
   const [reports, setReports] = useState<MaintenanceReport[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,9 +39,6 @@ export function SalesSection({ onOpenPOS }: { onOpenPOS: () => void; isAdmin?: b
       if (subTab === 'ventas') {
         const res = await orderService.getOrders();
         setOrders(Array.isArray(res) ? res : (res.data || []));
-      } else if (subTab === 'facturas') {
-        const res = await orderService.getInvoices();
-        setInvoices(Array.isArray(res.data) ? res.data : []);
       } else if (subTab === 'movimientos') {
         const data = await inventoryService.getMovements();
         setMovements(Array.isArray(data) ? data : (data?.data || []));
@@ -193,7 +189,7 @@ export function SalesSection({ onOpenPOS }: { onOpenPOS: () => void; isAdmin?: b
     <div className="space-y-8">
       <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
-          <h1 className="text-4xl font-extrabold tracking-tight text-[#1a1a1a]">Ventas <span className="text-[#ec131e]">&</span> Facturas</h1>
+          <h1 className="text-4xl font-extrabold tracking-tight text-[#1a1a1a]">Ventas <span className="text-[#ec131e]">&</span> Historial</h1>
           <p className="text-sm text-slate-500 font-medium tracking-tight">Registro de ventas, facturación contable y exportaciones del historial de tu negocio.</p>
         </div>
         <div className="flex gap-3">
@@ -222,7 +218,6 @@ export function SalesSection({ onOpenPOS }: { onOpenPOS: () => void; isAdmin?: b
       <div className="flex gap-1 rounded-2xl bg-white border border-slate-100 p-1.5 w-fit shadow-sm">
         {[
           { id: 'ventas', label: 'Ventas' },
-          { id: 'facturas', label: 'Facturas' },
           { id: 'movimientos', label: 'Movimientos' },
           { id: 'incidencias', label: 'Incidencias' },
         ].map(t => (
@@ -257,7 +252,7 @@ export function SalesSection({ onOpenPOS }: { onOpenPOS: () => void; isAdmin?: b
         <div className="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-[#fcfdfe] border-b border-slate-100">
+              <thead className="bg-[#fcfdfe]">
                 <tr>
                   <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-widest text-slate-400">#</th>
                   <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-widest text-slate-400">Fecha</th>
@@ -268,7 +263,7 @@ export function SalesSection({ onOpenPOS }: { onOpenPOS: () => void; isAdmin?: b
                   <th className="px-5 py-4 text-center text-[11px] font-black uppercase tracking-widest text-slate-400">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
+              <tbody className="bg-white">
                 {subTab === 'ventas' && (
                   filteredOrders.length === 0 ? (
                     <tr><td colSpan={6} className="py-10 text-center text-slate-400 font-medium">No hay ventas registradas</td></tr>
@@ -318,39 +313,6 @@ export function SalesSection({ onOpenPOS }: { onOpenPOS: () => void; isAdmin?: b
                                </button>
                             ) : null}
                           </div>
-                        </td>
-                      </tr>
-                    ))
-                  )
-                )}
-                {subTab === 'facturas' && (
-                  invoices.length === 0 ? (
-                    <tr><td colSpan={6} className="py-10 text-center text-slate-400">No hay facturas emitidas</td></tr>
-                  ) : (
-                    invoices.map(f => (
-                      <tr key={f.id_fact} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-5 py-4 font-black text-slate-400 text-xs">#{f.id_fact}</td>
-                        <td className="px-5 py-4 text-[#111827] text-xs font-bold">
-                          {f.fecha_fact ? new Date(f.fecha_fact).toLocaleDateString('es-CO') : '—'}
-                        </td>
-                        <td className="px-5 py-4 text-slate-500 text-xs font-bold">
-                          Venta #{f.id_pedido}
-                        </td>
-                        <td className="px-5 py-4 text-right font-black text-[#1a1a1a] text-sm">
-                          ${safePrice(f.total_fact).toLocaleString('es-CO')}
-                        </td>
-                        <td className="px-5 py-4 text-center">
-                          <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-[10px] font-black uppercase text-blue-600 border border-blue-100">
-                            EMITIDA
-                          </span>
-                        </td>
-                        <td className="px-5 py-4 text-center">
-                          <button 
-                            onClick={() => void handleDownloadReceipt(f.id_pedido)}
-                            className="text-emerald-600 text-xs font-black hover:underline"
-                          >
-                            Descargar
-                          </button>
                         </td>
                       </tr>
                     ))

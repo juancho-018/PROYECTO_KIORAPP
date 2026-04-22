@@ -404,7 +404,7 @@ export default function PanelApp() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <button
                   onClick={() => setShowHelp(true)}
-                  className="flex items-center gap-4 p-6 bg-white border border-slate-100 rounded-2xl text-left transition-all hover:border-[#ec131e]/30 hover:shadow-lg group"
+                  className="flex items-center gap-4 p-6 bg-white rounded-3xl text-left transition-all hover:shadow-[0_20px_50px_rgba(0,0,0,0.06)] hover:-translate-y-1 group ring-1 ring-slate-100 shadow-[0_10px_30px_rgba(0,0,0,0.02)]"
                 >
                   <div className="w-14 h-14 bg-red-50 text-[#ec131e] rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-7 h-7">
@@ -418,23 +418,65 @@ export default function PanelApp() {
                 </button>
 
                 <button
-                  onClick={() => alertService.showToast('info', 'Selección de idioma próximamente')}
-                  className="flex items-center gap-4 p-6 bg-white border border-slate-100 rounded-2xl text-left transition-all hover:border-[#ec131e]/30 hover:shadow-lg group"
+                  onClick={() => {
+                    // @ts-ignore
+                    if (window.Weglot) {
+                      // @ts-ignore
+                      const cur = window.Weglot.getCurrentLang();
+                      // @ts-ignore
+                      window.Weglot.switchTo(cur === 'es' ? 'en' : 'es');
+                      alertService.showToast('success', `Idioma cambiado a ${cur === 'es' ? 'Inglés' : 'Español'}`);
+                    } else {
+                      alertService.showToast('info', 'Weglot no inicializado');
+                    }
+                  }}
+                  className="flex items-center gap-4 p-6 bg-white rounded-3xl text-left transition-all hover:shadow-[0_20px_50px_rgba(0,0,0,0.06)] hover:-translate-y-1 group ring-1 ring-slate-100 shadow-[0_10px_30px_rgba(0,0,0,0.02)]"
                 >
-                  <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                  <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-7 h-7">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 21l5.25-11.25L21 21m-9-3h7.5M3 5.621a48.474 48.474 0 016-.371m0 0c1.12 0 2.233.038 3.334.114M9 5.25V3m3.334 2.364C11.176 10.658 7.69 15.08 3 17.502m9.334-12.138c.896.061 1.785.147 2.666.257m-4.589 8.495a18.023 18.023 0 01-3.827-5.802" />
                     </svg>
                   </div>
                   <div>
-                    <h3 className="font-bold text-[#111827] text-lg">Idioma y Región</h3>
-                    <p className="text-slate-500 text-sm font-medium">Configura el lenguaje del sistema.</p>
+                    <h3 className="font-black text-[#111827] text-lg">Idioma / Language</h3>
+                    <p className="text-slate-500 text-sm font-medium">Toggle between Spanish & English.</p>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => setActiveTab('legal-privacidad')}
+                  className="flex items-center gap-4 p-6 bg-white rounded-3xl text-left transition-all hover:shadow-[0_20px_50px_rgba(0,0,0,0.06)] hover:-translate-y-1 group ring-1 ring-slate-100 shadow-[0_10px_30px_rgba(0,0,0,0.02)]"
+                >
+                  <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-7 h-7">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.744c0 5.051 3.11 9.38 7.443 11.161a11.94 11.94 0 007.443-11.161c0-1.312-.208-2.574-.598-3.751A11.959 11.959 0 0112 2.714z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="font-black text-[#111827] text-lg">Privacidad</h3>
+                    <p className="text-slate-500 text-sm font-medium">Políticas de datos y privacidad.</p>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => setActiveTab('legal-terminos')}
+                  className="flex items-center gap-4 p-6 bg-white rounded-3xl text-left transition-all hover:shadow-[0_20px_50px_rgba(0,0,0,0.06)] hover:-translate-y-1 group ring-1 ring-slate-100 shadow-[0_10px_30px_rgba(0,0,0,0.02)]"
+                >
+                  <div className="w-14 h-14 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-7 h-7">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="font-black text-[#111827] text-lg">Términos</h3>
+                    <p className="text-slate-500 text-sm font-medium">Condiciones de uso del servicio.</p>
                   </div>
                 </button>
               </div>
             ) : (
               <div className="relative animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <button
+                  type="button"
                   onClick={() => setShowHelp(false)}
                   className="mb-6 flex items-center gap-2 text-slate-400 hover:text-[#ec131e] transition-all group font-bold text-xs uppercase tracking-widest bg-transparent border-none cursor-pointer"
                 >
@@ -446,6 +488,20 @@ export default function PanelApp() {
                 <HelpCenter />
               </div>
             )}
+          </div>
+        ) : activeTab === 'legal-privacidad' || activeTab === 'legal-terminos' ? (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <button
+              type="button"
+              onClick={() => setActiveTab('ajustes')}
+              className="mb-6 flex items-center gap-2 text-slate-400 hover:text-[#ec131e] transition-all group font-bold text-xs uppercase tracking-widest"
+            >
+              <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Volver a Ajustes
+            </button>
+            <LegalSection defaultTab={activeTab === 'legal-privacidad' ? 'privacidad' : 'terminos'} />
           </div>
         ) : (
           <ComingSoonSection tabId={activeTab} />

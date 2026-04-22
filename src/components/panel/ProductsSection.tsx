@@ -40,6 +40,12 @@ export function ProductsSection() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Movements state for Drawer
+  const [movements, setMovements] = useState<any[]>([]);
+  const [loadingMovements, setLoadingMovements] = useState(false);
+
   const isAdmin = authService.isAdmin();
 
   const loadData = useCallback(async () => {
@@ -59,6 +65,48 @@ export function ProductsSection() {
   }, []);
 
   useEffect(() => { void loadData(); }, [loadData]);
+
+  const loadMovements = useCallback(async (productId: number) => {
+    setLoadingMovements(true);
+    try {
+      const { inventoryService } = await import('@/config/setup');
+      const data = await inventoryService.getMovements(productId);
+      setMovements(data && 'data' in data ? data.data : (Array.isArray(data) ? data : []));
+    } catch (e) {
+      alertService.showToast('error', getErrorMessage(e, 'Error al cargar movimientos'));
+    } finally {
+      setLoadingMovements(false);
+    }
+  }, []);
+
+  const handleSaveProduct = async (dto: any, isEdit: boolean) => {
+    try {
+      if (isEdit && selectedProduct?.cod_prod) {
+        await productService.updateProduct(selectedProduct.cod_prod, dto);
+        alertService.showToast('success', 'Producto actualizado');
+      } else {
+        await productService.createProduct(dto);
+        alertService.showToast('success', 'Producto creado');
+      }
+      loadData();
+    } catch (e) {
+      alertService.showToast('error', getErrorMessage(e, 'Error al guardar producto'));
+      throw e;
+    }
+  };
+
+  const handleSaveMovement = async (mov: any) => {
+    try {
+      const { inventoryService } = await import('@/config/setup');
+      await inventoryService.createMovement(mov);
+      alertService.showToast('success', 'Movimiento registrado');
+      if (mov.cod_prod) await loadMovements(mov.cod_prod);
+      loadData(); // refresh stock in list
+    } catch (e) {
+      alertService.showToast('error', getErrorMessage(e, 'Error al registrar movimiento'));
+      throw e;
+    }
+  };
 
   const filteredProducts = useMemo(() => {
     let result = products;
@@ -89,6 +137,7 @@ export function ProductsSection() {
 
   const handleApplyFilters = () => {
     setActiveFilters({ ...pendingFilters });
+    setShowFilters(false);
     alertService.showToast('success', 'Filtros aplicados');
   };
 
@@ -111,7 +160,7 @@ export function ProductsSection() {
         await productService.deleteProduct(id);
         alertService.showToast('success', 'Producto eliminado');
         loadData();
-      } catch (e) { alertService.showToast('error', 'Error al eliminar'); }
+      } catch (e) { alertService.showToast('error', getErrorMessage(e, 'Error al eliminar')); }
     }
   };
 
@@ -144,6 +193,13 @@ export function ProductsSection() {
           </h1>
         </div>
         <div className="flex gap-3">
+          <button 
+            onClick={() => setShowFilters(!showFilters)} 
+            className={`rounded-2xl px-6 py-3.5 text-sm font-black transition-all flex items-center gap-2 ${showFilters ? 'bg-slate-900 text-white shadow-lg' : 'bg-white text-slate-700 ring-1 ring-slate-200 hover:ring-[#ec131e]/30'}`}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+            Filtros
+          </button>
           <button onClick={() => setIsCategoryModalOpen(true)} className="rounded-2xl bg-white px-6 py-3.5 text-sm font-black text-slate-700 ring-1 ring-slate-200 hover:ring-[#ec131e]/30 transition-all">Categorías</button>
           {isAdmin && (
             <button onClick={() => { setSelectedProduct(null); setIsDrawerOpen(true); }} className="rounded-2xl bg-[#ec131e] px-8 py-3.5 text-sm font-black text-white shadow-xl shadow-[#ec131e]/20 transition-all hover:bg-[#d01019]">Nuevo Producto</button>
@@ -152,62 +208,64 @@ export function ProductsSection() {
       </header>
 
       {/* Advanced Filter Panel */}
-      <div className="bg-white rounded-[2.5rem] p-10 shadow-[0_20px_50px_rgba(0,0,0,0.04)] ring-1 ring-slate-100/50 space-y-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Buscador</label>
-            <input
-              type="text"
-              placeholder="Nombre o código..."
-              value={pendingFilters.search}
-              onChange={e => setPendingFilters(p => ({ ...p, search: e.target.value }))}
-              className="w-full rounded-2xl border border-slate-100 bg-slate-50 py-4 px-5 text-sm font-bold focus:border-[#ec131e] focus:bg-white focus:outline-none transition-all"
-            />
-          </div>
+      {showFilters && (
+        <div className="bg-white rounded-[2.5rem] p-10 shadow-[0_20px_50px_rgba(0,0,0,0.04)] ring-1 ring-slate-100/50 space-y-8 animate-in slide-in-from-top-4 duration-300">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Buscador</label>
+              <input
+                type="text"
+                placeholder="Nombre o código..."
+                value={pendingFilters.search}
+                onChange={e => setPendingFilters(p => ({ ...p, search: e.target.value }))}
+                className="w-full rounded-2xl border border-slate-100 bg-slate-50 py-4 px-5 text-sm font-bold focus:border-[#ec131e] focus:bg-white focus:outline-none transition-all"
+              />
+            </div>
 
-          <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Tipo de Elemento</label>
-            <select
-              value={pendingFilters.tipo}
-              onChange={e => setPendingFilters(p => ({ ...p, tipo: e.target.value }))}
-              className="w-full rounded-2xl border border-slate-100 bg-slate-50 py-4 px-5 text-sm font-bold focus:border-[#ec131e] focus:bg-white focus:outline-none transition-all"
-            >
-              <option value="all">Cualquier Tipo</option>
-              <option value="alimento">🍎 Alimento</option>
-              <option value="bebida">🥤 Bebida</option>
-              <option value="otro">📦 Otro</option>
-            </select>
-          </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Tipo de Elemento</label>
+              <select
+                value={pendingFilters.tipo}
+                onChange={e => setPendingFilters(p => ({ ...p, tipo: e.target.value }))}
+                className="w-full rounded-2xl border border-slate-100 bg-slate-50 py-4 px-5 text-sm font-bold focus:border-[#ec131e] focus:bg-white focus:outline-none transition-all"
+              >
+                <option value="all">Cualquier Tipo</option>
+                <option value="alimento">🍎 Alimento</option>
+                <option value="bebida">🥤 Bebida</option>
+                <option value="otro">📦 Otro</option>
+              </select>
+            </div>
 
-          <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Rango de Precio</label>
-            <div className="flex gap-2">
-              <input type="number" placeholder="Min" value={pendingFilters.minPrice} onChange={e => setPendingFilters(p => ({ ...p, minPrice: e.target.value }))} className="w-1/2 rounded-2xl border border-slate-100 bg-slate-50 py-4 px-4 text-sm font-bold focus:border-[#ec131e] focus:bg-white transition-all" />
-              <input type="number" placeholder="Max" value={pendingFilters.maxPrice} onChange={e => setPendingFilters(p => ({ ...p, maxPrice: e.target.value }))} className="w-1/2 rounded-2xl border border-slate-100 bg-slate-50 py-4 px-4 text-sm font-bold focus:border-[#ec131e] focus:bg-white transition-all" />
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Rango de Precio</label>
+              <div className="flex gap-2">
+                <input type="number" placeholder="Min" value={pendingFilters.minPrice} onChange={e => setPendingFilters(p => ({ ...p, minPrice: e.target.value }))} className="w-1/2 rounded-2xl border border-slate-100 bg-slate-50 py-4 px-4 text-sm font-bold focus:border-[#ec131e] focus:bg-white transition-all" />
+                <input type="number" placeholder="Max" value={pendingFilters.maxPrice} onChange={e => setPendingFilters(p => ({ ...p, maxPrice: e.target.value }))} className="w-1/2 rounded-2xl border border-slate-100 bg-slate-50 py-4 px-4 text-sm font-bold focus:border-[#ec131e] focus:bg-white transition-all" />
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="space-y-3 pt-4 border-t border-slate-50">
-          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Categorías</label>
-          <div className="flex flex-wrap gap-2">
-            {categories.map(c => (
-              <button
-                key={c.cod_cat}
-                onClick={() => toggleCategoryPending(c.cod_cat!)}
-                className={`px-5 py-2.5 rounded-xl text-xs font-black transition-all border capitalize ${pendingFilters.categories.includes(c.cod_cat!) ? 'bg-slate-800 text-white border-slate-800 shadow-lg' : 'bg-white text-slate-500 border-slate-100 hover:border-slate-300'}`}
-              >
-                {c.nom_cat}
-              </button>
-            ))}
+          <div className="space-y-3 pt-4 border-t border-slate-50">
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Categorías</label>
+            <div className="flex flex-wrap gap-2">
+              {categories.map(c => (
+                <button
+                  key={c.cod_cat}
+                  onClick={() => toggleCategoryPending(c.cod_cat!)}
+                  className={`px-5 py-2.5 rounded-xl text-xs font-black transition-all border capitalize ${pendingFilters.categories.includes(c.cod_cat!) ? 'bg-slate-800 text-white border-slate-800 shadow-lg' : 'bg-white text-slate-500 border-slate-100 hover:border-slate-300'}`}
+                >
+                  {c.nom_cat}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-6 border-t border-slate-50">
+            <button onClick={handleClearFilters} className="px-8 py-3 rounded-2xl ring-1 ring-slate-200 text-xs font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50 transition-all">Limpiar</button>
+            <button onClick={handleApplyFilters} className="px-10 py-3 rounded-2xl bg-slate-900 text-white text-xs font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl shadow-slate-200">Aplicar Filtros</button>
           </div>
         </div>
-
-        <div className="flex justify-end gap-3 pt-6 border-t border-slate-50">
-          <button onClick={handleClearFilters} className="px-8 py-3 rounded-2xl ring-1 ring-slate-200 text-xs font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50 transition-all">Limpiar</button>
-          <button onClick={handleApplyFilters} className="px-10 py-3 rounded-2xl bg-slate-900 text-white text-xs font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl shadow-slate-200">Aplicar Filtros</button>
-        </div>
-      </div>
+      )}
 
       {/* Grid */}
       {isLoading ? (
@@ -249,7 +307,18 @@ export function ProductsSection() {
         </div>
       )}
 
-      <ProductDrawer isOpen={isDrawerOpen} product={selectedProduct} onClose={() => setIsDrawerOpen(false)} onSuccess={loadData} />
+      <ProductDrawer 
+        isOpen={isDrawerOpen} 
+        product={selectedProduct} 
+        onClose={() => setIsDrawerOpen(false)} 
+        onSuccess={loadData}
+        categories={categories}
+        movements={movements}
+        loadingMovements={loadingMovements}
+        onSave={handleSaveProduct}
+        onSaveMovement={handleSaveMovement}
+        onLoadMovements={loadMovements}
+      />
       <CategoryModal isOpen={isCategoryModalOpen} onClose={() => setIsCategoryModalOpen(false)} onSuccess={loadData} />
     </div>
   );

@@ -9,6 +9,12 @@ interface ProductDrawerProps {
   onClose: () => void;
   product?: Product | null;
   onSuccess: () => void;
+  categories: Category[];
+  movements: Movement[];
+  loadingMovements: boolean;
+  onSave: (product: any, isEdit: boolean) => Promise<void>;
+  onSaveMovement: (movement: any) => Promise<void>;
+  onLoadMovements: (productId: number) => Promise<void>;
 }
 
 const EMPTY_PRODUCT = {
@@ -33,18 +39,25 @@ function getImageUrl(path?: string): string {
   return `${cleanBase}${cleanPath}`;
 }
 
-export function ProductDrawer({ isOpen, onClose, product, onSuccess }: ProductDrawerProps) {
+export function ProductDrawer({ 
+  isOpen, 
+  onClose, 
+  product, 
+  onSuccess,
+  categories,
+  movements,
+  loadingMovements,
+  onSave,
+  onSaveMovement,
+  onLoadMovements
+}: ProductDrawerProps) {
   const [form, setForm] = useState(EMPTY_PRODUCT);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loadingCats, setLoadingCats] = useState(false);
   const [saving, setSaving] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   // Stock Movements state
   const [activeTab, setActiveTab] = useState<'info' | 'stock'>('info');
-  const [movements, setMovements] = useState<Movement[]>([]);
-  const [loadingMovements, setLoadingMovements] = useState(false);
   const [movForm, setMovForm] = useState<{ tipo_mov: 'entrada' | 'salida'; cantidad_mov: number; desc_mov: string }>({
     tipo_mov: 'entrada',
     cantidad_mov: 1,
@@ -73,41 +86,15 @@ export function ProductDrawer({ isOpen, onClose, product, onSuccess }: ProductDr
 
   useEffect(() => {
     if (isOpen) {
-      loadCategories();
       setActiveTab('info');
     }
   }, [isOpen]);
 
-  const loadMovements = useCallback(async () => {
-    if (!product?.cod_prod) return;
-    setLoadingMovements(true);
-    try {
-      const data = await inventoryService.getMovements(product.cod_prod);
-      setMovements(data && 'data' in data ? data.data : (Array.isArray(data) ? data : []));
-    } catch (e) {
-      alertService.showToast('error', getErrorMessage(e, 'Error al cargar movimientos'));
-    } finally {
-      setLoadingMovements(false);
-    }
-  }, [product?.cod_prod]);
-
   useEffect(() => {
-    if (activeTab === 'stock' && product) {
-      void loadMovements();
+    if (activeTab === 'stock' && product?.cod_prod) {
+      void onLoadMovements(product.cod_prod);
     }
-  }, [activeTab, product, loadMovements]);
-
-  async function loadCategories() {
-    setLoadingCats(true);
-    try {
-      const res = await productService.getCategories();
-      setCategories(res && res.data ? res.data : []);
-    } catch (e) {
-      console.error('Error loading categories:', e);
-    } finally {
-      setLoadingCats(false);
-    }
-  }
+  }, [activeTab, product?.cod_prod, onLoadMovements]);
 
   const handleSaveMovement = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,19 +108,13 @@ export function ProductDrawer({ isOpen, onClose, product, onSuccess }: ProductDr
 
     setSavingMov(true);
     try {
-      await inventoryService.createMovement({
+      await onSaveMovement({
         tipo_mov: movForm.tipo_mov,
         cantidad: movForm.cantidad_mov,
-        // @ts-ignore
         desc_mov: movForm.desc_mov,
         cod_prod: product.cod_prod,
       });
-      alertService.showToast('success', 'Movimiento registrado');
       setMovForm({ tipo_mov: 'entrada', cantidad_mov: 1, desc_mov: '' });
-      await loadMovements();
-      onSuccess(); // refresh parent
-    } catch (e) {
-      alertService.showToast('error', getErrorMessage(e, 'Error al registrar movimiento'));
     } finally {
       setSavingMov(false);
     }
@@ -163,17 +144,8 @@ export function ProductDrawer({ isOpen, onClose, product, onSuccess }: ProductDr
         imagen: imageFile || undefined,
       };
 
-      if (product?.cod_prod) {
-        await productService.updateProduct(product.cod_prod, dto);
-        alertService.showToast('success', 'Producto actualizado');
-      } else {
-        await productService.createProduct(dto);
-        alertService.showToast('success', 'Producto creado');
-      }
-      onSuccess();
+      await onSave(dto, !!product?.cod_prod);
       onClose();
-    } catch (e) {
-      alertService.showToast('error', getErrorMessage(e, 'Error al guardar producto'));
     } finally {
       setSaving(false);
     }
