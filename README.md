@@ -1,8 +1,8 @@
 # 🍰 Kiora – Panel Administrativo Frontend
 
-<div align="center">
 
-**Sistema integral de gestión para negocios de alimentos**  
+
+**Sistema integral de gestión para kiosko**  
 *Punto de Venta · Inventario · Ventas · Facturación · Usuarios*
 
 ![Astro](https://img.shields.io/badge/Astro-v5.17-BC52EE?style=for-the-badge&logo=astro&logoColor=white)
@@ -11,13 +11,12 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-Strict-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![Vitest](https://img.shields.io/badge/Vitest-v4-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)
 
-</div>
 
 ---
 
 ## 📋 Descripción
 
-**Kiora** es el frontend del ecosistema de microservicios para la gestión integral de un negocio de alimentos. Centraliza los módulos de **Administración**, **Inventario**, **Punto de Venta (POS)**, **Facturación**, **Incidencias** y **Seguridad** bajo una arquitectura moderna basada en **Astro v5** + **React v19**.
+**Kiora** es el frontend de kiosko de microservicios para la gestión integral. Centraliza los módulos de **Administración**, **Inventario**, **Punto de Venta (POS)**, **Facturación**, **Incidencias** y **Seguridad** bajo una arquitectura moderna basada en **Astro v5** + **React v19**.
 
 ### Características principales
 
@@ -26,7 +25,7 @@
 - 🛒 **Punto de Venta (POS)** con carrito persistente y **validación de stock en tiempo real**.
 - 📊 **Módulo de Ventas** con historial detallado, gestión de estados y **exportación a Excel/PDF**.
 - 🧾 **Facturación Histórica** con registro contable y reportes descargables.
-- 👥 **Gestión de Usuarios** con roles (Admin/Cliente), reseteo de claves administrativo y bloqueos de seguridad.
+- 👥 **Gestión de Usuarios** con roles (Admin/Cliente-operador), reseteo de claves administrativo y bloqueos de seguridad.
 - 🔧 **Mantenimiento** con reportes de incidencias técnicas y Health Check de servicios.
 - 💳 **Integración con Stripe** para pagos electrónicos seguros.
 - 🌐 **PWA** con soporte offline, manifest y etiquetas meta optimizadas.
@@ -130,6 +129,3 @@ npm run dev
 
 ---
 
-<div align="center">
-  <sub>Hecho con ❤️ por el equipo Kiora</sub>
-</div>
