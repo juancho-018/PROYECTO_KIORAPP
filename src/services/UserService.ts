@@ -19,7 +19,7 @@ export class UserService {
   constructor(
     private httpClient: IHttpClient,
     private authService: AuthService
-  ) {}
+  ) { }
 
   private getAuthHeaders(): Record<string, string> {
     const token = this.authService.getToken();
@@ -49,18 +49,18 @@ export class UserService {
   async registerUser(dto: RegisterUserDto): Promise<void> {
     const defaultPassword = dto.password || Math.random().toString(36).slice(-8); // Contraseña por defecto si no se pasa
     const payload = { ...dto, password: defaultPassword };
-    
+
     // Se asume que /auth/register recibe el body en minúsculas y está protegido por isAdmin según el authController
     const response = await this.httpClient.post<unknown>('/auth/register', payload, {
       headers: this.getAuthHeaders()
     });
-    
+
     if (!response.ok) {
       throw new Error(response.error ?? 'Error al registrar el nuevo usuario');
     }
   }
 
-  async unlockUser(id: string): Promise<boolean> {
+  async unlockUser(id: string | number): Promise<boolean> {
     const response = await this.httpClient.patch<User>(`/auth/users/${id}/unlock`, undefined, {
       headers: this.getAuthHeaders()
     });
@@ -76,7 +76,7 @@ export class UserService {
     // El rol se actualiza por un endpoint separado (/auth/users/:id/role)
     delete cleanDto.rol_usu;
     delete cleanDto.rol;
-    
+
     const response = await this.httpClient.patch<unknown>(`/auth/users/${id}`, cleanDto, {
       headers: this.getAuthHeaders()
     });
@@ -130,7 +130,7 @@ export class UserService {
   }
 
   async adminUpdatePassword(id: string | number, password: string): Promise<void> {
-    const response = await this.httpClient.patch<unknown>(`/auth/users/${id}/password`, { 
+    const response = await this.httpClient.patch<unknown>(`/auth/users/${id}/password`, {
       password: password,
       new_password: password // Algunos microservicios usan este nombre
     }, {

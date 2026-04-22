@@ -11,6 +11,10 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-Strict-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![Vitest](https://img.shields.io/badge/Vitest-v4-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)
 
+<<<<<<< HEAD
+=======
+**Kiora** es el ecosistema frontend centralizado para la gestión integral del sistema de microservicios. Esta aplicación integra los módulos de **Administración**, **Inventario**, **Venta Directa (Kiosk)**, **Incidencias** y **Seguridad** bajo una arquitectura robusta de **Astro v5** y **React v19**.
+>>>>>>> origin/develop
 
 ---
 
@@ -36,6 +40,7 @@
 
 ```
 src/
+<<<<<<< HEAD
 ├── components/                # Capa de Presentación (React)
 │   ├── auth/                  # Login, Recuperar contraseña, Verificación
 │   ├── panel/                 # Dashboard Administrativo (38+ componentes)
@@ -60,13 +65,33 @@ src/
 ├── pages/                     # Rutas Astro (.astro)
 ├── styles/                    # Tailwind v4 + CSS global
 └── utils/                     # Utilidades (paginación, errores, búsqueda)
+=======
+├── components/             # Capa de Presentación (React)
+│   ├── auth/               # Seguridad (Login, Recover)
+│   ├── panel/              # Dashboard Administrativo
+│   ├── inventory/          # Gestión de stock y proveedores
+│   ├── products/           # Catálogo y categorías
+│   └── ui/                 # Componentes transversales
+├── core/                   # Infraestructura (HttpClient)
+├── services/               # Lógica de Negocio (Order, Product, Incident)
+├── models/                 # Contratos de Datos e Interfaces TS
+├── pages/                  # Orquestación de Rutas y PWA (Astro)
+└── styles/                 # Tailwind v4 y Global CSS
+>>>>>>> origin/develop
 ```
 
 ---
 
 ## 🚀 Inicio Rápido
 
+<<<<<<< HEAD
 ### Prerrequisitos
+=======
+Para una explicación profunda de la arquitectura y patrones utilizados, consulta:
+👉 **[Guía de Código (src/README.md)](./src/README.md)**  
+👉 **[TECHNICAL_DOCS.md](./src/TECHNICAL_DOCS.md)**  
+👉 **[Seguridad y Modelos de Amenaza](./SECURITY.md)**
+>>>>>>> origin/develop
 
 - **Node.js** ≥ 18
 - **npm** ≥ 9
@@ -88,10 +113,22 @@ cp .env.example .env
 ```
 
 ### Desarrollo Local
+<<<<<<< HEAD
+=======
+1. **Instalar dependencias:** `npm install`
+2. **Configurar entorno:** `cp .env.example .env` (Verifica `PUBLIC_API_URL` apuntando al Gateway en puerto 3000)
+3. **Ejecutar:** `npm run dev`
+   - La aplicación corre por defecto en: **`http://localhost:8080`**
+>>>>>>> origin/develop
 
 ```bash
+<<<<<<< HEAD
 npm run dev
 # → http://localhost:8080
+=======
+# Construir y levantar todo el ecosistema front (Puerto 8080 expuesto)
+docker-compose up -d --build
+>>>>>>> origin/develop
 ```
 
 ---
@@ -112,11 +149,18 @@ npm run dev
 
 ## 📐 Principios de Ingeniería
 
+<<<<<<< HEAD
 - **Clean Architecture** – Separación estricta entre UI, servicios e infraestructura.
 - **Estado Inmutable** – Lógica de pedidos protegida contra reversiones accidentales (ej: ventas canceladas).
 - **Validación Preventiva** – El POS bloquea acciones que excedan el stock físico disponible.
 - **Type Safety** – TypeScript estricto para garantizar la integridad de los datos de inventario y ventas.
 - **Premium UI** – Diseño consistente basado en tokens de marca (Kiora Red `#ec131e`).
+=======
+- **Clean Architecture**: Separación estricta entre UI e Infraestructura.
+- **Microservices Oriented**: Comunicación optimizada a través de un API Gateway.
+- **PWA (Progressive Web App)**: Soporte nativo para instalación y funcionamiento offline.
+- **Premium UI**: Diseño consistente basado en tokens de marca (Kiora Red).
+>>>>>>> origin/develop
 
 ---
 
@@ -129,3 +173,9 @@ npm run dev
 
 ---
 
+<<<<<<< HEAD
+=======
+- **API**: Asegúrate de que el Gateway de microservicios (Puerto 3000) esté levantado para que el frontend funcione correctamente.
+- **Incidencias**: Usa el módulo de Soporte para reportar fallos técnicos detectados en tiempo real.
+- **Recibos**: Los PDFs de ventas se generan dinámicamente conectando con el `reports-service`.
+>>>>>>> origin/develop

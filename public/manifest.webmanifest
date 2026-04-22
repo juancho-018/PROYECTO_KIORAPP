@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "name": "Kiora Administrative Panel",
   "short_name": "Kiora",
   "description": "Sistema de gestión para negocios de alimentos",
@@ -14,4 +15,36 @@
       "purpose": "any"
     }
   ]
+=======
+  "name": "Kiora | Dashboard",
+  "short_name": "Kiora",
+  "description": "Sistema administrativo para kioskos Kiora",
+  "theme_color": "#ec131e",
+  "background_color": "#fafafc",
+  "display": "standalone",
+  "orientation": "portrait",
+  "start_url": "/panel",
+  "id": "/panel",
+  "icons": [
+    {
+      "src": "/img/logo-kiora-vectorizado.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/img/logo-kiora-vectorizado.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/img/logo-kiora-vectorizado.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity"]
+>>>>>>> origin/develop
 }

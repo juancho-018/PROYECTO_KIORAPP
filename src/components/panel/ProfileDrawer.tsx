@@ -76,6 +76,7 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
                       onChange={(e) => onPasswordsChange({...passwords, current: e.target.value})}
                       className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-[#ec131e] focus:ring-4 focus:ring-red-50 transition-all text-sm bg-white" 
                       placeholder="••••••••"
+                      autoComplete="current-password"
                    />
                 </div>
                 <div className="flex flex-col gap-1.5">
@@ -88,6 +89,7 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
                       className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-[#ec131e] focus:ring-4 focus:ring-red-50 transition-all text-sm bg-white" 
                       placeholder="Mínimo 8 caracteres"
                       minLength={8}
+                      autoComplete="new-password"
                    />
                 </div>
                 <div className="flex flex-col gap-1.5">
@@ -100,6 +102,7 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
                       className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-[#ec131e] focus:ring-4 focus:ring-red-50 transition-all text-sm bg-white" 
                       placeholder="Repite la contraseña"
                       minLength={8}
+                      autoComplete="new-password"
                    />
                 </div>
                 <button 

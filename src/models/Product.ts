@@ -9,7 +9,10 @@ export interface Product {
   fk_cod_cats?: number[];
   nom_cat?: string;
   descrip_cat?: string;
+<<<<<<< HEAD
   tipo_prod?: string;
+=======
+>>>>>>> origin/develop
   alerta_stock_critico?: boolean;
 }
 

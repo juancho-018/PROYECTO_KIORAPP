@@ -116,6 +116,7 @@ export function OrdersSection() {
   };
 
   const handleUpdateStatus = async (id: number, status: string) => {
+<<<<<<< HEAD
     const currentOrder = orders.find(o => o.id_vent === id);
     if (currentOrder?.estado === 'cancelada') {
       alertService.showToast('warning', 'No se puede modificar una venta ya cancelada');
@@ -135,13 +136,18 @@ export function OrdersSection() {
       }
     }
 
+=======
+>>>>>>> origin/develop
     try {
       await orderService.updateOrderStatus(id, status as any);
       alertService.showToast('success', `Estado actualizado a ${status}`);
       loadData();
     } catch (error: any) {
       alertService.showError('Error', 'No se pudo actualizar el estado');
+<<<<<<< HEAD
       loadData();
+=======
+>>>>>>> origin/develop
     }
   };
 
@@ -158,6 +164,7 @@ export function OrdersSection() {
           </div>
           
           {activeSubTab === 'facturas' && (
+<<<<<<< HEAD
             <div className="flex items-center gap-3">
               <div className="relative">
                 <input 
@@ -177,6 +184,18 @@ export function OrdersSection() {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                 Exportar Excel
               </button>
+=======
+            <div className="relative">
+              <input 
+                type="text" 
+                inputMode="numeric"
+                placeholder="Buscar Factura #ID..." 
+                className="bg-white border border-gray-200 rounded-xl px-4 py-3 pl-10 text-sm focus:ring-[#ec131e] focus:border-[#ec131e]"
+                value={searchInvoiceId}
+                onChange={(e) => setSearchInvoiceId(e.target.value.replace(/\D/g, ''))}
+              />
+              <svg className="w-4 h-4 text-gray-400 absolute left-4 top-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+>>>>>>> origin/develop
             </div>
           )}
         </div>
@@ -223,9 +242,14 @@ export function OrdersSection() {
                   <td className="px-6 py-4 text-center">
                     <select 
                       value={order.estado}
+<<<<<<< HEAD
                       disabled={order.estado === 'cancelada'}
                       onChange={(e) => handleUpdateStatus(order.id_vent!, e.target.value)}
                       className={`text-[10px] font-black uppercase px-3 py-1 rounded-full border-none ring-1 appearance-none cursor-pointer text-center disabled:opacity-70 disabled:cursor-not-allowed ${
+=======
+                      onChange={(e) => handleUpdateStatus(order.id_vent!, e.target.value)}
+                      className={`text-[10px] font-black uppercase px-3 py-1 rounded-full border-none ring-1 appearance-none cursor-pointer text-center ${
+>>>>>>> origin/develop
                         order.estado === 'completada' ? 'bg-emerald-50 text-emerald-600 ring-emerald-100' : 
                         order.estado === 'cancelada' ? 'bg-red-50 text-red-600 ring-red-100' : 
                         'bg-amber-50 text-amber-600 ring-amber-100'

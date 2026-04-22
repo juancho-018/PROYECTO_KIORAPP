@@ -10,7 +10,6 @@ interface UserListProps {
   onEdit: (user: User) => void;
   onDelete: (id: string | number) => void;
   onUnlock: (id: string | number, isBlocked: boolean) => void;
-  onPasswordReset: (user: User) => void;
   pagination: {
     currentPage: number;
     totalPages: number;
@@ -21,7 +20,11 @@ interface UserListProps {
 function roleKey(rol?: string): 'admin' | 'cliente' | 'other' {
   const r = String(rol ?? '').toLowerCase();
   if (r === 'admin') return 'admin';
+<<<<<<< HEAD
   if (r === 'cliente' || r === 'operario') return 'cliente';
+=======
+  if (r === 'cliente' || r === 'operario') return 'operario';
+>>>>>>> origin/develop
   return 'other';
 }
 
@@ -33,7 +36,6 @@ export const UserList: React.FC<UserListProps> = ({
   onEdit,
   onDelete,
   onUnlock,
-  onPasswordReset,
   pagination
 }) => {
   const pageItems = getPaginationPages(
@@ -112,7 +114,7 @@ export const UserList: React.FC<UserListProps> = ({
             </div>
           ) : (
             <ul className="divide-y divide-slate-100">
-              {users.map((u, i) => (
+              {(Array.isArray(users) ? users : []).map((u, i) => (
                 <li key={u.id_usu || `user-${i}`}>
                   <div className="flex flex-col gap-3 px-4 py-4 transition-colors hover:bg-slate-50/90 sm:flex-row sm:items-center sm:gap-4 sm:px-6 sm:py-3.5">
                     <div className="flex min-w-0 flex-1 items-center gap-3.5">
@@ -125,25 +127,29 @@ export const UserList: React.FC<UserListProps> = ({
                         <p className="truncate font-semibold text-slate-900">{String(u.nom_usu || 'Sin nombre')}</p>
                         <p className="truncate text-sm text-slate-500">{u.correo_usu}</p>
                         <span className="mt-1 inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold capitalize text-slate-600">
-                          {u.rol_usu || 'Usuario'}
+                          {u.rol_usu === 'cliente' ? 'operario' : (u.rol_usu || 'Usuario')}
                         </span>
                       </div>
                     </div>
 
                     <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
                       {u.isBlocked ? (
-                        <button
-                          type="button"
-                          onClick={() => onUnlock(u.id_usu as string, true)}
-                          className="rounded-full bg-slate-200/80 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-600 transition-colors hover:bg-slate-300/80"
-                        >
-                          Inactivo
-                        </button>
+                        <div className="flex flex-col items-end gap-1">
+                          <button
+                            type="button"
+                            onClick={() => onUnlock(u.id_usu as string, true)}
+                            className="rounded-full bg-red-100 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-red-700 ring-1 ring-red-200 transition-colors hover:bg-red-200 animate-pulse"
+                          >
+                            Bloqueado
+                          </button>
+                          <span className="text-[9px] text-red-400 font-bold uppercase">Click para liberar</span>
+                        </div>
                       ) : (
                         <span className="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-700 ring-1 ring-emerald-200/80">
                           Activo
                         </span>
                       )}
+
 
                       <div className="flex items-center gap-0.5 rounded-xl bg-slate-100/80 p-0.5 ring-1 ring-slate-200/80">
                         <button
@@ -154,16 +160,6 @@ export const UserList: React.FC<UserListProps> = ({
                         >
                           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                          </svg>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onPasswordReset(u)}
-                          className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-white hover:text-amber-600"
-                          title="Contraseña"
-                        >
-                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                           </svg>
                         </button>
                         <button
@@ -195,7 +191,7 @@ export const UserList: React.FC<UserListProps> = ({
                 ← Anterior
               </button>
               <div className="flex flex-wrap justify-center gap-1">
-                {pageItems.map((item, idx) =>
+                {(Array.isArray(pageItems) ? pageItems : []).map((item, idx) =>
                   item === 'ellipsis' ? (
                     <span
                       key={`ellipsis-${idx}`}

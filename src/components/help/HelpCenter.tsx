@@ -3,7 +3,11 @@ import { HELP_FAQS, HELP_TOPICS } from './helpContent';
 import { RolesSection } from '../panel/RolesSection';
 import { authService } from '@/config/setup';
 
-export default function HelpCenter() {
+interface HelpCenterProps {
+  hideBackButton?: boolean;
+}
+
+export default function HelpCenter({ hideBackButton = false }: HelpCenterProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -23,8 +27,8 @@ export default function HelpCenter() {
 
   const filteredFaqIndices = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
-    if (!q) return HELP_FAQS.map((_, i) => i);
-    return HELP_FAQS.map((faq, i) => ({ faq, i }))
+    if (!q) return (Array.isArray(HELP_FAQS) ? HELP_FAQS : []).map((unused, i) => i);
+    return (Array.isArray(HELP_FAQS) ? HELP_FAQS : []).map((faq, i) => ({ faq, i }))
       .filter(
         ({ faq }) =>
           faq.question.toLowerCase().includes(q) || faq.answer.toLowerCase().includes(q)
@@ -34,6 +38,7 @@ export default function HelpCenter() {
 
   return (
     <div className="w-full max-w-3xl mx-auto px-4 pb-24 relative">
+<<<<<<< HEAD
       {isStandalone && (
         <button
           onClick={handleBack}
@@ -45,6 +50,31 @@ export default function HelpCenter() {
           Volver
         </button>
       )}
+=======
+      {!hideBackButton && (
+        <button
+          onClick={() => {
+            if (window.history.length > 1) {
+              window.history.back();
+            } else {
+              window.location.href = '/login';
+            }
+          }}
+          className="mt-6 flex items-center gap-2 text-gray-400 hover:text-[#ec131e] transition-all group border-none bg-transparent cursor-pointer"
+        >
+          <svg
+            className="w-5 h-5 group-hover:-translate-x-1 transition-transform"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          <span className="text-[12px] font-bold uppercase tracking-widest">Volver</span>
+        </button>
+      )}
+
+>>>>>>> origin/develop
       <div className="mb-10 text-left pt-4">
         <h1 className="text-[26px] font-extrabold text-[#111827] tracking-tight mb-6">¿En qué podemos ayudarte?</h1>
         <div className="relative group">
@@ -119,7 +149,7 @@ export default function HelpCenter() {
                   </button>
                   <div
                     className={`px-6 text-[#6b7280] text-[14px] leading-relaxed transition-all duration-350 ease-in-out overflow-hidden ${
-                      isActive ? 'pb-6 pt-0 max-h-[320px] opacity-100 visible' : 'max-h-0 opacity-0 invisible'
+                      isActive ? 'pb-6 pt-0 max-h-80 opacity-100 visible' : 'max-h-0 opacity-0 invisible'
                     }`}
                   >
                     {faq.answer}

@@ -16,7 +16,7 @@ export class ProductService {
   constructor(
     private httpClient: IHttpClient,
     private authService: AuthService
-  ) {}
+  ) { }
 
   private getAuthHeaders(): Record<string, string> {
     const token = this.authService.getToken();
@@ -49,17 +49,17 @@ export class ProductService {
       console.error('HTTP Error Response:', response);
       throw new Error(response.error || 'Error retrieving products');
     }
-    
+
     const data = response.data;
     if (Array.isArray(data)) {
-        return data.map(p => this.normalizeProduct(p));
+      return data.map(p => this.normalizeProduct(p));
     }
-    
+
     if (data.data && Array.isArray(data.data)) {
-        return {
-            ...data,
-            data: data.data.map((p: any) => this.normalizeProduct(p))
-        };
+      return {
+        ...data,
+        data: data.data.map((p: any) => this.normalizeProduct(p))
+      };
     }
 
     return [];

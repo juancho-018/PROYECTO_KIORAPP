@@ -33,14 +33,21 @@ const {
     <meta name="theme-color" content="#ec131e" />
     <link rel="apple-touch-icon" href="/favicon.svg" />
     <meta name="mobile-web-app-capable" content="yes" />
+<<<<<<< HEAD
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+=======
+>>>>>>> origin/develop
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/sw.js', { scope: '/' })
             .catch(error => console.error('PWA Registration Failed:', error));
         });
+      }
+      // Add is-panel class if on panel route
+      if (window.location.pathname.startsWith('/panel')) {
+        document.body.classList.add('is-panel');
       }
     </script>
     <script is:inline>
@@ -64,7 +71,11 @@ const {
             right: 1.5rem !important;
             z-index: 9999 !important;
           }
+<<<<<<< HEAD
           html[data-path*="/panel"] .weglot-container {
+=======
+          body.is-panel .weglot-container {
+>>>>>>> origin/develop
             display: none !important;
           }
           .wg-default, .wg-default .wg-li {

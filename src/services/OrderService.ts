@@ -127,7 +127,7 @@ export class OrderService {
         headers: this.getAuthHeaders()
       });
       const orders = response.data || [];
-      
+
       const data = orders.map(o => ({
         'ID Venta': o.id_vent,
         'Fecha': o.fecha_vent ? new Date(o.fecha_vent).toLocaleString('es-CO') : '—',
@@ -139,7 +139,7 @@ export class OrderService {
       const worksheet = XLSX.utils.json_to_sheet(data);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Ventas Kiora");
-      
+
       // Auto-ajustar anchos de columna básicos
       const wscols = [
         { wch: 10 }, { wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 15 }
@@ -172,10 +172,10 @@ export class OrderService {
     let y = 45;
     doc.setFontSize(8);
     (order.items || []).forEach(item => {
-       doc.text((item.nom_prod || 'Producto').substring(0, 15), 5, y);
-       doc.text(item.cantidad?.toString() || '1', 45, y);
-       doc.text(`$${Number(item.precio_unit).toLocaleString('es-CO')}`, 55, y);
-       y += 5;
+      doc.text((item.nom_prod || 'Producto').substring(0, 15), 5, y);
+      doc.text(item.cantidad?.toString() || '1', 45, y);
+      doc.text(`$${Number(item.precio_unit).toLocaleString('es-CO')}`, 55, y);
+      y += 5;
     });
 
     y += 10;
@@ -227,7 +227,7 @@ export class OrderService {
     try {
       const response = await this.getInvoices(1, 1000);
       const invoices = response.data || [];
-      
+
       const data = invoices.map(f => ({
         'ID Factura': f.id_fact,
         'Fecha': f.fecha_fact ? new Date(f.fecha_fact).toLocaleString('es-CO') : '—',
@@ -239,7 +239,7 @@ export class OrderService {
       const worksheet = XLSX.utils.json_to_sheet(data);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Facturas Kiora");
-      
+
       const wscols = [
         { wch: 12 }, { wch: 25 }, { wch: 12 }, { wch: 15 }, { wch: 18 }
       ];
