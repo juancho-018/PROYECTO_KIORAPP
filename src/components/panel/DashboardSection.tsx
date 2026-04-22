@@ -1,6 +1,9 @@
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 import React from 'react';
 =======
+=======
+>>>>>>> Stashed changes
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import Fuse from 'fuse.js';
 import { productService, orderService, alertService } from '@/config/setup';
@@ -53,6 +56,24 @@ export function DashboardSection({ onSwitchTab }: DashboardSectionProps) {
   useEffect(() => {
     setTodayDate(new Date().toDateString());
     void loadDashboardData();
+<<<<<<< Updated upstream
+=======
+
+    const handleRefresh = () => void loadDashboardData();
+    window.addEventListener('kiora-refresh-alerts', handleRefresh);
+    const poll = setInterval(() => void loadDashboardData(), 60000);
+
+    return () => {
+      window.removeEventListener('kiora-refresh-alerts', handleRefresh);
+      clearInterval(poll);
+    };
+  }, [loadDashboardData]);
+
+  const todayOrders = useMemo(() => {
+    if (!todayDate) return [];
+    return orders.filter(o => o.fecha_vent && new Date(o.fecha_vent).toDateString() === todayDate);
+  }, [orders, todayDate]);
+>>>>>>> Stashed changes
 
     const handleRefresh = () => void loadDashboardData();
     window.addEventListener('kiora-refresh-alerts', handleRefresh);

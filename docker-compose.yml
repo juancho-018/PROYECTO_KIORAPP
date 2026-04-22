@@ -12,3 +12,12 @@ services:
     restart: unless-stopped
     ports:
       - "8080:80"
+<<<<<<< Updated upstream
+=======
+    networks:
+      - kiora-public-net
+
+networks:
+  kiora-public-net:
+    external: true
+>>>>>>> Stashed changes

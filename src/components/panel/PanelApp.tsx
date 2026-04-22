@@ -39,9 +39,12 @@ export default function PanelApp() {
   
   // Tab switching
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showHelp, setShowHelp] = useState(false);
 =======
+=======
+>>>>>>> Stashed changes
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [isHydrated, setIsHydrated] = useState(false);
 
@@ -386,6 +389,17 @@ export default function PanelApp() {
     }
   };
 
+<<<<<<< Updated upstream
+=======
+  const handleUnlockUser = async (id: string | number) => {
+    try {
+      await userService.unlockUser(Number(id));
+      alertService.showToast('success', 'Desbloqueado');
+      loadUsersList(currentPage);
+    } catch (e) { alertService.showToast('error', 'Error al desbloquear'); }
+  };
+
+>>>>>>> Stashed changes
   if (!isHydrated || !user) return null;
 
   return (
@@ -566,6 +580,11 @@ export default function PanelApp() {
           if (!isAdmin && !['dashboard', 'ventas', 'ajustes'].includes(tab)) return;
           setActiveTab(tab);
         }} />
+<<<<<<< Updated upstream
+=======
+
+
+>>>>>>> Stashed changes
 
 
 >>>>>>> Stashed changes

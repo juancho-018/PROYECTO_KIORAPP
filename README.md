@@ -1,8 +1,11 @@
 # 🍰 Kiora – Panel Administrativo Frontend
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 **Kiora** es el ecosistema frontend centralizado para la gestión del sistema de microservicios. Esta aplicación integra los módulos de **Administración**, **Autenticación**, **Seguridad** y **Soporte** bajo una arquitectura robusta de **Astro v5** y **React v19**.
 =======
+=======
+>>>>>>> Stashed changes
 <div align="center">
 
 **Sistema integral de gestión para negocios de alimentos**  
@@ -15,6 +18,9 @@
 ![Vitest](https://img.shields.io/badge/Vitest-v4-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)
 
 </div>
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 
 ---
@@ -42,6 +48,7 @@
 ```
 src/
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 ├── components/             # Capa de Presentación (React)
 │   ├── auth/               # Login, Recuperación y Reseteo de Password
 │   ├── panel/              # Dashboard Administrativo Modular
@@ -54,6 +61,8 @@ src/
 ├── pages/                  # Orquestación de Rutas (Astro)
 └── styles/                 # Configuración de Tailwind v4 y Global CSS
 =======
+=======
+>>>>>>> Stashed changes
 ├── components/                # Capa de Presentación (React)
 │   ├── auth/                  # Login, Recuperar contraseña, Verificación
 │   ├── panel/                 # Dashboard Administrativo (38 componentes)
@@ -81,6 +90,9 @@ src/
 ├── pages/                     # Rutas Astro (.astro)
 ├── styles/                    # Tailwind v4 + CSS global
 └── utils/                     # Utilidades (paginación, errores, búsqueda)
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 ```
 
@@ -89,9 +101,13 @@ src/
 ## 🚀 Inicio Rápido
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 Para una explicación profunda de la arquitectura y patrones utilizados, consulta:
 👉 **[TECHNICAL_DOCS.md](./src/TECHNICAL_DOCS.md)**  
 👉 **[Seguridad (modelo de amenazas del cliente)](./SECURITY.md)**
+=======
+### Prerrequisitos
+>>>>>>> Stashed changes
 =======
 ### Prerrequisitos
 >>>>>>> Stashed changes
@@ -117,6 +133,7 @@ cp .env.example .env
 
 ### Desarrollo Local
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 1. **Instalar dependencias:** `npm install`
 2. **Configurar entorno:** `cp .env.example .env` (opcional: `PUBLIC_WEGLOT_API_KEY` si usas traducción Weglot)
 3. **Ejecutar:** `npm run dev`
@@ -127,6 +144,10 @@ cp .env.example .env
 <<<<<<< Updated upstream
 # Construir y levantar todo el ecosistema front
 =======
+=======
+
+```bash
+>>>>>>> Stashed changes
 npm run dev
 # → http://localhost:8080
 ```
@@ -152,6 +173,9 @@ npm run test -- --coverage
 
 ```bash
 # Construir y levantar (puerto 8080)
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 docker-compose up -d --build
 ```
@@ -161,11 +185,14 @@ docker-compose up -d --build
 ## 🛠️ Stack Tecnológico
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 - **Clean Architecture**: Separación estricta entre UI e Infraestructura.
 - **SOLID**: Código mantenible, extensible y testeable.
 - **Performance**: Hidratación selectiva de componentes React mediante Astro.
 - **Premium UI**: Diseño consistente basado en tokens de marca (Kiora Red).
 =======
+=======
+>>>>>>> Stashed changes
 | Categoría | Tecnología | Versión |
 |-----------|-----------|---------|
 | **Framework SSR** | Astro | v5.17 |
@@ -178,6 +205,9 @@ docker-compose up -d --build
 | **Pagos** | Stripe.js | v9.2 |
 | **PWA** | @vite-pwa/astro | v1.2 |
 | **Bundler** | Vite | v6+ |
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 
 ---
@@ -185,11 +215,14 @@ docker-compose up -d --build
 ## 📐 Principios de Ingeniería
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 - **Logs de Build**: Revisa `build.log` o `tsc.log` para errores de compilación o tipos.
 - **Sesiones**: Si experimentas desconexiones inesperadas, verifica la configuración de `SessionManager.ts`.
 - **API**: Asegúrate de que `PUBLIC_API_URL` en tu `.env` apunte al backend correcto.
 - **Seguridad**: Lee [SECURITY.md](./SECURITY.md) antes de desplegar en producción (sesión, JWT, CSP).
 =======
+=======
+>>>>>>> Stashed changes
 - **Clean Architecture** – Separación estricta entre UI, servicios e infraestructura
 - **Microservices Oriented** – Comunicación vía API Gateway centralizado
 - **Component-Driven** – 38+ componentes modulares reutilizables en el panel
@@ -235,4 +268,7 @@ Desarrollado por el equipo **Kiora** – Universidad.
 <div align="center">
   <sub>Hecho con ❤️ por el equipo Kiora</sub>
 </div>
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
