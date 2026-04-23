@@ -14,11 +14,7 @@ export const SystemAlerts: React.FC = () => {
           setAlerts(res.data);
         }
       } catch (err) {
-<<<<<<< HEAD
         // Silently handle backend downtime
-=======
-        console.error('[SystemAlerts]', err);
->>>>>>> origin/develop
       } finally {
         setLoading(false);
       }

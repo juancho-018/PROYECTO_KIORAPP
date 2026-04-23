@@ -9,18 +9,9 @@ import { HealthService } from "../services/HealthService";
 import { MaintenanceService } from "../services/MaintenanceService";
 import { NotificationService } from "../services/NotificationService";
 import { IncidentService } from "../services/IncidentService";
+import { ReportService } from "../services/ReportService";
 
 // Punto de entrada único (API Gateway)
-<<<<<<< HEAD
-export const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:3001/api";
-
-// Base para imágenes
-export const IMAGE_BASE_URL = API_URL.replace(/\/api$/, '');
-
-// Cliente único para todo el sistema
-export const httpClient = new FetchHttpClient(API_URL);
-
-=======
 export const API_URL = import.meta.env.PUBLIC_API_URL || "http://localhost:3000/api";
 
 // Base para imágenes
@@ -29,7 +20,6 @@ export const IMAGE_BASE_URL = API_URL.replace(/\/api$/, '');
 // Cliente único para todo el sistema
 export const httpClient = new FetchHttpClient(API_URL);
 
->>>>>>> origin/develop
 // Instancias únicas (Singleton Pattern)
 export const authService = new AuthService(httpClient);
 export const userService = new UserService(httpClient, authService);
@@ -39,12 +29,8 @@ export const orderService = new OrderService(httpClient, authService);
 export const healthService = new HealthService(httpClient);
 export const maintenanceService = new MaintenanceService(httpClient, authService);
 export const incidentService = new IncidentService(httpClient, authService);
+export const reportService = new ReportService(httpClient, authService);
 export const notificationService = new NotificationService();
 
-<<<<<<< HEAD
-// AlertService
-export const alertService = new SweetAlertService();
-=======
 // AlertService requiere NotificationService para integraciones
 export const alertService = new SweetAlertService(notificationService);
->>>>>>> origin/develop

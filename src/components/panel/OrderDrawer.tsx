@@ -2,7 +2,7 @@ import type { CreateOrderDto } from '@/services/OrderService';
 import type { Product } from '@/models/Product';
 import React from 'react';
 
-const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000/api';
 const IMG_BASE = API_URL.replace('/api', '');
 
 function getImageUrl(path?: string): string {
@@ -20,15 +20,9 @@ interface OrderDrawerProps {
   prodSearch: string;
   setProdSearch: (v: string) => void;
   filteredProducts: Product[];
-<<<<<<< HEAD
   categories: Category[];
   selectedCategoryId: number | null;
   setSelectedCategoryId: (id: number | null) => void;
-=======
-  categories?: any[];
-  selectedCategories?: number[];
-  setSelectedCategories?: (ids: number[]) => void;
->>>>>>> origin/develop
   addToCart: (p: Product) => void;
   removeFromCart: (cod_prod: number) => void;
   updateQuantity: (cod_prod: number, delta: number, stock?: number) => void;
@@ -47,12 +41,9 @@ export function OrderDrawer({
   prodSearch,
   setProdSearch,
   filteredProducts,
-<<<<<<< HEAD
   categories,
   selectedCategoryId,
   setSelectedCategoryId,
-=======
->>>>>>> origin/develop
   addToCart,
   removeFromCart,
   updateQuantity,
@@ -68,17 +59,13 @@ export function OrderDrawer({
 
   return (
     <div className="fixed inset-0 z-[100] flex animate-in fade-in duration-300">
-      <div 
-        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-all duration-300" 
-        onClick={onClose} 
+      <div
+        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-all duration-300"
+        onClick={onClose}
         aria-label="Cerrar nueva venta"
       />
-<<<<<<< HEAD
       <div className="relative ml-auto h-full w-full max-w-5xl bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-500">
-=======
-      <div className="relative ml-auto h-full w-full max-w-4xl bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-500">
->>>>>>> origin/develop
-        
+
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5 bg-white z-10 relative shadow-sm">
           <div>
@@ -87,8 +74,8 @@ export function OrderDrawer({
             </h2>
             <p className="text-xs text-slate-500 font-medium mt-0.5">Gestiona tu nueva venta de forma ágil</p>
           </div>
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="rounded-full bg-slate-50 p-2.5 text-slate-500 hover:bg-[#ec131e]/10 hover:text-[#ec131e] transition-colors focus:outline-none focus:ring-2 focus:ring-[#ec131e]/20"
             aria-label="Cerrar cajón"
           >
@@ -99,17 +86,13 @@ export function OrderDrawer({
         </div>
 
         <div className="flex-1 overflow-hidden flex flex-col md:flex-row bg-slate-50/30">
-          
+
           {/* Product Selector Section */}
           <div className="flex-1 flex flex-col border-r border-slate-100 bg-white">
-<<<<<<< HEAD
             <div className="p-4 border-b border-slate-100 space-y-4">
-=======
-            <div className="p-4 border-b border-slate-100">
->>>>>>> origin/develop
               <div className="relative group">
                 <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-[#ec131e] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
                 <input
                   type="text"
@@ -119,17 +102,15 @@ export function OrderDrawer({
                   className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm font-medium text-slate-800 placeholder-slate-400 focus:bg-white focus:border-[#ec131e] focus:outline-none focus:ring-4 focus:ring-[#ec131e]/10 transition-all shadow-sm"
                 />
               </div>
-<<<<<<< HEAD
 
               {/* Category Filter */}
               <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
                 <button
                   onClick={() => setSelectedCategoryId(null)}
-                  className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border ${
-                    selectedCategoryId === null 
-                      ? 'bg-slate-900 text-white border-slate-900 shadow-sm' 
+                  className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border ${selectedCategoryId === null
+                      ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
                       : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
-                  }`}
+                    }`}
                 >
                   Todos
                 </button>
@@ -137,29 +118,23 @@ export function OrderDrawer({
                   <button
                     key={cat.cod_cat}
                     onClick={() => setSelectedCategoryId(cat.cod_cat!)}
-                    className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border ${
-                      selectedCategoryId === cat.cod_cat
+                    className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border ${selectedCategoryId === cat.cod_cat
                         ? 'bg-[#ec131e] text-white border-[#ec131e] shadow-sm'
                         : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
-                    }`}
+                      }`}
                   >
                     {cat.nom_cat}
                   </button>
                 ))}
               </div>
             </div>
-            
+
             <div className="flex-1 overflow-y-auto p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 content-start">
-=======
-            </div>
-            
-            <div className="flex-1 overflow-y-auto p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 content-start">
->>>>>>> origin/develop
               {filteredProducts.map((p) => {
                 const stock = p.stock_actual ?? 0;
                 const min = p.stock_minimo ?? 0;
                 const outOfStock = stock <= 0;
-                
+
                 return (
                   <button
                     key={p.cod_prod}
@@ -167,12 +142,11 @@ export function OrderDrawer({
                     disabled={outOfStock}
                     className="group flex flex-col text-left rounded-2xl border border-slate-100 bg-white p-4 shadow-sm hover:shadow-md hover:border-[#ec131e]/30 transition-all focus:outline-none focus:ring-2 focus:ring-[#ec131e]/20 active:scale-[0.98] disabled:opacity-60 disabled:bg-slate-50 disabled:active:scale-100 disabled:hover:border-slate-100 disabled:hover:shadow-sm disabled:cursor-not-allowed"
                   >
-<<<<<<< HEAD
                     {/* Product Image - No zoom/scale */}
                     <div className="w-full h-28 rounded-xl overflow-hidden bg-white mb-2 border border-slate-50">
                       {p.imagen_prod ? (
-                        <img 
-                          src={getImageUrl(p.imagen_prod)} 
+                        <img
+                          src={getImageUrl(p.imagen_prod)}
                           alt={p.nom_prod}
                           className="w-full h-full object-contain p-2"
                           onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/200x200?text=No+Image'; }}
@@ -182,7 +156,7 @@ export function OrderDrawer({
                       )}
                     </div>
                     <div className="flex justify-between items-start mb-1">
-                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100">COD: {p.cod_prod}</span>
+                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100">COD: {p.cod_prod}</span>
                     </div>
                     <h4 className="font-bold text-slate-800 line-clamp-2 group-hover:text-[#ec131e] transition-colors leading-tight min-h-[2.5rem] text-sm">
                       {p.nom_prod}
@@ -192,46 +166,11 @@ export function OrderDrawer({
                         <span className="text-xs font-bold text-[#ec131e] mr-0.5">$</span>
                         {safePrice(p.precio_prod).toLocaleString('es-CO')}
                       </span>
-                      <span className={`text-[9px] font-black px-2 py-1 rounded-md tracking-wider border flex items-center gap-1 ${
-=======
-                    {/* Product Image */}
-                    {p.imagen_prod && (
-                      <div className="w-full h-24 rounded-xl overflow-hidden bg-slate-50 mb-2">
-                        <img 
-                          src={getImageUrl(p.imagen_prod)} 
-                          alt={p.nom_prod}
-                          className="w-full h-full object-cover"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                        />
-                      </div>
-                    )}
-                    <div className="flex justify-between items-start mb-2">
-                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded-md">COD: {p.cod_prod}</span>
-                    </div>
-                    <h4 className="font-bold text-slate-800 line-clamp-2 group-hover:text-[#ec131e] transition-colors leading-tight min-h-[2.5rem]">
-                      {p.nom_prod}
-                    </h4>
-                    <div className="mt-auto flex items-end justify-between pt-3 w-full">
-                      <span className="text-xl font-black text-[#111827]">
-                        <span className="text-sm font-bold text-[#ec131e] mr-0.5">$</span>
-                        {safePrice(p.precio_prod).toLocaleString('es-CO')}
-                      </span>
-                      <span className={`text-[10px] font-black px-2 py-1 rounded-md tracking-wider border flex items-center gap-1 ${
->>>>>>> origin/develop
-                        outOfStock ? 'bg-slate-100 text-slate-500 border-slate-200' :
-                        stock <= min ? 'bg-amber-50 text-amber-600 border-amber-200' : 
-                        'bg-emerald-50 text-emerald-600 border-emerald-200'
-                      }`}>
-<<<<<<< HEAD
+                      <span className={`text-[9px] font-black px-2 py-1 rounded-md tracking-wider border flex items-center gap-1 ${outOfStock ? 'bg-slate-100 text-slate-500 border-slate-200' :
+                          stock <= min ? 'bg-amber-50 text-amber-600 border-amber-200' :
+                            'bg-emerald-50 text-emerald-600 border-emerald-200'
+                        }`}>
                         {outOfStock ? 'Agotado' : `Stock: ${stock}`}
-=======
-                        {outOfStock ? (
-                          <>
-                           <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                           Agotado
-                          </>
-                        ) : `Disponibles: ${stock}`}
->>>>>>> origin/develop
                       </span>
                     </div>
                   </button>
@@ -243,22 +182,14 @@ export function OrderDrawer({
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                   </div>
                   <p className="text-sm font-bold text-slate-600">No se encontraron productos</p>
-<<<<<<< HEAD
                   <p className="text-xs text-slate-500 mt-1">Intenta cambiar la categoría o el término de búsqueda.</p>
-=======
-                  <p className="text-xs text-slate-400 mt-1">Intenta con otro término de búsqueda.</p>
->>>>>>> origin/develop
                 </div>
               )}
             </div>
           </div>
 
           {/* Cart Section */}
-<<<<<<< HEAD
           <div className="w-full md:w-[400px] flex flex-col bg-slate-50 border-l border-slate-200 shadow-[-10px_0_30px_rgba(0,0,0,0.03)] z-10">
-=======
-          <div className="w-full md:w-[380px] flex flex-col bg-slate-50 border-l border-slate-200 shadow-[-10px_0_30px_rgba(0,0,0,0.03)] z-10">
->>>>>>> origin/develop
             <div className="p-4 border-b border-slate-200 bg-white flex items-center justify-between">
               <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
                 <svg className="h-4 w-4 text-[#ec131e]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -270,23 +201,22 @@ export function OrderDrawer({
                 {orderForm.items.length} ITEM{orderForm.items.length !== 1 && 'S'}
               </span>
             </div>
-            
+
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {orderForm.items.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center opacity-40 px-6">
-                   <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm border border-slate-200">
-                     <svg className="h-8 w-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                     </svg>
-                   </div>
-                   <p className="text-sm font-bold text-slate-600 block">Tu carrito está vacío.</p>
-                   <p className="text-xs text-slate-500 mt-1">Selecciona productos del listado para comenzar una nueva venta.</p>
+                  <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm border border-slate-200">
+                    <svg className="h-8 w-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                  </div>
+                  <p className="text-sm font-bold text-slate-600 block">Tu carrito está vacío.</p>
+                  <p className="text-xs text-slate-500 mt-1">Selecciona productos del listado para comenzar una nueva venta.</p>
                 </div>
               ) : (
                 orderForm.items.map((item) => (
                   <div key={item.cod_prod} className="flex gap-3 bg-white p-3 rounded-2xl border border-slate-200 shadow-sm animate-in slide-in-from-right-2 duration-300 transition-all hover:border-slate-300">
                     {/* Item image thumbnail */}
-<<<<<<< HEAD
                     <div className="w-12 h-12 rounded-lg overflow-hidden bg-slate-50 shrink-0 border border-slate-100">
                       {item.url_imagen ? (
                         <img src={getImageUrl(item.url_imagen)} alt="" className="w-full h-full object-contain p-1" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
@@ -296,31 +226,18 @@ export function OrderDrawer({
                     </div>
                     <div className="flex-1 min-w-0 flex flex-col justify-between">
                       <h5 className="text-xs font-bold text-slate-800 line-clamp-2 leading-tight mb-2 pr-4">{item.nom_prod}</h5>
-=======
-                    {item.url_imagen && (
-                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-slate-50 shrink-0">
-                        <img src={getImageUrl(item.url_imagen)} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0 flex flex-col justify-between">
-                      <h5 className="text-sm font-bold text-slate-800 line-clamp-2 leading-tight mb-2 pr-4">{item.nom_prod}</h5>
->>>>>>> origin/develop
                       <div className="flex items-center justify-between mt-auto">
                         <div className="flex items-center gap-0.5 border border-slate-200 rounded-lg p-0.5 bg-slate-50 w-fit">
-                          <button 
-                            onClick={() => updateQuantity(item.cod_prod, -1)} 
+                          <button
+                            onClick={() => updateQuantity(item.cod_prod, -1)}
                             className="w-7 h-7 flex items-center justify-center bg-white rounded-md shadow-sm border border-slate-100 hover:text-[#ec131e] font-black transition-colors focus:outline-none"
                             aria-label="Disminuir cantidad"
                           >
                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M20 12H4" /></svg>
                           </button>
                           <span className="w-8 text-center text-xs font-black text-slate-800">{item.cantidad}</span>
-                          <button 
-<<<<<<< HEAD
-                            onClick={() => updateQuantity(item.cod_prod, 1)} 
-=======
-                            onClick={() => updateQuantity(item.cod_prod, 1, filteredProducts.find(x => x.cod_prod === item.cod_prod)?.stock_actual)} 
->>>>>>> origin/develop
+                          <button
+                            onClick={() => updateQuantity(item.cod_prod, 1)}
                             className="w-7 h-7 flex items-center justify-center bg-white rounded-md shadow-sm border border-slate-100 hover:text-[#ec131e] font-black transition-colors focus:outline-none"
                             aria-label="Aumentar cantidad"
                           >
@@ -334,8 +251,8 @@ export function OrderDrawer({
                       </div>
                     </div>
                     <div className="flex flex-col justify-start">
-                      <button 
-                        onClick={() => removeFromCart(item.cod_prod)} 
+                      <button
+                        onClick={() => removeFromCart(item.cod_prod)}
                         className="p-1.5 text-slate-300 hover:bg-red-50 hover:text-red-500 rounded-lg transition-colors focus:outline-none"
                         aria-label="Remover del carrito"
                       >
@@ -348,60 +265,36 @@ export function OrderDrawer({
                 ))
               )}
             </div>
-            
+
             <div className="p-5 bg-white border-t border-slate-200 shadow-[0_-10px_20px_rgba(0,0,0,0.02)]">
               <div className="space-y-4">
                 <div className="space-y-2 relative">
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Método de pago</label>
-<<<<<<< HEAD
                   <div className="grid grid-cols-3 gap-2">
                     <button
                       type="button"
                       onClick={() => setOrderForm(f => ({ ...f, metodopago_usu: 'efectivo' }))}
-                      className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl border-2 transition-all active:scale-95 ${
-=======
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setOrderForm(f => ({ ...f, metodopago_usu: 'efectivo' }))}
-                      className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border-2 transition-all active:scale-95 ${
->>>>>>> origin/develop
-                        orderForm.metodopago_usu === 'efectivo'
+                      className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl border-2 transition-all active:scale-95 ${orderForm.metodopago_usu === 'efectivo'
                           ? 'bg-emerald-50 border-emerald-500 text-emerald-700 shadow-md shadow-emerald-200/50'
                           : 'bg-white border-slate-100 text-slate-400 hover:border-slate-200'
-                      }`}
+                        }`}
                     >
-<<<<<<< HEAD
                       <div className={`p-1.5 rounded-lg ${orderForm.metodopago_usu === 'efectivo' ? 'bg-emerald-100' : 'bg-slate-50'}`}>
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                         </svg>
                       </div>
                       <span className="text-[9px] font-black uppercase tracking-wider">Efectivo</span>
-=======
-                      <div className={`p-2 rounded-xl ${orderForm.metodopago_usu === 'efectivo' ? 'bg-emerald-100' : 'bg-slate-50'}`}>
-                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
-                      </div>
-                      <span className="text-xs font-black uppercase tracking-wider">Efectivo</span>
->>>>>>> origin/develop
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setOrderForm(f => ({ ...f, metodopago_usu: 'tarjeta' }))}
-<<<<<<< HEAD
-                      className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl border-2 transition-all active:scale-95 ${
-=======
-                      className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border-2 transition-all active:scale-95 ${
->>>>>>> origin/develop
-                        orderForm.metodopago_usu === 'tarjeta'
+                      className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl border-2 transition-all active:scale-95 ${orderForm.metodopago_usu === 'tarjeta'
                           ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-md shadow-blue-200/50'
                           : 'bg-white border-slate-100 text-slate-400 hover:border-slate-200'
-                      }`}
+                        }`}
                     >
-<<<<<<< HEAD
                       <div className={`p-1.5 rounded-lg ${orderForm.metodopago_usu === 'tarjeta' ? 'bg-blue-100' : 'bg-slate-50'}`}>
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
@@ -413,11 +306,10 @@ export function OrderDrawer({
                     <button
                       type="button"
                       onClick={() => setOrderForm(f => ({ ...f, metodopago_usu: 'digital' }))}
-                      className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl border-2 transition-all active:scale-95 ${
-                        orderForm.metodopago_usu === 'digital'
+                      className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl border-2 transition-all active:scale-95 ${orderForm.metodopago_usu === 'digital'
                           ? 'bg-purple-50 border-purple-500 text-purple-700 shadow-md shadow-purple-200/50'
                           : 'bg-white border-slate-100 text-slate-400 hover:border-slate-200'
-                      }`}
+                        }`}
                     >
                       <div className={`p-1.5 rounded-lg ${orderForm.metodopago_usu === 'digital' ? 'bg-purple-100' : 'bg-slate-50'}`}>
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -425,14 +317,6 @@ export function OrderDrawer({
                         </svg>
                       </div>
                       <span className="text-[9px] font-black uppercase tracking-wider">Digital</span>
-=======
-                      <div className={`p-2 rounded-xl ${orderForm.metodopago_usu === 'tarjeta' ? 'bg-blue-100' : 'bg-slate-50'}`}>
-                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                        </svg>
-                      </div>
-                      <span className="text-xs font-black uppercase tracking-wider">Tarjeta</span>
->>>>>>> origin/develop
                     </button>
                   </div>
                 </div>
@@ -446,7 +330,7 @@ export function OrderDrawer({
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <button 
+                  <button
                     onClick={onCancelOrder}
                     disabled={saving || orderForm.items.length === 0}
                     className="w-full rounded-2xl border border-slate-200 py-3 text-xs font-black text-slate-400 hover:bg-red-50 hover:text-red-500 hover:border-red-100 transition-all flex items-center justify-center gap-2 disabled:opacity-30 disabled:hover:bg-transparent"
@@ -455,9 +339,9 @@ export function OrderDrawer({
                     CANCELAR PEDIDO
                   </button>
 
-                  <button 
-                    onClick={() => { handleCreateOrder(); }} 
-                    disabled={saving || orderForm.items.length === 0} 
+                  <button
+                    onClick={() => { handleCreateOrder(); }}
+                    disabled={saving || orderForm.items.length === 0}
                     className="group relative w-full overflow-hidden rounded-2xl bg-[#111827] py-4 text-sm font-black text-white shadow-xl shadow-slate-900/20 hover:bg-slate-800 active:scale-[0.98] transition-all disabled:opacity-50 disabled:active:scale-100 disabled:hover:bg-[#111827] disabled:shadow-none focus:outline-none focus:ring-4 focus:ring-slate-900/10"
                   >
                     <span className="relative z-10 flex items-center justify-center gap-2">
@@ -479,7 +363,7 @@ export function OrderDrawer({
                       )}
                     </span>
                     {!saving && orderForm.items.length > 0 && (
-                       <div className="absolute inset-0 h-full w-0 bg-[#ec131e] transition-all duration-300 ease-out group-hover:w-full opacity-10"></div>
+                      <div className="absolute inset-0 h-full w-0 bg-[#ec131e] transition-all duration-300 ease-out group-hover:w-full opacity-10"></div>
                     )}
                   </button>
                 </div>

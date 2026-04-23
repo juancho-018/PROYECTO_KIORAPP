@@ -2,13 +2,8 @@ import { useState } from 'react';
 
 type LegalTab = 'terminos' | 'privacidad';
 
-<<<<<<< HEAD
 export function LegalSection({ defaultTab }: { defaultTab?: LegalTab }) {
   const [activeTab, setActiveTab] = useState<LegalTab>(defaultTab || 'terminos');
-=======
-export function LegalSection() {
-  const [activeTab, setActiveTab] = useState<LegalTab>('terminos');
->>>>>>> origin/develop
 
   return (
     <div className="space-y-8 pb-20">
@@ -19,7 +14,6 @@ export function LegalSection() {
             <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#3E2723]/60">Legal</span>
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight text-[#1a1a1a] sm:text-4xl">
-<<<<<<< HEAD
             {activeTab === 'privacidad' ? 'Políticas de Privacidad' : 'Términos y Condiciones'}
           </h1>
           <p className="text-sm text-slate-500 font-medium">Documentación legal oficial de Kiora.</p>
@@ -51,37 +45,6 @@ export function LegalSection() {
           </button>
         </div>
       )}
-=======
-            Documentación <span className="text-[#ec131e]">Legal</span>
-          </h1>
-          <p className="text-sm text-slate-500 font-medium">Consulta los términos de uso y políticas de privacidad de Kiora.</p>
-        </div>
-      </header>
-
-      {/* Internal Tabs */}
-      <div className="flex border-b border-slate-100 mb-6">
-        <button
-          onClick={() => setActiveTab('terminos')}
-          className={`px-6 py-3 text-sm font-bold transition-all border-b-2 ${
-            activeTab === 'terminos' 
-              ? 'border-[#ec131e] text-[#ec131e]' 
-              : 'border-transparent text-slate-400 hover:text-slate-600'
-          }`}
-        >
-          Términos y Condiciones
-        </button>
-        <button
-          onClick={() => setActiveTab('privacidad')}
-          className={`px-6 py-3 text-sm font-bold transition-all border-b-2 ${
-            activeTab === 'privacidad' 
-              ? 'border-[#ec131e] text-[#ec131e]' 
-              : 'border-transparent text-slate-400 hover:text-slate-600'
-          }`}
-        >
-          Política de Privacidad
-        </button>
-      </div>
->>>>>>> origin/develop
 
       <div className="bg-white rounded-2xl border border-slate-100 p-6 md:p-10 shadow-sm relative overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-1 bg-[#ec131e]"></div>
@@ -186,10 +149,7 @@ export function LegalSection() {
 
         <div className="mt-12 pt-8 border-t border-slate-100 text-center">
           <p className="text-xs text-slate-400 font-medium">© 2024 Kiora S.A. Todos los derechos reservados.</p>
-<<<<<<< HEAD
-=======
           <a href="mailto:legal@kiora.com" className="text-[11px] font-bold text-[#ec131e] hover:underline mt-2 inline-block">legal@kiora.com</a>
->>>>>>> origin/develop
         </div>
       </div>
     </div>
