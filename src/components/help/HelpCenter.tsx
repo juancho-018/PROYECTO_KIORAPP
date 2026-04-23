@@ -1,5 +1,7 @@
 import { useState, useMemo } from 'react';
 import { HELP_FAQS, HELP_TOPICS } from './helpContent';
+import { RolesSection } from '../panel/RolesSection';
+import { authService } from '@/config/setup';
 
 interface HelpCenterProps {
   hideBackButton?: boolean;
@@ -8,6 +10,16 @@ interface HelpCenterProps {
 export default function HelpCenter({ hideBackButton = false }: HelpCenterProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
   const [searchTerm, setSearchTerm] = useState('');
+
+  const isStandalone = typeof window !== 'undefined' && window.location.pathname === '/ayuda';
+
+  const handleBack = () => {
+    if (authService.isAuthenticated()) {
+      window.location.href = '/panel';
+    } else {
+      window.location.href = '/login';
+    }
+  };
 
   const toggleFaq = (index: number) => {
     setOpenIndex(openIndex === index ? null : index);
@@ -26,6 +38,19 @@ export default function HelpCenter({ hideBackButton = false }: HelpCenterProps) 
 
   return (
     <div className="w-full max-w-3xl mx-auto px-4 pb-24 relative">
+<<<<<<< HEAD
+      {isStandalone && (
+        <button
+          onClick={handleBack}
+          className="mb-6 flex items-center gap-2 text-slate-400 hover:text-[#ec131e] transition-all group font-bold text-xs uppercase tracking-widest pt-4"
+        >
+          <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Volver
+        </button>
+      )}
+=======
       {!hideBackButton && (
         <button
           onClick={() => {
@@ -49,6 +74,7 @@ export default function HelpCenter({ hideBackButton = false }: HelpCenterProps) 
         </button>
       )}
 
+>>>>>>> origin/develop
       <div className="mb-10 text-left pt-4">
         <h1 className="text-[26px] font-extrabold text-[#111827] tracking-tight mb-6">¿En qué podemos ayudarte?</h1>
         <div className="relative group">
@@ -135,15 +161,10 @@ export default function HelpCenter({ hideBackButton = false }: HelpCenterProps) 
         )}
       </section>
 
-      <button
-        type="button"
-        className="fixed bottom-6 right-6 bg-[#ec131e] hover:bg-[#d01019] text-white px-6 py-3.5 rounded-full shadow-2xl flex items-center gap-3 active:scale-95 transition-all z-50"
-      >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-        </svg>
-        <span className="font-bold text-[14px]">Chat en vivo</span>
-      </button>
+      <section className="mt-16 pt-12 border-t border-slate-100">
+        <RolesSection />
+      </section>
+
     </div>
   );
 }

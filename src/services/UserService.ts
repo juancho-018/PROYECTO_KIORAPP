@@ -19,7 +19,7 @@ export class UserService {
   constructor(
     private httpClient: IHttpClient,
     private authService: AuthService
-  ) {}
+  ) { }
 
   private getAuthHeaders(): Record<string, string> {
     const token = this.authService.getToken();
@@ -49,12 +49,12 @@ export class UserService {
   async registerUser(dto: RegisterUserDto): Promise<void> {
     const defaultPassword = dto.password || Math.random().toString(36).slice(-8); // Contraseña por defecto si no se pasa
     const payload = { ...dto, password: defaultPassword };
-    
+
     // Se asume que /auth/register recibe el body en minúsculas y está protegido por isAdmin según el authController
     const response = await this.httpClient.post<unknown>('/auth/register', payload, {
       headers: this.getAuthHeaders()
     });
-    
+
     if (!response.ok) {
       throw new Error(response.error ?? 'Error al registrar el nuevo usuario');
     }
@@ -71,10 +71,11 @@ export class UserService {
   }
 
   async updateUser(id: string | number, dto: Partial<RegisterUserDto>): Promise<void> {
-    const cleanDto: any = {};
-    if (dto.nom_usu) cleanDto.nom_usu = dto.nom_usu;
-    if (dto.correo_usu) cleanDto.correo_usu = dto.correo_usu;
-    if (dto.tel_usu) cleanDto.tel_usu = dto.tel_usu;
+    const cleanDto: any = { ...dto };
+    delete cleanDto.password;
+    // El rol se actualiza por un endpoint separado (/auth/users/:id/role)
+    delete cleanDto.rol_usu;
+    delete cleanDto.rol;
 
     const response = await this.httpClient.patch<unknown>(`/auth/users/${id}`, cleanDto, {
       headers: this.getAuthHeaders()
@@ -129,7 +130,10 @@ export class UserService {
   }
 
   async adminUpdatePassword(id: string | number, password: string): Promise<void> {
-    const response = await this.httpClient.patch<unknown>(`/auth/users/${id}/password`, { password }, {
+    const response = await this.httpClient.patch<unknown>(`/auth/users/${id}/password`, {
+      password: password,
+      new_password: password // Algunos microservicios usan este nombre
+    }, {
       headers: this.getAuthHeaders()
     });
     if (!response.ok) {

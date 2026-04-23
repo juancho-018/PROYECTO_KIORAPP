@@ -17,10 +17,14 @@ interface UserListProps {
   };
 }
 
-function roleKey(rol?: string): 'admin' | 'operario' | 'other' {
+function roleKey(rol?: string): 'admin' | 'cliente' | 'other' {
   const r = String(rol ?? '').toLowerCase();
   if (r === 'admin') return 'admin';
+<<<<<<< HEAD
+  if (r === 'cliente' || r === 'operario') return 'cliente';
+=======
   if (r === 'cliente' || r === 'operario') return 'operario';
+>>>>>>> origin/develop
   return 'other';
 }
 
@@ -49,7 +53,7 @@ export const UserList: React.FC<UserListProps> = ({
   const avatarRing = (u: User & { isBlocked: boolean }) => {
     const k = roleKey(u.rol_usu);
     if (k === 'admin') return 'bg-sky-50 text-sky-700 ring-sky-100';
-    if (k === 'operario') return 'bg-amber-50 text-amber-800 ring-amber-100';
+    if (k === 'cliente') return 'bg-amber-50 text-amber-800 ring-amber-100';
     return 'bg-emerald-50 text-emerald-800 ring-emerald-100';
   };
 

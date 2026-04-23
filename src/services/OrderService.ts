@@ -3,6 +3,7 @@ import { type AuthService } from './AuthService';
 import type { Order, PaginatedOrders, Invoice, Paginated } from '../models/Order';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 export interface CreateOrderDto {
   metodopago_usu: string;
@@ -73,7 +74,10 @@ export class OrderService {
   async createCheckoutSession(orderId: number): Promise<{ checkoutUrl: string }> {
     const res = await this.httpClient.post<any>(
       `/orders/checkout/${orderId}`,
-      {},
+      {
+        success_url: `${window.location.origin}/panel?tab=ventas&status=success`,
+        cancel_url: `${window.location.origin}/panel?tab=ventas&status=cancel`,
+      },
       { headers: this.getAuthHeaders() }
     );
     if (!res.ok || !res.data) throw new Error(res.error ?? 'Error al generar sesión de pago');
@@ -117,6 +121,38 @@ export class OrderService {
     }
   }
 
+  async exportExcel(): Promise<void> {
+    try {
+      const response = await this.httpClient.get<{ data: Order[] }>('/orders?page=1&limit=1000', {
+        headers: this.getAuthHeaders()
+      });
+      const orders = response.data || [];
+
+      const data = orders.map(o => ({
+        'ID Venta': o.id_vent,
+        'Fecha': o.fecha_vent ? new Date(o.fecha_vent).toLocaleString('es-CO') : '—',
+        'Método Pago': (o.metodopago_usu || 'Efectivo').toUpperCase(),
+        'Estado': (o.estado || 'Pendiente').toUpperCase(),
+        'Total ($)': Number(o.montofinal_vent || 0)
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(data);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Ventas Kiora");
+
+      // Auto-ajustar anchos de columna básicos
+      const wscols = [
+        { wch: 10 }, { wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 15 }
+      ];
+      worksheet['!cols'] = wscols;
+
+      XLSX.writeFile(workbook, `kiora_reporte_ventas_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    } catch (e) {
+      console.error(e);
+      throw new Error('Error al generar Excel de ventas');
+    }
+  }
+
   async downloadReceipt(orderId: number): Promise<void> {
     const order = await this.getOrderById(orderId);
     const doc = new jsPDF({
@@ -136,10 +172,10 @@ export class OrderService {
     let y = 45;
     doc.setFontSize(8);
     (order.items || []).forEach(item => {
-       doc.text((item.nom_prod || 'Producto').substring(0, 15), 5, y);
-       doc.text(item.cantidad?.toString() || '1', 45, y);
-       doc.text(`$${Number(item.precio_unit).toLocaleString('es-CO')}`, 55, y);
-       y += 5;
+      doc.text((item.nom_prod || 'Producto').substring(0, 15), 5, y);
+      doc.text(item.cantidad?.toString() || '1', 45, y);
+      doc.text(`$${Number(item.precio_unit).toLocaleString('es-CO')}`, 55, y);
+      y += 5;
     });
 
     y += 10;
@@ -151,6 +187,16 @@ export class OrderService {
   }
 
   // Invoices
+  private normalizeInvoice(f: any): Invoice {
+    return {
+      ...f,
+      id_fact: f.id_fact ?? f.id,
+      fecha_fact: f.fecha_fact ?? f.emitida_en,
+      id_pedido: f.id_pedido ?? f.fk_id_vent,
+      total_fact: f.total_fact ?? f.montototal_vent
+    };
+  }
+
   async getInvoices(page = 1, limit = 20): Promise<Paginated<Invoice>> {
     const res = await this.httpClient.get<Paginated<Invoice>>(
       `/invoices?page=${page}&limit=${limit}`,
@@ -160,12 +206,49 @@ export class OrderService {
       if (res.status === 404) return { data: [], pagination: { page: 1, limit: 20, total: 0, totalPages: 0 } };
       throw new Error(res.error ?? 'Error al obtener facturas');
     }
-    return res.data ?? { data: [], pagination: { page: 1, limit: 20, total: 0, totalPages: 0 } };
+
+    const data = res.data;
+    if (data && Array.isArray(data.data)) {
+      return {
+        ...data,
+        data: data.data.map(f => this.normalizeInvoice(f))
+      };
+    }
+    return data ?? { data: [], pagination: { page: 1, limit: 20, total: 0, totalPages: 0 } };
   }
 
   async createInvoice(dto: any): Promise<Invoice> {
     const res = await this.httpClient.post<Invoice>('/invoices', dto, { headers: this.getAuthHeaders() });
     if (!res.ok || !res.data) throw new Error(res.error ?? 'Error al emitir factura');
-    return res.data;
+    return this.normalizeInvoice(res.data);
+  }
+
+  async exportInvoicesExcel(): Promise<void> {
+    try {
+      const response = await this.getInvoices(1, 1000);
+      const invoices = response.data || [];
+
+      const data = invoices.map(f => ({
+        'ID Factura': f.id_fact,
+        'Fecha': f.fecha_fact ? new Date(f.fecha_fact).toLocaleString('es-CO') : '—',
+        'ID Venta': f.id_pedido,
+        'Cantidad Items': f.cantidad_vent,
+        'Monto Total ($)': Number(f.total_fact || 0)
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(data);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Facturas Kiora");
+
+      const wscols = [
+        { wch: 12 }, { wch: 25 }, { wch: 12 }, { wch: 15 }, { wch: 18 }
+      ];
+      worksheet['!cols'] = wscols;
+
+      XLSX.writeFile(workbook, `kiora_reporte_facturas_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    } catch (e) {
+      console.error(e);
+      throw new Error('Error al generar Excel de facturas');
+    }
   }
 }

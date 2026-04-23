@@ -19,13 +19,13 @@
     "@types/react-dom": "^19.2.3",
     "@vite-pwa/astro": "^1.2.0",
     "astro": "^5.17.1",
-    "fuse.js": "^7.3.0",
-    "jspdf": "^4.2.1",
-    "jspdf-autotable": "^5.0.7",
+    "fuse.js": "^7.0.0",
+    "jspdf": "^2.5.1",
+    "jspdf-autotable": "^3.8.2",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "sweetalert2": "^11.26.21",
-    "workbox-window": "^7.4.0"
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@axe-core/react": "^4.11.1",

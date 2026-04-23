@@ -1,4 +1,3 @@
-
 services:
   frontend:
     build:
@@ -19,4 +18,3 @@ services:
 networks:
   kiora-public-net:
     external: true
-    name: kiora-public-net

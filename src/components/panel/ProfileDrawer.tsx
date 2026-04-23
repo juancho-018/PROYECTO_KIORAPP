@@ -57,10 +57,10 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Correo Electrónico</span>
                    <span className="text-sm font-medium text-gray-700">{user.correo_usu}</span>
                 </div>
-                <div className="flex flex-col">
-                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Teléfono</span>
-                   <span className="text-sm font-medium text-gray-700">{user.tel_usu || 'No registrado'}</span>
-                </div>
+                 <div className="flex flex-col">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Teléfono</span>
+                    <span className="text-sm font-medium text-gray-700">{user.tel_usu || (user as any).telefono || (user as any).telefono_usu || 'No registrado'}</span>
+                 </div>
              </div>
           </div>
 

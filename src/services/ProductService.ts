@@ -16,7 +16,7 @@ export class ProductService {
   constructor(
     private httpClient: IHttpClient,
     private authService: AuthService
-  ) {}
+  ) { }
 
   private getAuthHeaders(): Record<string, string> {
     const token = this.authService.getToken();
@@ -45,18 +45,21 @@ export class ProductService {
       `/products?page=${page}&limit=${limit}`,
       this.getAuthHeaders()
     );
-    if (!response.ok || !response.data) throw new Error(response.error || 'Error retrieving products');
-    
+    if (!response.ok || !response.data) {
+      console.error('HTTP Error Response:', response);
+      throw new Error(response.error || 'Error retrieving products');
+    }
+
     const data = response.data;
     if (Array.isArray(data)) {
-        return data.map(p => this.normalizeProduct(p));
+      return data.map(p => this.normalizeProduct(p));
     }
-    
+
     if (data.data && Array.isArray(data.data)) {
-        return {
-            ...data,
-            data: data.data.map((p: any) => this.normalizeProduct(p))
-        };
+      return {
+        ...data,
+        data: data.data.map((p: any) => this.normalizeProduct(p))
+      };
     }
 
     return [];
@@ -81,15 +84,43 @@ export class ProductService {
   }
 
   async createProduct(dto: CreateProductDto | FormData): Promise<Product> {
-    const response = await this.httpClient.post<Product>('/products', dto, { headers: this.getAuthHeaders() });
+    const body = this.prepareBody(dto);
+    const response = await this.httpClient.post<Product>('/products', body, { headers: this.getAuthHeaders() });
     if (!response.ok || !response.data) throw new Error(response.error || 'Error creating product');
     return this.normalizeProduct(response.data);
   }
 
   async updateProduct(id: number, dto: CreateProductDto | FormData): Promise<Product> {
-    const response = await this.httpClient.put<Product>(`/products/${id}`, dto, { headers: this.getAuthHeaders() });
+    const body = this.prepareBody(dto);
+    const response = await this.httpClient.put<Product>(`/products/${id}`, body, { headers: this.getAuthHeaders() });
     if (!response.ok || !response.data) throw new Error(response.error || 'Error updating product');
     return this.normalizeProduct(response.data);
+  }
+
+  private prepareBody(dto: CreateProductDto | FormData): FormData | any {
+    if (dto instanceof FormData) return dto;
+
+    const hasImage = !!dto.imagen;
+    if (hasImage) {
+      const fd = new FormData();
+      fd.append('nom_prod', dto.nom_prod);
+      if (dto.desc_prod) fd.append('descrip_prod', dto.desc_prod);
+      fd.append('precio_unitario', dto.precio_prod.toString());
+      if (dto.stock_actual !== undefined) fd.append('stock_actual', dto.stock_actual.toString());
+      if (dto.stock_minimo !== undefined) fd.append('stock_minimo', dto.stock_minimo.toString());
+      if (dto.fk_cod_cats) fd.append('fk_cod_cats', JSON.stringify(dto.fk_cod_cats));
+      if (dto.imagen) fd.append('imagen', dto.imagen);
+      return fd;
+    }
+
+    return {
+      nom_prod: dto.nom_prod,
+      descrip_prod: dto.desc_prod,
+      precio_unitario: dto.precio_prod,
+      stock_actual: dto.stock_actual,
+      stock_minimo: dto.stock_minimo,
+      fk_cod_cats: dto.fk_cod_cats
+    };
   }
 
   async deleteProduct(id: number): Promise<void> {

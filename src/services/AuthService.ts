@@ -120,9 +120,13 @@ export class AuthService {
 
   isAdmin(): boolean {
     const user = this.getUser();
+<<<<<<< HEAD
+    return !!user && String(user.rol_usu || '').toLowerCase() === 'admin';
+=======
     if (!user || !user.rol_usu) return false;
     const role = user.rol_usu.toLowerCase();
     return role === 'admin' || role === 'administrador';
+>>>>>>> origin/develop
   }
 }
 
