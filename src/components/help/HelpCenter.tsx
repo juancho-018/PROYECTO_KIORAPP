@@ -17,7 +17,7 @@ export default function HelpCenter({ hideBackButton = false }: HelpCenterProps) 
     if (authService.isAuthenticated()) {
       window.location.href = '/panel';
     } else {
-      window.location.href = '/login';
+      window.location.href = '/login/';
     }
   };
 
@@ -38,28 +38,9 @@ export default function HelpCenter({ hideBackButton = false }: HelpCenterProps) 
 
   return (
     <div className="w-full max-w-3xl mx-auto px-4 pb-24 relative">
-<<<<<<< HEAD
-      {isStandalone && (
-        <button
-          onClick={handleBack}
-          className="mb-6 flex items-center gap-2 text-slate-400 hover:text-[#ec131e] transition-all group font-bold text-xs uppercase tracking-widest pt-4"
-        >
-          <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-          Volver
-        </button>
-      )}
-=======
       {!hideBackButton && (
         <button
-          onClick={() => {
-            if (window.history.length > 1) {
-              window.history.back();
-            } else {
-              window.location.href = '/login';
-            }
-          }}
+          onClick={handleBack}
           className="mt-6 flex items-center gap-2 text-gray-400 hover:text-[#ec131e] transition-all group border-none bg-transparent cursor-pointer"
         >
           <svg
@@ -73,8 +54,6 @@ export default function HelpCenter({ hideBackButton = false }: HelpCenterProps) 
           <span className="text-[12px] font-bold uppercase tracking-widest">Volver</span>
         </button>
       )}
-
->>>>>>> origin/develop
       <div className="mb-10 text-left pt-4">
         <h1 className="text-[26px] font-extrabold text-[#111827] tracking-tight mb-6">¿En qué podemos ayudarte?</h1>
         <div className="relative group">
@@ -162,6 +141,10 @@ export default function HelpCenter({ hideBackButton = false }: HelpCenterProps) 
       </section>
 
       <section className="mt-16 pt-12 border-t border-slate-100">
+        <div className="mb-8">
+          <h2 className="text-[17px] font-bold text-[#111827] mb-2">Guía de Roles & Permisos</h2>
+          <p className="text-sm text-slate-500">Consulta los niveles de acceso disponibles en la plataforma Kiora.</p>
+        </div>
         <RolesSection />
       </section>
 

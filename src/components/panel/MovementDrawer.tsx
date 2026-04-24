@@ -18,12 +18,8 @@ export const MovementDrawer: React.FC<MovementDrawerProps> = ({ isOpen, onClose,
     tipo_mov: 'entrada' as 'entrada' | 'salida',
     cod_prod: '',
     fk_cod_prov: '',
-<<<<<<< HEAD
     cantidad: '',
     desc_mov: ''
-=======
-    cantidad: ''
->>>>>>> origin/develop
   });
 
   useEffect(() => {
@@ -52,13 +48,10 @@ export const MovementDrawer: React.FC<MovementDrawerProps> = ({ isOpen, onClose,
       alertService.showToast('warning', 'Producto y cantidad son obligatorios');
       return;
     }
-<<<<<<< HEAD
     if (!formData.desc_mov.trim()) {
       alertService.showToast('warning', 'La justificación es obligatoria');
       return;
     }
-=======
->>>>>>> origin/develop
 
     setIsSaving(true);
     try {
@@ -66,11 +59,8 @@ export const MovementDrawer: React.FC<MovementDrawerProps> = ({ isOpen, onClose,
         tipo_mov: formData.tipo_mov,
         cod_prod: Number(formData.cod_prod),
         cantidad: Number(formData.cantidad),
-<<<<<<< HEAD
         // @ts-ignore
         desc_mov: formData.desc_mov,
-=======
->>>>>>> origin/develop
         fecha_mov: new Date().toISOString() as any
       }) as any;
 
@@ -83,11 +73,7 @@ export const MovementDrawer: React.FC<MovementDrawerProps> = ({ isOpen, onClose,
       onSuccess();
       window.dispatchEvent(new CustomEvent('kiora-refresh-alerts'));
       onClose();
-<<<<<<< HEAD
       setFormData({ tipo_mov: 'entrada', cod_prod: '', fk_cod_prov: '', cantidad: '', desc_mov: '' });
-=======
-      setFormData({ tipo_mov: 'entrada', cod_prod: '', fk_cod_prov: '', cantidad: '' });
->>>>>>> origin/develop
     } catch (error: any) {
       alertService.showError('Error', error.message || 'No se pudo registrar el movimiento');
     } finally {
@@ -174,7 +160,6 @@ export const MovementDrawer: React.FC<MovementDrawerProps> = ({ isOpen, onClose,
               />
             </div>
 
-<<<<<<< HEAD
             <div className="flex flex-col gap-1.5">
               <label className="text-[12px] font-bold text-gray-600 uppercase tracking-wider">Justificación / Origen</label>
               <input
@@ -186,9 +171,6 @@ export const MovementDrawer: React.FC<MovementDrawerProps> = ({ isOpen, onClose,
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-[#ec131e] focus:ring-4 focus:ring-red-50 transition-all text-sm"
               />
             </div>
-
-=======
->>>>>>> origin/develop
           </form>
         </div>
 

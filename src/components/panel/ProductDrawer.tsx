@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import type { Product, Category } from '@/models/Product';
 import type { Movement } from '@/models/Inventory';
-import { productService, inventoryService, alertService } from '@/config/setup';
+import { alertService } from '@/config/setup';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 
 interface ProductDrawerProps {
@@ -9,15 +9,12 @@ interface ProductDrawerProps {
   onClose: () => void;
   product?: Product | null;
   onSuccess: () => void;
-<<<<<<< HEAD
   categories: Category[];
   movements: Movement[];
   loadingMovements: boolean;
   onSave: (product: any, isEdit: boolean) => Promise<void>;
   onSaveMovement: (movement: any) => Promise<void>;
   onLoadMovements: (productId: number) => Promise<void>;
-=======
->>>>>>> origin/develop
 }
 
 const EMPTY_PRODUCT = {
@@ -27,7 +24,6 @@ const EMPTY_PRODUCT = {
   stock_actual: 0,
   stock_minimo: 0,
   fk_cod_cats: [] as number[],
-<<<<<<< HEAD
   tipo_prod: 'alimento',
 };
 
@@ -56,25 +52,12 @@ export function ProductDrawer({
   onLoadMovements
 }: ProductDrawerProps) {
   const [form, setForm] = useState(EMPTY_PRODUCT);
-=======
-};
-
-export function ProductDrawer({ isOpen, onClose, product, onSuccess }: ProductDrawerProps) {
-  const [form, setForm] = useState(EMPTY_PRODUCT);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loadingCats, setLoadingCats] = useState(false);
->>>>>>> origin/develop
   const [saving, setSaving] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   // Stock Movements state
   const [activeTab, setActiveTab] = useState<'info' | 'stock'>('info');
-<<<<<<< HEAD
-=======
-  const [movements, setMovements] = useState<Movement[]>([]);
-  const [loadingMovements, setLoadingMovements] = useState(false);
->>>>>>> origin/develop
   const [movForm, setMovForm] = useState<{ tipo_mov: 'entrada' | 'salida'; cantidad_mov: number; desc_mov: string }>({
     tipo_mov: 'entrada',
     cantidad_mov: 1,
@@ -91,14 +74,9 @@ export function ProductDrawer({ isOpen, onClose, product, onSuccess }: ProductDr
         stock_actual: product.stock_actual || 0,
         stock_minimo: product.stock_minimo || 0,
         fk_cod_cats: product.fk_cod_cats || [],
-<<<<<<< HEAD
         tipo_prod: product.tipo_prod || 'alimento',
       });
       setImagePreview(product.imagen_prod ? getImageUrl(product.imagen_prod) : null);
-=======
-      });
-      setImagePreview(product.imagen_prod || null);
->>>>>>> origin/develop
     } else {
       setForm(EMPTY_PRODUCT);
       setImagePreview(null);
@@ -108,52 +86,15 @@ export function ProductDrawer({ isOpen, onClose, product, onSuccess }: ProductDr
 
   useEffect(() => {
     if (isOpen) {
-<<<<<<< HEAD
-=======
-      loadCategories();
->>>>>>> origin/develop
       setActiveTab('info');
     }
   }, [isOpen]);
 
-<<<<<<< HEAD
   useEffect(() => {
     if (activeTab === 'stock' && product?.cod_prod) {
       void onLoadMovements(product.cod_prod);
     }
   }, [activeTab, product?.cod_prod, onLoadMovements]);
-=======
-  const loadMovements = useCallback(async () => {
-    if (!product?.cod_prod) return;
-    setLoadingMovements(true);
-    try {
-      const data = await inventoryService.getMovements(product.cod_prod);
-      setMovements(data && 'data' in data ? data.data : (Array.isArray(data) ? data : []));
-    } catch (e) {
-      alertService.showToast('error', getErrorMessage(e, 'Error al cargar movimientos'));
-    } finally {
-      setLoadingMovements(false);
-    }
-  }, [product?.cod_prod]);
-
-  useEffect(() => {
-    if (activeTab === 'stock' && product) {
-      void loadMovements();
-    }
-  }, [activeTab, product, loadMovements]);
-
-  async function loadCategories() {
-    setLoadingCats(true);
-    try {
-      const res = await productService.getCategories();
-      setCategories(res && res.data ? res.data : []);
-    } catch (e) {
-      console.error('Error loading categories:', e);
-    } finally {
-      setLoadingCats(false);
-    }
-  }
->>>>>>> origin/develop
 
   const handleSaveMovement = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -167,7 +108,6 @@ export function ProductDrawer({ isOpen, onClose, product, onSuccess }: ProductDr
 
     setSavingMov(true);
     try {
-<<<<<<< HEAD
       await onSaveMovement({
         tipo_mov: movForm.tipo_mov,
         cantidad: movForm.cantidad_mov,
@@ -175,21 +115,8 @@ export function ProductDrawer({ isOpen, onClose, product, onSuccess }: ProductDr
         cod_prod: product.cod_prod,
       });
       setMovForm({ tipo_mov: 'entrada', cantidad_mov: 1, desc_mov: '' });
-=======
-      await inventoryService.createMovement({
-        tipo_mov: movForm.tipo_mov,
-        cantidad: movForm.cantidad_mov,
-        // @ts-ignore
-        desc_mov: movForm.desc_mov,
-        cod_prod: product.cod_prod,
-      });
-      alertService.showToast('success', 'Movimiento registrado');
-      setMovForm({ tipo_mov: 'entrada', cantidad_mov: 1, desc_mov: '' });
-      await loadMovements();
-      onSuccess(); // refresh parent
     } catch (e) {
       alertService.showToast('error', getErrorMessage(e, 'Error al registrar movimiento'));
->>>>>>> origin/develop
     } finally {
       setSavingMov(false);
     }
@@ -219,22 +146,10 @@ export function ProductDrawer({ isOpen, onClose, product, onSuccess }: ProductDr
         imagen: imageFile || undefined,
       };
 
-<<<<<<< HEAD
       await onSave(dto, !!product?.cod_prod);
-      onClose();
-=======
-      if (product?.cod_prod) {
-        await productService.updateProduct(product.cod_prod, dto);
-        alertService.showToast('success', 'Producto actualizado');
-      } else {
-        await productService.createProduct(dto);
-        alertService.showToast('success', 'Producto creado');
-      }
-      onSuccess();
       onClose();
     } catch (e) {
       alertService.showToast('error', getErrorMessage(e, 'Error al guardar producto'));
->>>>>>> origin/develop
     } finally {
       setSaving(false);
     }
@@ -323,7 +238,6 @@ export function ProductDrawer({ isOpen, onClose, product, onSuccess }: ProductDr
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-<<<<<<< HEAD
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tipo de Producto</label>
                   <select
                     value={form.tipo_prod}
@@ -336,8 +250,6 @@ export function ProductDrawer({ isOpen, onClose, product, onSuccess }: ProductDr
                   </select>
                 </div>
                 <div className="space-y-1.5">
-=======
->>>>>>> origin/develop
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Precio ($) *</label>
                   <input
                     type="number"
@@ -347,7 +259,6 @@ export function ProductDrawer({ isOpen, onClose, product, onSuccess }: ProductDr
                     className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium focus:border-[#ec131e] focus:outline-none focus:ring-4 focus:ring-[#ec131e]/5 transition-all"
                   />
                 </div>
-<<<<<<< HEAD
               </div>
 
               <div className="space-y-1.5">
@@ -374,33 +285,6 @@ export function ProductDrawer({ isOpen, onClose, product, onSuccess }: ProductDr
                       {c.nom_cat}
                     </button>
                   ))}
-=======
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Categorías (Puedes escoger varias)</label>
-                  <div className="flex flex-wrap gap-2">
-                    {categories.map(c => (
-                      <button
-                        key={c.cod_cat}
-                        type="button"
-                        onClick={() => {
-                          const id = c.cod_cat!;
-                          setForm(f => ({
-                            ...f,
-                            fk_cod_cats: f.fk_cod_cats?.includes(id)
-                              ? f.fk_cod_cats.filter(t => t !== id)
-                              : [...(f.fk_cod_cats || []), id]
-                          }));
-                        }}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all capitalize border ${form.fk_cod_cats?.includes(c.cod_cat!)
-                          ? 'bg-slate-800 text-white border-slate-800 shadow-sm'
-                          : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
-                          }`}
-                      >
-                        {c.nom_cat}
-                      </button>
-                    ))}
-                  </div>
->>>>>>> origin/develop
                 </div>
               </div>
 
@@ -460,10 +344,7 @@ export function ProductDrawer({ isOpen, onClose, product, onSuccess }: ProductDr
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Justificación / Origen</label>
                 <input
                   type="text"
-<<<<<<< HEAD
                   required
-=======
->>>>>>> origin/develop
                   placeholder="Ej. Compra a proveedor, merma, ajuste..."
                   value={movForm.desc_mov}
                   onChange={e => setMovForm(f => ({ ...f, desc_mov: e.target.value }))}
@@ -517,7 +398,7 @@ export function ProductDrawer({ isOpen, onClose, product, onSuccess }: ProductDr
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 rounded-2xl border border-slate-200 py-3.5 text-sm font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50 transition-all font-[Inter]"
+            className="flex-1 rounded-2xl border border-slate-200 py-3.5 text-sm font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50 transition-all"
           >
             {activeTab === 'stock' ? 'Cerrar' : 'Cancelar'}
           </button>
@@ -526,7 +407,7 @@ export function ProductDrawer({ isOpen, onClose, product, onSuccess }: ProductDr
               type="submit"
               form="productForm"
               disabled={saving}
-              className="flex-1 rounded-2xl bg-[#ec131e] py-3.5 text-sm font-black uppercase tracking-widest text-white shadow-lg shadow-[#ec131e]/20 hover:bg-[#d01019] hover:shadow-[#ec131e]/30 disabled:opacity-60 transition-all active:scale-95 font-[Inter]"
+              className="flex-1 rounded-2xl bg-[#ec131e] py-3.5 text-sm font-black uppercase tracking-widest text-white shadow-lg shadow-[#ec131e]/20 hover:bg-[#d01019] hover:shadow-[#ec131e]/30 disabled:opacity-60 transition-all active:scale-95"
             >
               {saving ? 'Guardando...' : (product ? 'Actualizar' : 'Crear')}
             </button>

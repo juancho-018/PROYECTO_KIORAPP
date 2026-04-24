@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { inventoryService, alertService } from '@/config/setup';
+import { inventoryService, alertService } from '../../config/setup';
+import { productService } from '../../config/setup';
 import type { Supplier, Suministra } from '@/models/Inventory';
 import { SupplierDrawer } from './SupplierDrawer';
 
@@ -7,7 +8,8 @@ export function ProveedoresSection() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [suministra, setSuministra] = useState<Suministra[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeSubTab, setActiveSubTab] = useState<'lista' | 'matriz'>('lista');
+  const [activeSubTab, setActiveSubTab] = useState<'lista' | 'matriz' | 'alertas'>('lista');
+  const [lowStockProducts, setLowStockProducts] = useState<any[]>([]);
 
   // Drawer states
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -25,9 +27,12 @@ export function ProveedoresSection() {
       if (activeSubTab === 'lista') {
         const res = await inventoryService.getSuppliers();
         if (res && res.data) setSuppliers(res.data);
-      } else {
+      } else if (activeSubTab === 'matriz') {
         const res = await inventoryService.getSuministra();
         if (res && res.data) setSuministra(res.data);
+      } else {
+        const res = await productService.getLowStockProducts();
+        setLowStockProducts(res);
       }
     } catch (error: any) {
       alertService.showError('Error', error.message || 'Error cargando datos de proveedores');
@@ -111,6 +116,12 @@ export function ProveedoresSection() {
           >
             Matriz de Suministros
           </button>
+          <button 
+            onClick={() => setActiveSubTab('alertas')}
+            className={`px-6 py-2 rounded-lg text-xs font-bold transition-all ${activeSubTab === 'alertas' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+          >
+            Alertas de Stock
+          </button>
         </div>
       </header>
 
@@ -147,7 +158,7 @@ export function ProveedoresSection() {
               {suppliers.length === 0 && <tr><td colSpan={4} className="py-20 text-center text-slate-400">No hay proveedores registrados.</td></tr>}
             </tbody>
           </table>
-        ) : (
+        ) : activeSubTab === 'matriz' ? (
           <table className="w-full text-left">
             <thead className="bg-gray-50 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-slate-100">
               <tr>
@@ -177,6 +188,41 @@ export function ProveedoresSection() {
               {suministra.length === 0 && <tr><td colSpan={5} className="py-20 text-center text-slate-400">No hay relaciones de suministro registradas.</td></tr>}
             </tbody>
           </table>
+        ) : (
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {lowStockProducts.map(p => (
+                <div key={p.cod_prod} className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm border-l-4 border-red-500 hover:shadow-md transition-all">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="h-10 w-10 rounded-xl bg-red-50 flex items-center justify-center text-[#ec131e]">
+                      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                    </div>
+                    <span className="bg-red-50 text-[#ec131e] px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">Crítico</span>
+                  </div>
+                  <h4 className="font-bold text-gray-900">{p.nom_prod}</h4>
+                  <div className="mt-4 flex items-center justify-between">
+                    <div>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Stock Actual</p>
+                      <p className="text-xl font-black text-[#ec131e]">{p.stock_actual}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Stock Mínimo</p>
+                      <p className="text-sm font-bold text-gray-900">{p.stock_minimo}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {lowStockProducts.length === 0 && (
+                <div className="col-span-full py-20 text-center flex flex-col items-center">
+                  <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mb-4 text-emerald-600">
+                    <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  </div>
+                  <h3 className="text-gray-900 font-bold text-lg mb-1">Todo en Orden</h3>
+                  <p className="text-gray-500 font-medium text-sm">No hay productos con bajo stock actualmente.</p>
+                </div>
+              )}
+            </div>
+          </div>
         )}
       </div>
 

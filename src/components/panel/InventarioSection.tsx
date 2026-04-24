@@ -3,10 +3,12 @@ import { productService, inventoryService, alertService } from '@/config/setup';
 import type { Product } from '@/models/Product';
 import { ProductDrawer } from './ProductDrawer';
 import { MovementDrawer } from './MovementDrawer';
+import { ComingSoonSection } from './ComingSoonSection';
 
 export function InventarioSection() {
   const [searchTerm, setSearchTerm] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
+  const [movements, setMovements] = useState<any[]>([]);
   const [criticalStock, setCriticalStock] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -16,6 +18,7 @@ export function InventarioSection() {
   const [isSaving, setIsSaving] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<Partial<Product>>({});
   const [isMovementDrawerOpen, setIsMovementDrawerOpen] = useState(false);
+  const [activeSubTab, setActiveSubTab] = useState<'catalogo' | 'movimientos' | 'alertas'>('catalogo');
 
   useEffect(() => {
     loadData();
@@ -32,14 +35,24 @@ export function InventarioSection() {
 
       // Fetch low stock count
       try {
-        const stockRes = await inventoryService.getLowStock();
+        const [stockRes, movRes] = await Promise.all([
+          inventoryService.getLowStock(),
+          inventoryService.getMovements()
+        ]);
+        
         if (stockRes && stockRes.data && Array.isArray(stockRes.data)) {
           setCriticalStock(stockRes.data.length);
         } else if (stockRes && Array.isArray(stockRes)) {
           setCriticalStock((stockRes as any[]).length);
         }
+
+        if (movRes && movRes.data) {
+          setMovements(movRes.data);
+        } else if (movRes && Array.isArray(movRes)) {
+          setMovements(movRes);
+        }
       } catch (err) {
-        console.warn('Could not fetch low stock', err);
+        console.warn('Could not fetch low stock or movements', err);
       }
     } catch (error: any) {
       alertService.showError('Error', error.message || 'Error cargando inventario');
@@ -123,6 +136,22 @@ export function InventarioSection() {
           </div>
         </div>
 
+        <div className="flex gap-2 rounded-2xl bg-slate-50 p-1.5 border border-slate-100/50">
+          {[
+            { id: 'catalogo', label: 'Catálogo' },
+            { id: 'movimientos', label: 'Movimientos' },
+            { id: 'alertas', label: 'Alertas' }
+          ].map(t => (
+            <button 
+              key={t.id} 
+              onClick={() => setActiveSubTab(t.id as any)} 
+              className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeSubTab === t.id ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-100' : 'text-slate-400 hover:text-slate-600'}`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
         {/* Barra de Búsqueda */}
         <div className="flex items-center justify-end">
           <div className="relative w-full sm:w-80">
@@ -141,6 +170,9 @@ export function InventarioSection() {
           </div>
         </div>
       </header>
+
+      {activeSubTab === 'catalogo' ? (
+        <>
 
       {/* Resumen Cards (Métricas Globales) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 animate-in fade-in slide-in-from-bottom-6 duration-700">
@@ -251,6 +283,58 @@ export function InventarioSection() {
           )}
         </div>
       </div>
+        </>
+      ) : activeSubTab === 'movimientos' ? (
+        <div className="bg-white rounded-[2.5rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.04)] ring-1 ring-slate-100/50 animate-in fade-in zoom-in-95 duration-500">
+           <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-slate-50/50 text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                  <tr>
+                    <th className="px-6 py-4">Fecha</th>
+                    <th className="px-6 py-4">Producto</th>
+                    <th className="px-6 py-4">Tipo</th>
+                    <th className="px-6 py-4">Cant.</th>
+                    <th className="px-6 py-4">Justificación</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-slate-50">
+                  {movements.length > 0 ? movements.map((m, i) => {
+                    const p = products.find(prod => prod.cod_prod === m.cod_prod);
+                    return (
+                      <tr key={m.id_mov || i} className="group hover:bg-slate-50/80 transition-all duration-300">
+                        <td className="px-6 py-4 font-medium text-slate-500 whitespace-nowrap">{m.fecha_mov ? new Date(m.fecha_mov).toLocaleString() : '—'}</td>
+                        <td className="px-6 py-4 font-bold text-slate-900">{p?.nom_prod || `ID: ${m.cod_prod}`}</td>
+                        <td className="px-6 py-4">
+                          <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase ${m.tipo_mov === 'entrada' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>{m.tipo_mov}</span>
+                        </td>
+                        <td className={`px-6 py-4 font-black ${m.tipo_mov === 'entrada' ? 'text-emerald-500' : 'text-red-500'}`}>{m.tipo_mov === 'entrada' ? '+' : '-'}{m.cantidad_mov}</td>
+                        <td className="px-6 py-4 text-slate-500 italic truncate max-w-[200px]">{m.desc_mov}</td>
+                      </tr>
+                    );
+                  }) : (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-20 text-center text-slate-400 font-bold">No hay movimientos registrados.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in zoom-in-95 duration-500">
+           {products.filter(p => (p.stock_actual || 0) <= (p.stock_minimo || 0)).map(p => (
+              <div key={p.cod_prod} className="bg-white rounded-[2.5rem] p-8 shadow-sm border-l-4 border-red-500">
+                 <h4 className="font-bold text-slate-900">{p.nom_prod}</h4>
+                 <p className="text-xs text-red-500 font-bold mt-1">⚠️ Quedan {p.stock_actual} unid. (Mín: {p.stock_minimo})</p>
+              </div>
+           ))}
+           {products.filter(p => (p.stock_actual || 0) <= (p.stock_minimo || 0)).length === 0 && (
+             <div className="col-span-full py-20 text-center bg-white rounded-[2.5rem] border border-slate-100">
+                <p className="text-slate-400 font-bold">No hay alertas de stock bajo.</p>
+             </div>
+           )}
+        </div>
+      )}
 
       <ProductDrawer
         isOpen={isDrawerOpen}

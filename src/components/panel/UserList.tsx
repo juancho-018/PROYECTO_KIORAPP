@@ -20,11 +20,7 @@ interface UserListProps {
 function roleKey(rol?: string): 'admin' | 'cliente' | 'other' {
   const r = String(rol ?? '').toLowerCase();
   if (r === 'admin') return 'admin';
-<<<<<<< HEAD
   if (r === 'cliente' || r === 'operario') return 'cliente';
-=======
-  if (r === 'cliente' || r === 'operario') return 'operario';
->>>>>>> origin/develop
   return 'other';
 }
 

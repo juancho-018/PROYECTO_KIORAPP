@@ -52,7 +52,7 @@ export class AuthService {
       console.error('Error al cerrar sesión en el servidor:', e);
     }
     this.clearSession();
-    window.location.href = '/login';
+    window.location.href = '/login/';
   }
 
   saveSession(token: string, user: User | null) {
@@ -120,13 +120,9 @@ export class AuthService {
 
   isAdmin(): boolean {
     const user = this.getUser();
-<<<<<<< HEAD
-    return !!user && String(user.rol_usu || '').toLowerCase() === 'admin';
-=======
     if (!user || !user.rol_usu) return false;
     const role = user.rol_usu.toLowerCase();
     return role === 'admin' || role === 'administrador';
->>>>>>> origin/develop
   }
 }
 

@@ -9,11 +9,7 @@ export class SessionManager {
   private maxInactivity = 15 * 60; // 15 minutes by default
   private warningThreshold = 60; // Warning 1 minute before max
   private warningShown = false;
-<<<<<<< HEAD
-  private intervalId: any = null;
-=======
   private intervalId: number | undefined;
->>>>>>> origin/develop
 
   private readonly onActivity = () => this.resetInactivity();
   private readonly touchStartOptions: AddEventListenerOptions = { passive: true };
@@ -97,7 +93,7 @@ export class SessionManager {
         'Sesión Finalizada por Inactividad',
         'Has estado mucho tiempo inactivo. Vuelve a ingresar.'
       );
-      window.location.href = '/login';
+      window.location.href = '/login/';
       return;
     }
 
@@ -126,7 +122,7 @@ export class SessionManager {
           'Sesión Expirada',
           'Tu sesión ha expirado por seguridad.'
         );
-        window.location.href = '/login';
+        window.location.href = '/login/';
       }
     }
   }

@@ -14,10 +14,7 @@ export interface OrderItem {
   precio_unit?: number;
   nom_prod?: string;
   url_imagen?: string;
-<<<<<<< HEAD
   stock_actual?: number;
-=======
->>>>>>> origin/develop
 }
 
 export interface Order {
@@ -25,7 +22,7 @@ export interface Order {
   fecha_vent?: string;
   montofinal_vent?: number;
   metodopago_usu?: string;
-  estado?: 'pendiente' | 'completada' | 'cancelada';
+  estado?: 'pendiente' | 'completada' | 'cancelada' | 'reembolsada';
   items?: OrderItem[];
   productos_resumen?: string;
 }
