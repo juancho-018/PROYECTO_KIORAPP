@@ -10,6 +10,7 @@ export interface CreateProductDto {
   stock_minimo?: number;
   fk_cod_cats?: number[];
   imagen?: File;
+  alerta_stock_critico?: boolean;
 }
 
 export class ProductService {
@@ -126,6 +127,16 @@ export class ProductService {
   async deleteProduct(id: number): Promise<void> {
     const response = await this.httpClient.delete(`/products/${id}`, { headers: this.getAuthHeaders() });
     if (!response.ok) throw new Error(response.error || 'Error deleting product');
+  }
+
+  async updateStock(id: number, cantidad: number): Promise<Product> {
+    const response = await this.httpClient.put<Product>(
+      `/products/${id}/stock`,
+      { cantidad },
+      { headers: this.getAuthHeaders() }
+    );
+    if (!response.ok || !response.data) throw new Error(response.error || 'Error al actualizar stock');
+    return this.normalizeProduct(response.data);
   }
 
   // Categories

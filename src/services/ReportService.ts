@@ -137,7 +137,7 @@ export class ReportService {
     XLSX.writeFile(workbook, `${fileName}.xlsx`);
   }
 
-  async exportToPdf(title: string, head: string[][], body: any[][], fileName: string) {
+  async exportToPdf(title: string, head: string[][], body: any[][], fileName: string, foot?: string[][]) {
     const doc = new jsPDF();
     doc.setFontSize(18);
     doc.text(title, 14, 20);
@@ -148,7 +148,9 @@ export class ReportService {
       startY: 35,
       head: head,
       body: body,
+      foot: foot,
       headStyles: { fillColor: [236, 19, 30] }, // Kiora Red
+      footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
     });
 
     doc.save(`${fileName}.pdf`);
