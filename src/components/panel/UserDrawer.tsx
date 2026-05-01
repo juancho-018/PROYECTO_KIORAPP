@@ -86,6 +86,7 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
                   minLength={8}
                   autoComplete="new-password"
                 />
+                <p className="text-[10px] text-gray-400 mt-1">Debe incluir al menos una mayúscula, un número y un signo de puntuación.</p>
               </div>
             )}
 
