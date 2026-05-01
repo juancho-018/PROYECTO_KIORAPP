@@ -12,6 +12,7 @@ export interface Movement {
   fecha_mov: string;
   cantidad: number;
   cod_prod: number;
+  desc_mov: string;
 }
 
 export interface Suministra {
