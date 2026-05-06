@@ -7,7 +7,7 @@ import * as XLSX from 'xlsx';
 
 export interface CreateOrderDto {
   metodopago_usu: string;
-  items: { cod_prod: number; cantidad: number; precio_unit: number; nom_prod?: string; url_imagen?: string }[];
+  items: { cod_prod: number; cantidad: number; precio_unit: number; nom_prod?: string; url_imagen?: string; stock_actual?: number }[];
 }
 
 export class OrderService {
@@ -21,8 +21,11 @@ export class OrderService {
     return token ? { Authorization: `Bearer ${token}` } : {};
   }
 
-  private get baseURL(): string {
-    return this.httpClient.baseURL;
+  // Dashboard Stats (Direct from API Gateway)
+  async getDashboardStats(): Promise<any> {
+    const response = await this.httpClient.get<any>('/dashboard/stats', this.getAuthHeaders());
+    if (!response.ok || !response.data) throw new Error(response.error || 'Error al obtener estadísticas del dashboard');
+    return response.data;
   }
 
   // Orders (Sales)
@@ -56,7 +59,7 @@ export class OrderService {
     return res.data;
   }
 
-  async updateOrderStatus(id: number, estado: 'pendiente' | 'completada' | 'cancelada' | 'reembolsada'): Promise<Order> {
+  async updateOrderStatus(id: number, estado: 'pendiente' | 'completada' | 'cancelada' | 'reembolsada' | 'pagado' | 'pagada'): Promise<Order> {
     const res = await this.httpClient.put<Order>(
       `/orders/${id}/status`,
       { estado },
@@ -75,7 +78,7 @@ export class OrderService {
     const res = await this.httpClient.post<any>(
       `/orders/checkout/${orderId}`,
       {
-        success_url: `${window.location.origin}/panel?tab=ventas&status=success`,
+        success_url: `${window.location.origin}/panel?tab=ventas&status=success&order_id=${orderId}`,
         cancel_url: `${window.location.origin}/panel?tab=ventas&status=cancel`,
       },
       { headers: this.getAuthHeaders() }
@@ -126,10 +129,10 @@ export class OrderService {
 
   async exportExcel(): Promise<void> {
     try {
-      const response = await this.httpClient.get<{ data: Order[] }>('/orders?page=1&limit=1000', {
+      const response = await this.httpClient.get<any>('/orders?page=1&limit=1000', {
         headers: this.getAuthHeaders()
       });
-      const orders = response.data || [];
+      const orders = Array.isArray(response.data) ? response.data : (response.data?.data || []);
 
       const totalMonto = orders.reduce((sum, o) => sum + Number(o.montofinal_vent || 0), 0);
       const data = [
@@ -262,7 +265,7 @@ export class OrderService {
   async exportInvoicesExcel(): Promise<void> {
     try {
       const response = await this.getInvoices(1, 1000);
-      const invoices = response.data || [];
+      const invoices = Array.isArray(response.data) ? response.data : (response.data || []);
 
       const totalMonto = invoices.reduce((sum, f) => sum + Number(f.total_fact || 0), 0);
       const data = [

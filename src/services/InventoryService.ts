@@ -86,4 +86,16 @@ export class InventoryService {
     if (!response.ok || !response.data) throw new Error(response.error || 'Error al obtener registro de suministra');
     return response.data;
   }
+
+  // ── Reservations (Redis Based) ───────────────────────────────────────────
+  
+  async reserveInventory(orderId: number, items: { cod_prod: number; cantidad: number }[]): Promise<void> {
+    const response = await this.httpClient.post('/inventory/reserve', { orderId, items }, { headers: this.getAuthHeaders() });
+    if (!response.ok) throw new Error(response.error || 'Error al reservar inventario');
+  }
+
+  async commitReservation(orderId: number): Promise<void> {
+    const response = await this.httpClient.post('/inventory/reserve/commit', { orderId }, { headers: this.getAuthHeaders() });
+    if (!response.ok) throw new Error(response.error || 'Error al confirmar la reserva de inventario');
+  }
 }
