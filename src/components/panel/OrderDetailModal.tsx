@@ -23,6 +23,10 @@ export function OrderDetailModal({
   const handleModalClick = (e: React.MouseEvent) => {
     e.stopPropagation();
   };
+  const isCompletada = (status?: string) =>
+    String(status ?? '').toLowerCase() === 'completada';
+
+  const isPaidStatus = (status?: string) => isCompletada(status);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -170,7 +174,7 @@ export function OrderDetailModal({
           </div>
 
           <div className="mt-6 flex flex-wrap justify-end gap-3 px-2 border-t border-slate-100 pt-6">
-            {detailOrder.estado === 'completada' && onDownloadReceipt && (
+            {isPaidStatus(detailOrder.estado) && onDownloadReceipt && (
               <button
                 onClick={() => onDownloadReceipt(detailOrder.id_vent!)}
                 className="flex items-center gap-2 px-5 py-2.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white rounded-xl font-bold transition-all border border-emerald-100 hover:border-emerald-600 shadow-sm"
@@ -182,7 +186,7 @@ export function OrderDetailModal({
               </button>
             )}
 
-            {detailOrder.estado === 'completada' && onRefund && (
+            {isCompletada(detailOrder.estado) && onRefund && (
               <button
                 onClick={() => onRefund(detailOrder.id_vent!)}
                 className="flex items-center gap-2 px-5 py-2.5 bg-purple-50 text-purple-700 hover:bg-purple-600 hover:text-white rounded-xl font-bold transition-all border border-purple-100 hover:border-purple-600 shadow-sm"
