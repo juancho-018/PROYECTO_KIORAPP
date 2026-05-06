@@ -13,13 +13,17 @@ export interface IAlertService {
 
 import Swal from 'sweetalert2';
 import type { NotificationService } from '../../services/NotificationService';
+import type { LogService } from '../LogService';
 import { COLORS } from '../../config/theme';
 
 /**
  * Concrete implementation of IAlertService using SweetAlert2 (SRP).
  */
 export class SweetAlertService implements IAlertService {
-  constructor(private notificationService?: NotificationService) {}
+  constructor(
+    private notificationService?: NotificationService,
+    private logger?: LogService
+  ) {}
 
   private logNotification(type: 'success' | 'info' | 'warning' | 'error', title: string) {
     if (this.notificationService) {
@@ -28,6 +32,15 @@ export class SweetAlertService implements IAlertService {
         description: `Se recibió una alerta de tipo ${type}`,
         type
       });
+    }
+    
+    // Log through LogService
+    if (type === 'error') {
+      this.logger?.error(`User Alert: ${title}`, { type, description: title });
+    } else if (type === 'warning') {
+      this.logger?.warn(`User Alert: ${title}`, { type, description: title });
+    } else {
+      this.logger?.info(`User Alert: ${title}`, { type, description: title });
     }
   }
 
