@@ -6,23 +6,28 @@ interface StripeQRModalProps {
   isOpen: boolean;
   onClose: () => void;
   checkoutUrl: string;
-  orderId: number;
+  orderId?: number;
   amount: number;
   onSuccess: () => void;
+  onCancel?: () => void;
 }
 
-export function StripeQRModal({ isOpen, onClose, checkoutUrl, orderId, amount, onSuccess }: StripeQRModalProps) {
+export function StripeQRModal({ isOpen, onClose, checkoutUrl, orderId, amount, onSuccess, onCancel }: StripeQRModalProps) {
   const [polling, setPolling] = useState(false);
+  const isPaidStatus = (status?: string) => {
+    const normalized = String(status ?? '').toLowerCase();
+    return normalized === 'pagado' || normalized === 'pagada' || normalized === 'completada';
+  };
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isOpen && orderId) {
       setPolling(true);
-      // Poll every 3 seconds to check if order status is 'pagado'
+      // Poll every 3 seconds to detect payment confirmation from backend.
       interval = setInterval(async () => {
         try {
           const order = await orderService.getOrderById(orderId);
-          if (order.estado === 'pagada' || order.estado === 'completada') {
+          if (isPaidStatus(order.estado)) {
             clearInterval(interval);
             setPolling(false);
             alertService.showToast('success', '¡Pago confirmado con éxito!');
@@ -36,6 +41,7 @@ export function StripeQRModal({ isOpen, onClose, checkoutUrl, orderId, amount, o
 
     return () => {
       if (interval) clearInterval(interval);
+      setPolling(false);
     };
   }, [isOpen, orderId, onSuccess]);
 
@@ -104,7 +110,29 @@ export function StripeQRModal({ isOpen, onClose, checkoutUrl, orderId, amount, o
             </a>
             
             <button 
-              onClick={onClose}
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                alertService.showConfirm(
+                  '¿Cancelar compra?',
+                  '¿Estás seguro que deseas cancelar el pago en proceso?',
+                  'Sí, cancelar',
+                  'No, mantener'
+                ).then(async (confirmed) => {
+                  if (confirmed) {
+                    try {
+                      await orderService.updateOrderStatus(orderId, 'cancelada');
+                      alertService.showToast('info', 'Pago cancelado correctamente.');
+                      if (onCancel) onCancel();
+                      else onClose();
+                      window.dispatchEvent(new CustomEvent('kiora_reload_orders'));
+                    } catch (error) {
+                      console.error('Error al cancelar la orden:', error);
+                    }
+                  }
+                });
+              }}
               className="w-full py-3 text-slate-400 font-bold text-xs uppercase tracking-widest hover:text-slate-600 transition-colors"
             >
               Cancelar Pago
@@ -122,3 +150,4 @@ export function StripeQRModal({ isOpen, onClose, checkoutUrl, orderId, amount, o
     </div>
   );
 }
+
