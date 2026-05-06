@@ -12,19 +12,4 @@ export function formatDate(date?: string | Date | null): string {
   });
 }
 
-/**
- * Formats a date with time.
- * Example: "2024-04-24T11:30:37Z" -> "24 abr 2024, 11:30 AM"
- */
-export function formatDateTime(date?: string | Date | null): string {
-  if (!date) return '—';
-  const d = typeof date === 'string' ? new Date(date) : date;
-  return d.toLocaleString('es-ES', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true
-  });
-}
+
