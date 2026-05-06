@@ -4,6 +4,7 @@ export interface Supplier {
   nom_prov: string;
   tel_prov: string | null;
   tipoid_prov: string | null;
+  correo_prov?: string | null;
 }
 
 export interface Movement {
