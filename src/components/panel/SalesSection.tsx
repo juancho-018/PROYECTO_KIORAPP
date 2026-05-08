@@ -918,7 +918,9 @@ export function SalesSection({ onOpenPOS }: { onOpenPOS: () => void; isAdmin?: b
             </div>
           </div>
         </div>
-      )}\n\n      {/* Modal de Motivo — Cancelación / Reembolso */}
+      )}
+
+      {/* Modal de Motivo — Cancelación / Reembolso */}
       {reasonModal.isOpen && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
           <div

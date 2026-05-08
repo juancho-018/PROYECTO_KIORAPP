@@ -3,6 +3,7 @@ import { defineConfig } from 'astro/config';
 
 import react from '@astrojs/react';
 import tailwindcss from '@tailwindcss/vite';
+import sentry from '@sentry/astro';
 
 // https://astro.build/config
 export default defineConfig({
@@ -10,10 +11,23 @@ export default defineConfig({
   server: {
     port: 8080,
   },
-  integrations: [react()],
+  integrations: [
+    react(),
+    sentry({
+      dsn: process.env.PUBLIC_SENTRY_DSN,
+      project: "kiorapp-frontend",
+      org: "kiora-bv",
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+    })
+  ],
 
   vite: {
     plugins: [tailwindcss()],
+    build: {
+      sourcemap: false,
+      cssMinify: true,
+      minify: 'esbuild',
+    },
     server: {
       proxy: {
         '/api': {
