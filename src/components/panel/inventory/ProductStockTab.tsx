@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Product } from '@/models/Product';
 import type { Movement } from '@/models/Inventory';
+import { alertService } from '@/config/setup';
 
 interface ProductStockTabProps {
   product: Product;

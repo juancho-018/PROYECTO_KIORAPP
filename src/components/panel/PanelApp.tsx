@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import * as Sentry from "@sentry/astro";
 import Fuse from 'fuse.js';
 import { authService, userService, alertService, productService, orderService, notificationService } from '@/config/setup';
 import { SessionManager } from '@/services/SessionManager';
@@ -68,12 +69,27 @@ export default function PanelApp() {
     if (status !== 'success' && status !== 'cancel') return;
 
     if (status === 'success' && orderId) {
+      // Notificar a Sentry con tags
+      Sentry.withScope((scope) => {
+        scope.setTag("order_id", orderId);
+        scope.setTag("payment_status", "success");
+        Sentry.captureMessage(`Pago exitoso confirmado: Orden #${orderId}`, "info");
+      });
+
       orderService.updateOrderStatus(Number(orderId), 'completada')
         .then(() => {
           window.dispatchEvent(new CustomEvent('kiora_reload_orders'));
         })
-        .catch(e => console.error('Error auto-confirming payment:', e));
-    } else {
+        .catch(e => {
+          Sentry.captureException(e);
+          console.error('Error auto-confirming payment:', e);
+        });
+    } else if (status === 'cancel') {
+      Sentry.withScope((scope) => {
+        scope.setTag("order_id", orderId || "unknown");
+        scope.setTag("payment_status", "cancel");
+        Sentry.captureMessage(`Pago cancelado por usuario: Orden #${orderId}`, "warning");
+      });
       window.dispatchEvent(new CustomEvent('kiora_reload_orders'));
     }
 
@@ -540,6 +556,16 @@ export default function PanelApp() {
               url: checkoutUrl,
               orderId: order.id_vent,
               amount: totalToCharge
+            });
+
+            // Tracking de inicio de pago
+            Sentry.withScope((scope) => {
+              scope.setTag("order_id", order.id_vent);
+              scope.setContext("checkout", {
+                amount: totalToCharge,
+                url: checkoutUrl
+              });
+              Sentry.captureMessage(`Checkout Stripe iniciado: Orden #${order.id_vent}`, "info");
             });
             return;
           } catch (checkoutError) {

@@ -9,6 +9,7 @@ export interface Product {
   fk_cod_cats?: number[];
   nom_cat?: string;
   descrip_cat?: string;
+  fechaven_prod?: string | null;
 
   alerta_stock_critico?: boolean;
 }

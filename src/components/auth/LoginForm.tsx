@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { authService, alertService } from '../../config/setup';
-import Loading from '../cargando'; // Importamos el componente de carga existente
+import Loading from '../cargando';
+import * as Sentry from "@sentry/astro";
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
@@ -13,6 +14,9 @@ export default function LoginForm() {
       alertService.showError('Campos incompletos', 'Por favor, ingresa tu correo y contraseña.');
       return;
     }
+
+    // Evento de prueba para Sentry
+    Sentry.captureMessage(`Intento de login para: ${email}`, "info");
 
     setIsLoading(true);
 

@@ -135,7 +135,7 @@ export class ReportService {
           };
         }
         stats[item.cod_prod].qty += item.cantidad;
-        stats[item.cod_prod].revenue += item.cantidad * item.precio_unit;
+        stats[item.cod_prod].revenue += item.cantidad * (item.precio_unit ?? 0);
       });
     });
 
