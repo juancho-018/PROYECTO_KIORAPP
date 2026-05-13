@@ -14,7 +14,6 @@ export default defineConfig({
   integrations: [
     react(),
     sentry({
-      dsn: process.env.PUBLIC_SENTRY_DSN,
       project: "kiorapp-frontend",
       org: "kiora-bv",
       authToken: process.env.SENTRY_AUTH_TOKEN,
@@ -24,8 +23,8 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss()],
     build: {
-      // Mapas ocultos: útiles para Sentry sin exponer `sourceMappingURL` en el bundle público.
-      sourcemap: process.env.SENTRY_AUTH_TOKEN ? 'hidden' : false,
+      // Forzar sourcemaps si estamos en producción para que Sentry pueda procesarlos
+      sourcemap: true,
       cssMinify: true,
       minify: 'esbuild',
     },
