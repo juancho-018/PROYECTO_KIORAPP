@@ -17,14 +17,15 @@ export default defineConfig({
       project: "kiorapp-frontend",
       org: "kiora-bv",
       authToken: process.env.SENTRY_AUTH_TOKEN,
+      telemetry: false,
     })
   ],
 
   vite: {
     plugins: [tailwindcss()],
     build: {
-      // Forzar sourcemaps si estamos en producción para que Sentry pueda procesarlos
-      sourcemap: true,
+      // Usar 'hidden' para que los sourcemaps se generen pero no se referencien en el JS público
+      sourcemap: 'hidden',
       cssMinify: true,
       minify: 'esbuild',
     },

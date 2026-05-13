@@ -53,6 +53,7 @@ export interface IHttpClient {
   baseURL: string;
   get<T>(url: string, headers?: Record<string, string>): Promise<HttpResponse<T>>;
   post<T>(url: string, body?: unknown, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
+  put<T>(url: string, body?: unknown, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
   patch<T>(url: string, body?: unknown, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
   delete<T>(url: string, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
 }
@@ -128,7 +129,6 @@ export class FetchHttpClient implements IHttpClient {
 
   async post<T>(url: string, body?: unknown, options: HttpRequestOptions = {}): Promise<HttpResponse<T>> {
     const { headers, ...rest } = options;
-<<<<<<< HEAD
     const isFormData = body instanceof FormData;
     const finalHeaders: Record<string, string> = { ...headers };
     if (!isFormData) {
@@ -155,22 +155,12 @@ export class FetchHttpClient implements IHttpClient {
       method: 'PUT',
       headers: finalHeaders,
       body: isFormData ? (body as any) : (body ? JSON.stringify(body) : undefined),
-=======
-    return this.request<T>(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...headers,
-      },
-      body: body ? JSON.stringify(body) : undefined,
->>>>>>> main
       ...rest,
     });
   }
 
   async patch<T>(url: string, body?: unknown, options: HttpRequestOptions = {}): Promise<HttpResponse<T>> {
     const { headers, ...rest } = options;
-<<<<<<< HEAD
     const isFormData = body instanceof FormData;
     const finalHeaders: Record<string, string> = { ...headers };
     if (!isFormData) {
@@ -181,20 +171,9 @@ export class FetchHttpClient implements IHttpClient {
       method: 'PATCH',
       headers: finalHeaders,
       body: isFormData ? (body as any) : (body ? JSON.stringify(body) : undefined),
-=======
-    return this.request<T>(url, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        ...headers,
-      },
-      body: body ? JSON.stringify(body) : undefined,
->>>>>>> main
       ...rest,
     });
   }
-
-
 
   async delete<T>(url: string, options: HttpRequestOptions = {}): Promise<HttpResponse<T>> {
     const { headers, ...rest } = options;
