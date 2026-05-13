@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { productService, orderService } from '@/config/setup';
 import { useInventoryStore } from '@/store/useInventoryStore';
+import { useSalesStore } from '@/store/useSalesStore';
 import type { Product } from '@/models/Product';
 import type { Order } from '@/models/Order';
 import { SystemAlerts } from './SystemAlerts';
@@ -24,6 +25,9 @@ export function DashboardSection({ onNavigate, isAdmin }: DashboardSectionProps)
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [statsData, setStatsData] = useState<any>(null);
+  
+  const { stockSyncVersion } = useInventoryStore();
+  const { salesSyncVersion } = useSalesStore();
 
   // Datos simulados para evolución si no hay suficientes datos reales
   const evolutionData = useMemo(() => {
@@ -82,7 +86,7 @@ export function DashboardSection({ onNavigate, isAdmin }: DashboardSectionProps)
       window.removeEventListener('kiora-refresh-alerts', handleRefresh);
       clearInterval(poll);
     };
-  }, [loadDashboardData]);
+  }, [loadDashboardData, salesSyncVersion, stockSyncVersion]);
 
   const stats = [
     { 

@@ -10,7 +10,6 @@ const VALID_TABS = new Set([
   'ventas',
   'mantenimiento',
   'reportes',
-  'roles',
   'ajustes',
 ]);
 

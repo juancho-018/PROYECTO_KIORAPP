@@ -25,7 +25,7 @@ export default defineConfig({
     plugins: [tailwindcss()],
     build: {
       // Mapas ocultos: útiles para Sentry sin exponer `sourceMappingURL` en el bundle público.
-      sourcemap: 'hidden',
+      sourcemap: process.env.SENTRY_AUTH_TOKEN ? 'hidden' : false,
       cssMinify: true,
       minify: 'esbuild',
     },

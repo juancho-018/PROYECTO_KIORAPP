@@ -10,6 +10,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { useSalesStore } from '@/store/useSalesStore';
 import { useInventoryStore } from '@/store/useInventoryStore';
 import { useUserManagement } from '@/features/users/hooks/useUserManagement';
+import { useRealTimeUpdates } from '@/hooks/useRealTimeUpdates';
 
 import { AdminNavbar } from './AdminNavbar';
 import { AdminSubNav } from './AdminSubNav';
@@ -48,9 +49,7 @@ const InventarioSection = lazy(() =>
 const UserList = lazy(() =>
   import('@/features/users/components/UserList').then((m) => ({ default: m.UserList }))
 );
-const RolesSection = lazy(() =>
-  import('@/features/users/components/RolesSection').then((m) => ({ default: m.RolesSection }))
-);
+
 
 function PanelSectionFallback() {
   return (
@@ -61,7 +60,7 @@ function PanelSectionFallback() {
   );
 }
 
-const ADMIN_ONLY_TABS = new Set(['usuarios', 'reportes', 'roles', 'mantenimiento']);
+const ADMIN_ONLY_TABS = new Set(['usuarios', 'reportes', 'mantenimiento']);
 
 function PanelLoadingShell({ message = 'Cargando sesión…' }: { message?: string }) {
   return (
@@ -91,6 +90,7 @@ export default function PanelApp() {
   const openPOS = useCallback(() => setIsOrderDrawerOpen(true), [setIsOrderDrawerOpen]);
 
   usePanelUrlSync(activeTab, setActiveTab, setOpenOrderFromUrl, openPOS);
+  useRealTimeUpdates();
 
   useEffect(() => {
     if (!isReady || !user || isAdmin) return;
@@ -173,8 +173,7 @@ export default function PanelApp() {
               <MaintenanceSection />
             ) : activeTab === 'reportes' && isAdmin ? (
               <ReportsSection />
-            ) : activeTab === 'roles' && isAdmin ? (
-              <RolesSection />
+
             ) : activeTab === 'ajustes' ? (
               <SettingsSection
                 settingsView={settingsView}

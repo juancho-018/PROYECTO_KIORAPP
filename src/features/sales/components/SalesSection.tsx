@@ -118,7 +118,7 @@ export function SalesSection({
           { id: 'ventas', label: 'Ventas' },
           { id: 'facturas', label: 'Facturas' },
           { id: 'movimientos', label: 'Movimientos' },
-          { id: 'incidencias', label: 'Incidencias' },
+
         ].map(t => (
           <button
             key={t.id}

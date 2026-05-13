@@ -366,19 +366,14 @@ export class ReceiptPrinterService {
     try {
       // Request device — try common service UUIDs of mini thermal printers
       this.bleDevice = await (navigator as any).bluetooth.requestDevice({
-        // Accept any device that advertises one of these services
         filters: [
-          { services: [BLE_PRINT_SERVICE] },
-          { services: [BLE_ALT_SERVICE] },
-          { namePrefix: 'Peripage' },
-          { namePrefix: 'Phomemo' },
-          { namePrefix: 'MX10' },
-          { namePrefix: 'MX' },
-          { namePrefix: 'GB' },        // Generic "GB0x" mini printers
-          { namePrefix: 'Cat' },
-          { namePrefix: 'Paperang' },
+          { services: [BLE_PRINT_SERVICE] }, { services: [BLE_ALT_SERVICE] },
+          { namePrefix: 'Peripage' }, { namePrefix: 'Phomemo' }, { namePrefix: 'MX10' },
+          { namePrefix: 'MX' }, { namePrefix: 'GB' }, { namePrefix: 'Cat' }, { namePrefix: 'Paperang' },
+          { namePrefix: 'BlePrinter' }, { namePrefix: 'M02' }, { namePrefix: 'A6' }, { namePrefix: 'A8' },
+          { namePrefix: 'Small' }, { namePrefix: 'Thermal' },
         ],
-        optionalServices: [BLE_PRINT_SERVICE, BLE_ALT_SERVICE],
+        optionalServices: [BLE_PRINT_SERVICE, BLE_ALT_SERVICE, '000018f0-0000-1000-8000-00805f9b34fb'],
       });
 
       const server = await this.bleDevice!.gatt!.connect();

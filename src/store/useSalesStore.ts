@@ -27,7 +27,7 @@ interface SalesState {
   isSavingOrder: boolean;
   stripeQR: StripeQR;
   salesSyncVersion: number;
-  
+
   // Actions
   setIsOrderDrawerOpen: (open: boolean) => void;
   setProdSearch: (search: string) => void;
@@ -68,7 +68,7 @@ export const useSalesStore = create<SalesState>()(
         const { orderForm } = get();
         const items = Array.isArray(orderForm.items) ? orderForm.items : [];
         const pId = Number(p.cod_prod);
-        
+
         const existing = items.find((i: OrderItem) => Number(i.cod_prod) === pId);
 
         if (existing) {
@@ -108,7 +108,7 @@ export const useSalesStore = create<SalesState>()(
         const { orderForm } = get();
         const items = Array.isArray(orderForm.items) ? orderForm.items : [];
         const pId = Number(cod_prod);
-        
+
         set({
           orderForm: {
             ...orderForm,
@@ -121,7 +121,7 @@ export const useSalesStore = create<SalesState>()(
         const { orderForm } = get();
         const items = Array.isArray(orderForm.items) ? orderForm.items : [];
         const pId = Number(cod_prod);
-        
+
         set({
           orderForm: {
             ...orderForm,
@@ -239,6 +239,9 @@ export const useSalesStore = create<SalesState>()(
                 }
                 if (attempt < maxAttempts) continue;
               }
+            } else if (order.id_vent) {
+              // Para efectivo o transferencias, completamos la orden inmediatamente
+              await orderService.updateOrderStatus(order.id_vent, 'completada');
             }
 
             // Venta exitosa
