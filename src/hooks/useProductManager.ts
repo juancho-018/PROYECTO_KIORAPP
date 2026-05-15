@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Fuse from 'fuse.js';
 import { productService, alertService, inventoryService } from '@/config/setup';
-import type { Product, Category, CreateProductDto } from '@/models/Product';
+import type { Product, Category } from '@/models/Product';
+import type { CreateProductDto } from '@/services/ProductService';
 import type { Movement } from '@/models/Inventory';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { pushAppNotification } from '@/lib/pushAppNotification';

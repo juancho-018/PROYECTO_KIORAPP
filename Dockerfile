@@ -1,6 +1,9 @@
 # Etapa 1: Construcción (Build)
-FROM node:20 AS build
+FROM node:22 AS build
 WORKDIR /app
+
+# Habilitar pnpm via corepack — pinado a v10 para coincidir con el pnpm-lock.yaml local
+RUN corepack enable && corepack prepare pnpm@10 --activate
 
 # Definir argumentos para el build (deben coincidir con docker-compose.yml y .env)
 ARG PUBLIC_API_URL
@@ -12,12 +15,13 @@ ENV PUBLIC_KIORA_API_KEY=$PUBLIC_KIORA_API_KEY
 ENV PUBLIC_WEGLOT_API_KEY=$PUBLIC_WEGLOT_API_KEY
 ENV PUBLIC_SENTRY_DSN=$PUBLIC_SENTRY_DSN
 
-COPY package*.json ./
-# Usamos npm ci para instalaciones más limpias y muchísimo más rápidas
-RUN npm ci
+# Copiar manifests primero para aprovechar la caché de Docker
+COPY package.json pnpm-lock.yaml* ./
+RUN pnpm install --frozen-lockfile
+
 COPY . .
-# Forzamos npx para asegurar que encuentre el binario de astro
-RUN NODE_OPTIONS=--max-old-space-size=1024 npx astro build
+# Generar tipos de Astro y construir
+RUN pnpm exec astro sync && NODE_OPTIONS=--max-old-space-size=1024 pnpm exec astro build
 
 # Etapa 2: Servidor Web (Nginx)
 FROM nginx:alpine

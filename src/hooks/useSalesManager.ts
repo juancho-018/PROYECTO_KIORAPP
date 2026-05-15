@@ -153,7 +153,7 @@ export function useSalesManager(isAdmin: boolean) {
     }
 
     try {
-      await orderService.updateOrderStatus(id, newStatus);
+      await orderService.updateOrderStatus(id, newStatus as Order['estado'] & string);
       alertService.showToast('success', `Venta #${id} ahora está ${newStatus}`);
       void loadData();
     } catch (e: unknown) {

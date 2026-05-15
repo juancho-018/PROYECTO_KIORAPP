@@ -105,8 +105,8 @@ export function useReportsManager() {
     setSavedReports(savedReports.filter(r => r.id !== id));
   };
 
-  const loadSavedReport = (report: Record<string, unknown>) => {
-    setFilters(report.filters);
+  const loadSavedReport = (report: { filters: Record<string, unknown>; [key: string]: unknown }) => {
+    setFilters(report.filters as unknown as Filters);
     setActiveTab('generar');
   };
 
@@ -122,7 +122,8 @@ export function useReportsManager() {
         setReportData(data);
       }
     } catch (error: unknown) {
-      alertService.showError('Error', error.message || 'No se pudo generar el reporte');
+      const msg = error instanceof Error ? error.message : 'No se pudo generar el reporte';
+      alertService.showError('Error', msg);
     } finally {
       setIsLoading(false);
     }

@@ -56,6 +56,7 @@ export interface IHttpClient {
   put<T>(url: string, body?: unknown, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
   patch<T>(url: string, body?: unknown, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
   delete<T>(url: string, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
+  download(url: string, headers?: Record<string, string>): Promise<Blob>;
 }
 
 import type { LogService } from "../LogService";
@@ -200,5 +201,15 @@ export class FetchHttpClient implements IHttpClient {
       },
       ...rest,
     });
+  }
+  async download(url: string, headers?: Record<string, string>): Promise<Blob> {
+    const fullUrl = `${this.baseURL}${url}`;
+    const reqHeaders: Record<string, string> = {
+      ...headers,
+      ...(this.apiKey ? { 'x-api-key': this.apiKey } : {}),
+    };
+    const response = await fetch(fullUrl, { headers: reqHeaders, credentials: 'same-origin' });
+    if (!response.ok) throw new Error(`Error al descargar: ${response.status}`);
+    return response.blob();
   }
 }

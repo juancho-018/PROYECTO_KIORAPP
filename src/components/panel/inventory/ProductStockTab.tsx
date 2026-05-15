@@ -8,7 +8,7 @@ interface ProductStockTabProps {
   product: Product;
   movements: Movement[];
   isLoading: boolean;
-  onSaveMovement: (movement: { tipo_mov: 'entrada' | 'salida' | 'ajuste'; cantidad: number; desc_mov: string; fk_cod_prov?: number }) => Promise<void>;
+  onSaveMovement: (movement: { tipo_mov: 'entrada' | 'salida' | 'ajuste'; cantidad: number; desc_mov: string; fk_cod_prov?: number; fecha_vencimiento?: string }) => Promise<void>;
   onViewMovement?: (movement: Movement) => void;
   saving: boolean;
 }
