@@ -144,9 +144,10 @@ export default function PanelApp() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] font-sans text-[#1e293b] selection:bg-[#ec131e]/10 selection:text-[#ec131e]">
+    <div className="min-h-screen bg-surface-bright text-on-surface selection:bg-primary/10 selection:text-primary">
       <OfflineBanner />
       <PWAInstallPrompt />
+      <AdminSubNav activeId={activeTab} onItemClick={setActiveTab} isAdmin={isAdmin} />
       <AdminNavbar
         user={user}
         onOpenProfile={() => setIsProfileOpen(true)}
@@ -157,56 +158,56 @@ export default function PanelApp() {
         }}
       />
 
-      <main className="mx-auto max-w-[1600px] px-4 py-6 pb-28 sm:px-6 sm:py-8 lg:px-8 lg:pb-10 lg:pl-20">
-        <ErrorBoundary>
-          <Suspense fallback={<PanelSectionFallback />}>
-            {activeTab === 'dashboard' ? (
-              <DashboardSection onNavigate={setActiveTab} isAdmin={isAdmin} />
-            ) : activeTab === 'usuarios' && isAdmin ? (
-              <UserList
-                users={userMgmt.filteredUsers}
-                isLoading={userMgmt.isLoadingUsers}
-                searchTerm={userMgmt.searchTerm}
-                onSearchChange={userMgmt.setSearchTerm}
-                onAddUser={() => userMgmt.handleOpenDrawer()}
-                onEditUser={userMgmt.handleOpenDrawer}
-                onToggleBlock={userMgmt.handleToggleBlock}
-                onResetPassword={userMgmt.handleOpenSecurity}
-                currentPage={userMgmt.currentPage}
-                totalPages={userMgmt.totalPages}
-                onPageChange={userMgmt.loadUsersList}
-              />
-            ) : activeTab === 'productos' ? (
-              <ProductsSection />
-            ) : activeTab === 'categorias' ? (
-              <CategoriasSection />
-            ) : activeTab === 'inventario' ? (
-              <InventarioSection />
-            ) : activeTab === 'ventas' ? (
-              <SalesSection
-                isAdmin={isAdmin}
-                onOpenPOS={openPOS}
-                initialOpenOrderId={openOrderFromUrl}
-                onInitialOrderOpened={handleOrderDeepLinkDone}
-              />
-            ) : activeTab === 'mantenimiento' && isAdmin ? (
-              <MaintenanceSection />
-            ) : activeTab === 'reportes' && isAdmin ? (
-              <ReportsSection />
-            ) : activeTab === 'ajustes' ? (
-              <SettingsSection
-                settingsView={settingsView}
-                setSettingsView={setSettingsView}
-                onOpenProfile={() => setIsProfileOpen(true)}
-              />
-            ) : (
-              <ComingSoonSection tabId={activeTab} />
-            )}
-          </Suspense>
-        </ErrorBoundary>
+      <main className="md:ml-56 px-4 sm:px-6 pt-6 pb-28 md:pb-10">
+        <div className="mx-auto w-full max-w-[1200px]">
+          <ErrorBoundary>
+            <Suspense fallback={<PanelSectionFallback />}>
+              {activeTab === 'dashboard' ? (
+                <DashboardSection onNavigate={setActiveTab} isAdmin={isAdmin} />
+              ) : activeTab === 'usuarios' && isAdmin ? (
+                <UserList
+                  users={userMgmt.filteredUsers}
+                  isLoading={userMgmt.isLoadingUsers}
+                  searchTerm={userMgmt.searchTerm}
+                  onSearchChange={userMgmt.setSearchTerm}
+                  onAddUser={() => userMgmt.handleOpenDrawer()}
+                  onEditUser={userMgmt.handleOpenDrawer}
+                  onToggleBlock={userMgmt.handleToggleBlock}
+                  onResetPassword={userMgmt.handleOpenSecurity}
+                  currentPage={userMgmt.currentPage}
+                  totalPages={userMgmt.totalPages}
+                  onPageChange={userMgmt.loadUsersList}
+                />
+              ) : activeTab === 'productos' ? (
+                <ProductsSection />
+              ) : activeTab === 'categorias' ? (
+                <CategoriasSection />
+              ) : activeTab === 'inventario' ? (
+                <InventarioSection />
+              ) : activeTab === 'ventas' ? (
+                <SalesSection
+                  isAdmin={isAdmin}
+                  onOpenPOS={openPOS}
+                  initialOpenOrderId={openOrderFromUrl}
+                  onInitialOrderOpened={handleOrderDeepLinkDone}
+                />
+              ) : activeTab === 'mantenimiento' && isAdmin ? (
+                <MaintenanceSection />
+              ) : activeTab === 'reportes' && isAdmin ? (
+                <ReportsSection />
+              ) : activeTab === 'ajustes' ? (
+                <SettingsSection
+                  settingsView={settingsView}
+                  setSettingsView={setSettingsView}
+                  onOpenProfile={() => setIsProfileOpen(true)}
+                />
+              ) : (
+                <ComingSoonSection tabId={activeTab} />
+              )}
+            </Suspense>
+          </ErrorBoundary>
+        </div>
       </main>
-
-      <AdminSubNav activeId={activeTab} onItemClick={setActiveTab} isAdmin={isAdmin} />
 
       <UserDrawer
         isOpen={userMgmt.isDrawerOpen}

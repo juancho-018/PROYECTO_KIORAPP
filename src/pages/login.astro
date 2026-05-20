@@ -21,7 +21,7 @@ import MainLayout from "@/layouts/mainlayout.astro";
   </script>
 
   <div class="flex flex-col items-center justify-center min-h-screen w-full relative z-10 px-4"
-    style="background: #F5F0EB;"
+    style="background: var(--md-background, #fff8f6);"
   >
     <!-- Warm gradient ambient -->
     <div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
@@ -38,7 +38,7 @@ import MainLayout from "@/layouts/mainlayout.astro";
       <img
         src="/img/logo-kiora-vectorizado.svg"
         alt="Kiora"
-        class="w-44 h-auto object-contain drop-shadow-sm"
+        class="w-40 h-auto object-contain drop-shadow-sm"
       />
     </div>
 
@@ -46,13 +46,13 @@ import MainLayout from "@/layouts/mainlayout.astro";
 
     <!-- Footer -->
     <footer class="mt-10 mb-8 flex flex-col items-center gap-5 z-50 px-6 w-full max-w-md">
-      <div class="h-px w-full" style="background: linear-gradient(to right, transparent, rgba(0,0,0,0.06), transparent);" />
+      <div class="h-px w-full" style="background: linear-gradient(to right, transparent, var(--md-outline-variant, #d6c2bd), transparent);" />
       <div class="flex flex-wrap justify-center items-center gap-x-6 gap-y-3 text-center">
-        <a href="/ayuda" class="text-[10px] font-black uppercase tracking-widest" style="color: #9ca3af; transition: color 0.2s;" onmouseover="this.style.color='#ec131e'" onmouseout="this.style.color='#9ca3af'">Ayuda</a>
-        <a href="/terminos" class="text-[10px] font-black uppercase tracking-widest" style="color: #9ca3af; transition: color 0.2s;" onmouseover="this.style.color='#6b6b6b'" onmouseout="this.style.color='#9ca3af'">Términos</a>
-        <a href="/privacidad" class="text-[10px] font-black uppercase tracking-widest" style="color: #9ca3af; transition: color 0.2s;" onmouseover="this.style.color='#6b6b6b'" onmouseout="this.style.color='#9ca3af'">Privacidad</a>
+        <a href="/ayuda" class="label-sm text-on-surface-variant hover:text-primary transition-colors">Ayuda</a>
+        <a href="/terminos" class="label-sm text-on-surface-variant hover:text-primary transition-colors">Términos</a>
+        <a href="/privacidad" class="label-sm text-on-surface-variant hover:text-primary transition-colors">Privacidad</a>
       </div>
-      <p class="text-[9px] font-bold uppercase tracking-[0.2em]" style="color: #c4b8ab;">&copy; {new Date().getFullYear()} Kiora &bull; Smart Kiosk System</p>
+      <p class="text-[10px] font-medium text-on-surface-variant/50 uppercase tracking-wider">&copy; {new Date().getFullYear()} Kiora &bull; Smart Kiosk System</p>
     </footer>
   </div>
   <GlobalControls client:load />

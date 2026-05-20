@@ -63,29 +63,27 @@ export default function VerifyCodeForm() {
 
   return (
     <div className="w-full flex flex-col items-center">
-      <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-        <h2 style={{ fontSize: 'clamp(1.5rem,4vw,2.5rem)', fontWeight: 900, letterSpacing: '-0.02em', lineHeight: 1, color: '#1a1a1a', margin: 0 }}>
-          Verificar Código
-        </h2>
-        <p style={{ fontSize: '0.875rem', fontWeight: 500, marginTop: '0.5rem', color: '#6b6b6b' }}>
+      <div className="text-center mb-6">
+        <h2 className="headline-lg text-on-surface mb-1">Verificar Código</h2>
+        <p className="body-md text-on-surface-variant">
           Ingresa el código de 6 dígitos enviado a <strong>{email}</strong>
         </p>
       </div>
 
       {state === 'error' && (
-        <div style={{ width: '100%', maxWidth: '448px', marginBottom: '1rem', padding: '0.75rem 1.25rem', borderRadius: '16px', fontSize: '0.875rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.75rem', backgroundColor: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b' }}>
+        <div className="w-full max-w-sm mb-4 px-4 py-3 rounded-xl text-sm font-semibold flex items-center gap-2.5 bg-error-container/20 border border-error-container/50 text-on-error-container">
           <span>⚠️</span> {errorMsg}
         </div>
       )}
 
       <form onSubmit={handleSubmit}
-        style={{ width: '100%', maxWidth: '448px', padding: '2rem 2.5rem', backgroundColor: '#ffffff', borderRadius: '40px', boxShadow: '0 20px 50px rgba(0,0,0,0.04)' }}>
+        className="w-full max-w-sm p-8 bg-surface rounded-2xl border border-outline-variant/40 shadow-sm">
 
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', fontSize: '0.625rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.75rem', textAlign: 'center', color: '#6b6b6b' }}>
+        <div className="mb-5">
+          <label className="block label-sm text-on-surface-variant mb-3 text-center">
             Código de verificación
           </label>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem' }}>
+          <div className="flex justify-center gap-2">
             {codeDigits.map((digit, index) => (
               <input key={index}
                 ref={(el) => { inputRefs.current[index] = el; }}
@@ -96,27 +94,31 @@ export default function VerifyCodeForm() {
                 onPaste={index === 0 ? handlePaste : undefined}
                 id={`code-${index}`}
                 required
-                style={{ width: '3rem', height: '3.5rem', border: `2px solid ${codeDigits[index] ? '#ec131e' : '#e2e8f0'}`, borderRadius: '12px', backgroundColor: codeDigits[index] ? '#fff' : '#f8fafc', textAlign: 'center', fontSize: '1.25rem', fontWeight: 900, color: '#1a1a1a', outline: 'none', transition: 'all 0.2s' }}
-                onFocus={(e) => { e.target.style.borderColor = '#ec131e'; e.target.style.backgroundColor = '#ffffff'; e.target.style.boxShadow = '0 0 0 4px rgba(236,19,30,0.05)'; }}
-                onBlur={(e) => { e.target.style.borderColor = codeDigits[index] ? '#ec131e' : '#e2e8f0'; e.target.style.backgroundColor = codeDigits[index] ? '#fff' : '#f8fafc'; e.target.style.boxShadow = 'none'; }} />
+                style={{
+                  width: '2.75rem', height: '3.25rem',
+                  border: `2px solid ${codeDigits[index] ? 'var(--md-primary, #ec131e)' : 'var(--md-outline-variant, #d6c2bd)'}`,
+                  borderRadius: '10px',
+                  backgroundColor: codeDigits[index] ? 'var(--md-surface, #fffcf9)' : 'var(--md-surface-container-low, #fcf1ef)',
+                  textAlign: 'center', fontSize: '1.25rem', fontWeight: 700,
+                  color: 'var(--md-on-surface, #1f1a19)',
+                  outline: 'none', transition: 'all 0.2s'
+                }}
+                onFocus={(e) => { e.target.style.borderColor = 'var(--md-primary, #ec131e)'; e.target.style.backgroundColor = 'var(--md-surface, #fffcf9)'; e.target.style.boxShadow = '0 0 0 4px rgba(236,19,30,0.05)'; }}
+                onBlur={(e) => { e.target.style.borderColor = codeDigits[index] ? 'var(--md-primary, #ec131e)' : 'var(--md-outline-variant, #d6c2bd)'; e.target.style.backgroundColor = codeDigits[index] ? 'var(--md-surface, #fffcf9)' : 'var(--md-surface-container-low, #fcf1ef)'; e.target.style.boxShadow = 'none'; }} />
             ))}
           </div>
         </div>
 
         <button type="submit" disabled={state === 'loading'}
-          style={{ width: '100%', border: 'none', padding: '1rem', fontSize: '0.6875rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.2em', cursor: state === 'loading' ? 'not-allowed' : 'pointer', borderRadius: '16px', color: '#ffffff', backgroundColor: '#ec131e', boxShadow: '0 4px 16px rgba(236,19,30,0.2)', opacity: state === 'loading' ? 0.7 : 1, marginBottom: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', transition: 'all 0.2s' }}
-          onMouseEnter={(e) => { if (!(e.target as HTMLButtonElement).disabled) { e.target.style.backgroundColor = '#d01019'; e.target.style.boxShadow = '0 6px 20px rgba(236,19,30,0.3)'; }}}
-          onMouseLeave={(e) => { e.target.style.backgroundColor = '#ec131e'; e.target.style.boxShadow = '0 4px 16px rgba(236,19,30,0.2)'; }}>
+          className="w-full bg-primary text-on-primary py-3 rounded-xl text-sm font-semibold shadow-sm transition-all duration-200 hover:opacity-90 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2">
           {state === 'loading' ? <><div style={{ width: '1rem', height: '1rem', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#ffffff', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} /> Verificando...</> : 'Verificar Código'}
         </button>
 
-        <div style={{ textAlign: 'center' }}>
+        <div className="text-center mt-5">
           <a href="/recuperar-contrasena"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.6875rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9ca3af', textDecoration: 'none', transition: 'color 0.2s' }}
-            onMouseEnter={(e) => e.currentTarget.style.color = '#6b6b6b'}
-            onMouseLeave={(e) => e.currentTarget.style.color = '#9ca3af'}>
-            <svg xmlns="http://www.w3.org/2000/svg" style={{ width: '1rem', height: '1rem' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            className="inline-flex items-center gap-1.5 label-sm text-on-surface-variant hover:text-primary transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" style={{ width: '1rem', height: '1rem' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
             Volver a intentar
           </a>
