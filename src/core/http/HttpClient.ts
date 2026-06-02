@@ -97,8 +97,10 @@ export class FetchHttpClient implements IHttpClient {
       const responseData = isJson ? await response.json() : null;
 
       if (!response.ok) {
-        // ── Auto-logout on 401/403 (except /auth/login que usa 401 para credenciales inválidas) ──
-        if ((response.status === 401 || response.status === 403) && !endpoint.includes('/auth/login')) {
+        // ── Auto-logout on 401/403 (except known business-logic codes) ──
+        const isAuthError = response.status === 401
+          || (response.status === 403 && !responseData?.code?.startsWith?.('BUSINESS_'));
+        if (isAuthError && !endpoint.includes('/auth/login')) {
           localStorage.removeItem('kiora_token');
           localStorage.removeItem('kiora_user');
           window.location.href = '/login/';

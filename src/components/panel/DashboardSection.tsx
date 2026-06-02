@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { productService, orderService } from '@/config/setup';
+import { productService, orderService, aiService } from '@/config/setup';
 import { useInventoryStore } from '@/store/useInventoryStore';
 import { useSalesStore } from '@/store/useSalesStore';
 import type { Product } from '@/models/Product';
 import type { Order } from '@/models/Order';
+import type { DashboardInsights } from '@/services/AiService';
 import { SystemAlerts } from './SystemAlerts';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
@@ -20,6 +21,9 @@ export function DashboardSection({ onNavigate, isAdmin }: DashboardSectionProps)
   const [isLoading, setIsLoading] = useState(true);
   const [statsData, setStatsData] = useState<any>(null);
   const [chartReady, setChartReady] = useState(false);
+  const [insights, setInsights] = useState<DashboardInsights | null>(null);
+  const [insightsLoading, setInsightsLoading] = useState(true);
+  const [insightsError, setInsightsError] = useState(false);
 
   const { stockSyncVersion } = useInventoryStore();
   const { salesSyncVersion } = useSalesStore();
@@ -53,6 +57,18 @@ export function DashboardSection({ onNavigate, isAdmin }: DashboardSectionProps)
       if (orderRes) {
         setOrders(Array.isArray(orderRes) ? orderRes : (orderRes.data || []));
       }
+
+      // Cargar insights del AI service
+      setInsightsLoading(true);
+      setInsightsError(false);
+      try {
+        const insightsData = await aiService.getInsights();
+        setInsights(insightsData);
+      } catch {
+        setInsightsError(true);
+      } finally {
+        setInsightsLoading(false);
+      }
     } catch (error) {
       console.error('Error loading dashboard:', error);
     } finally {
@@ -76,27 +92,47 @@ export function DashboardSection({ onNavigate, isAdmin }: DashboardSectionProps)
     return () => cancelAnimationFrame(raf);
   }, []);
 
+  const formatTimeAgo = (dateStr: string) => {
+    if (!dateStr) return 'Sin ventas hoy';
+    const diffMs = new Date().getTime() - new Date(dateStr).getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return 'Hace unos segundos';
+    if (diffMins < 60) return `Última hace ${diffMins} min`;
+    const diffHrs = Math.floor(diffMins / 60);
+    return `Última hace ${diffHrs} hr${diffHrs > 1 ? 's' : ''}`;
+  };
+
+  const formatTrend = (trendValue: number | undefined) => {
+    if (trendValue === undefined || trendValue === null) return null;
+    const isUp = trendValue >= 0;
+    const sign = isUp ? '+' : '';
+    return { text: `${sign}${trendValue.toFixed(1)}% vs ayer`, isUp };
+  };
+
+  const montoTrend = formatTrend(statsData?.trend_monto);
+  const ticketTrend = formatTrend(statsData?.trend_ticket);
+
   const stats = [
     {
       label: 'Ventas de Hoy',
       value: `$${Number(statsData?.monto_total || 0).toLocaleString('es-CO')}`,
-      trend: statsData ? '+12% vs ayer' : null,
-      trendUp: true,
+      trend: montoTrend?.text || null,
+      trendUp: montoTrend?.isUp ?? true,
       icon: 'payments',
       navigateTo: 'ventas',
     },
     {
       label: 'Órdenes',
       value: (statsData?.ventas_hoy || 0).toString(),
-      meta: 'Última hace 5 min',
+      meta: formatTimeAgo(statsData?.ultima_venta?.fecha_vent),
       icon: 'receipt_long',
       navigateTo: 'ventas',
     },
     {
       label: 'Ticket Promedio',
       value: `$${Number(statsData?.ticket_promedio || 0).toLocaleString('es-CO')}`,
-      trend: '+3% vs ayer',
-      trendUp: true,
+      trend: ticketTrend?.text || null,
+      trendUp: ticketTrend?.isUp ?? true,
       icon: 'sell',
       navigateTo: 'reportes',
     },
@@ -111,8 +147,9 @@ export function DashboardSection({ onNavigate, isAdmin }: DashboardSectionProps)
   ];
 
   // Donut data
-  const cardPercentage = 65;
-  const cashPercentage = 35;
+  const totalPagos = (statsData?.pagos_efectivo || 0) + (statsData?.pagos_tarjeta || 0);
+  const cashPercentage = totalPagos > 0 ? Math.round(((statsData?.pagos_efectivo || 0) / totalPagos) * 100) : 0;
+  const cardPercentage = totalPagos > 0 ? Math.round(((statsData?.pagos_tarjeta || 0) / totalPagos) * 100) : 0;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-8">
@@ -395,22 +432,39 @@ export function DashboardSection({ onNavigate, isAdmin }: DashboardSectionProps)
               </div>
 
               <div className="space-y-3">
-                <div className="p-4 rounded-xl bg-surface border border-outline-variant/30 relative">
-                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l-xl" />
-                  <p className="text-sm font-medium text-on-surface leading-relaxed pl-3">
-                    "Hoy es un día de <span className="font-bold text-primary">alta rotación</span>. Los productos de categoría <span className="font-bold text-primary">snacks</span> están subiendo en tendencia. Considera un descuento flash."
-                  </p>
-                </div>
-
-                <div className="flex items-center justify-between p-3.5 rounded-lg bg-surface-container-high border border-outline-variant/20">
-                  <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4 text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
-                    </svg>
-                    <span className="text-xs font-semibold text-tertiary">Rendimiento</span>
+                {insightsLoading ? (
+                  <div className="p-4 rounded-xl bg-surface border border-outline-variant/30 flex items-center gap-3">
+                    <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                    <span className="text-sm text-on-surface-variant">Analizando datos del negocio...</span>
                   </div>
-                  <span className="text-xs font-bold text-tertiary">+18% <span className="font-normal opacity-70">vs semana pasada</span></span>
-                </div>
+                ) : insightsError || !insights ? (
+                  <div className="p-4 rounded-xl bg-surface border border-outline-variant/30">
+                    <p className="text-sm text-on-surface-variant italic">
+                      No hay suficientes datos para generar insights en este momento.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="p-4 rounded-xl bg-surface border border-outline-variant/30 relative">
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l-xl" />
+                      <p className="text-sm font-medium text-on-surface leading-relaxed pl-3">
+                        {insights.insight}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between p-3.5 rounded-lg bg-surface-container-high border border-outline-variant/20">
+                      <div className="flex items-center gap-2">
+                        <svg className={`w-4 h-4 ${insights.trend_direction === 'up' ? 'text-tertiary' : 'text-error'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+                        </svg>
+                        <span className={`text-xs font-semibold ${insights.trend_direction === 'up' ? 'text-tertiary' : 'text-error'}`}>Rendimiento</span>
+                      </div>
+                      <span className={`text-xs font-bold ${insights.trend_direction === 'up' ? 'text-tertiary' : 'text-error'}`}>
+                        {insights.trend_direction === 'up' ? '+' : ''}{insights.trend_percentage}% <span className="font-normal opacity-70">{insights.trend_comparison}</span>
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>

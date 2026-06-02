@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import type { User } from '@/models/User';
 import type { Product } from '@/models/Product';
-import { authService } from '@/config/setup';
+import { authService, API_URL } from '@/config/setup';
 import { useInventoryStore } from '@/store/useInventoryStore';
 import { useAppStore } from '@/store/useAppStore';
 import { getInitials } from '@/utils/userUtils';
@@ -43,6 +43,44 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({ user, onLogout, onOpen
       setIsDark(true);
     }
   }, []);
+
+  const [businessState, setBusinessState] = useState<'open' | 'closed'>('open');
+  const [isToggling, setIsToggling] = useState(false);
+
+  useEffect(() => {
+    const checkState = async () => {
+      try {
+        const token = authService.getToken();
+        const res = await fetch(`${API_URL}/ai/business-state`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        const data = await res.json();
+        setBusinessState(data.state || 'open');
+      } catch (e) {
+        console.error('Error fetching business state', e);
+      }
+    };
+    checkState();
+  }, []);
+
+  const toggleBusinessState = async () => {
+    setIsToggling(true);
+    try {
+      const endpoint = businessState === 'open' ? '/ai/close-business' : '/ai/open-business';
+      const token = authService.getToken();
+      const res = await fetch(`${API_URL}${endpoint}`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (res.ok) {
+        setBusinessState(businessState === 'open' ? 'closed' : 'open');
+      }
+    } catch (e) {
+      console.error('Error toggling business state', e);
+    } finally {
+      setIsToggling(false);
+    }
+  };
 
   const { lowStockItems, fetchLowStock } = useInventoryStore();
   const notifications = useNotificationStore((s) => s.notifications);
@@ -126,6 +164,25 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({ user, onLogout, onOpen
           >
             <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
               {isDark ? 'light_mode' : 'dark_mode'}
+            </span>
+          </button>
+
+          {/* Business State Toggle */}
+          <button
+            type="button"
+            disabled={isToggling}
+            onClick={toggleBusinessState}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all active:scale-[0.97] disabled:opacity-50 ${
+              businessState === 'open' 
+                ? 'bg-error-container text-on-error-container hover:bg-error-container/80'
+                : 'bg-primary text-on-primary hover:bg-primary/90'
+            }`}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>
+              {businessState === 'open' ? 'lock' : 'lock_open'}
+            </span>
+            <span className="hidden sm:inline">
+              {businessState === 'open' ? 'Cerrar Negocio' : 'Abrir Negocio'}
             </span>
           </button>
 

@@ -1,4 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { aiService } from '@/config/setup';
+import type { ChatMessage } from '@/services/AiService';
+
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface NavItem {
   id: string;
@@ -14,7 +19,44 @@ interface AdminSubNavProps {
 
 export const AdminSubNav: React.FC<AdminSubNavProps> = ({ activeId, onItemClick, isAdmin }) => {
   const [isChatOpen, setIsChatOpen] = React.useState(false);
-  
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [inputValue, setInputValue] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isLoading]);
+
+  const sendMessage = useCallback(async (text: string) => {
+    const userMsg: ChatMessage = { role: 'user', content: text };
+    const updated = [...messages, userMsg];
+    setMessages(updated);
+    setInputValue('');
+    setIsLoading(true);
+
+    try {
+      const result = await aiService.ask(text, messages);
+      setMessages(prev => [...prev, userMsg, { role: 'assistant', content: result.response }]);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al contactar al asistente';
+      setMessages(prev => [...prev, userMsg, { role: 'assistant', content: `⚠️ ${msg}` }]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [messages]);
+
+  const handleSubmit = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    const text = inputValue.trim();
+    if (!text || isLoading) return;
+    sendMessage(text);
+  }, [inputValue, isLoading, sendMessage]);
+
+  const handleSuggestion = useCallback((text: string) => {
+    sendMessage(text);
+  }, [sendMessage]);
+
   const items: NavItem[] = useMemo(() => {
     const list: NavItem[] = [
       {
@@ -151,15 +193,14 @@ export const AdminSubNav: React.FC<AdminSubNavProps> = ({ activeId, onItemClick,
           })}
         </nav>
 
-        {/* AI Agent Prototype */}
+        {/* AI Agent */}
         <div className="px-4 py-4 mt-auto">
-          <div 
+          <div
             onClick={() => setIsChatOpen(true)}
             className="group relative flex flex-col gap-3 p-4 rounded-xl border border-outline-variant/30 bg-surface-container-lowest cursor-pointer transition-all duration-300 hover:border-on-surface/20 hover:bg-surface-container-low"
           >
-            {/* Minimalist glow effect */}
             <div className="absolute inset-0 rounded-xl bg-gradient-to-tr from-on-surface/0 via-on-surface/0 to-on-surface/[0.02] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
-            
+
             <div className="flex items-center justify-between z-10">
               <div className="w-10 h-10 rounded-lg bg-surface border border-outline-variant/50 flex items-center justify-center text-on-surface shadow-sm group-hover:shadow transition-all">
                 <span className="material-symbols-outlined font-light text-[22px]">auto_awesome</span>
@@ -169,7 +210,7 @@ export const AdminSubNav: React.FC<AdminSubNavProps> = ({ activeId, onItemClick,
                 <span className="text-[9px] font-medium text-on-surface-variant tracking-widest uppercase">Online</span>
               </div>
             </div>
-            
+
             <div className="z-10 mt-1">
               <h4 className="text-sm font-semibold text-on-surface tracking-wide">Kiora AI</h4>
               <p className="text-xs text-on-surface-variant/70 mt-0.5">Asistente Operativo</p>
@@ -186,26 +227,24 @@ export const AdminSubNav: React.FC<AdminSubNavProps> = ({ activeId, onItemClick,
       {/* ─── AI CHAT POPOVER ─── */}
       {isChatOpen && (
         <div className="fixed inset-0 z-[200] pointer-events-none">
-          {/* Backdrop (invisible to avoid focus effect) */}
-          <div 
+          <div
             className="absolute inset-0 pointer-events-auto"
             onClick={() => setIsChatOpen(false)}
           ></div>
-          
-          {/* Popover Window */}
+
           <div className="absolute left-[240px] bottom-[24px] w-[380px] h-[600px] max-h-[85vh] bg-surface rounded-[20px] border border-outline-variant/30 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.15)] flex flex-col animate-in zoom-in-75 slide-in-from-left-4 slide-in-from-bottom-8 duration-300 overflow-hidden origin-bottom-left pointer-events-auto">
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-5 border-b border-outline-variant/20 bg-surface-container-lowest">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-outline-variant/20 bg-surface-container-lowest shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-surface-container-low border border-outline-variant/50 flex items-center justify-center text-on-surface">
                   <span className="material-symbols-outlined">auto_awesome</span>
                 </div>
                 <div>
                   <h3 className="text-base font-semibold text-on-surface tracking-wide">Kiora AI</h3>
-                  <p className="text-[10px] text-on-surface-variant">Inteligencia Artificial</p>
+                  <p className="text-[10px] text-on-surface-variant">DeepSeek</p>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => setIsChatOpen(false)}
                 className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors"
               >
@@ -214,49 +253,137 @@ export const AdminSubNav: React.FC<AdminSubNavProps> = ({ activeId, onItemClick,
             </div>
 
             {/* Chat Area */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-surface-container-lowest/50">
-              {/* System message */}
-              <div className="flex gap-3">
-                <div className="w-8 h-8 rounded-full bg-surface-container-high border border-outline-variant/30 flex items-center justify-center shrink-0">
-                  <span className="material-symbols-outlined text-[16px] text-on-surface">auto_awesome</span>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <div className="bg-surface border border-outline-variant/30 rounded-2xl rounded-tl-sm p-3 shadow-sm max-w-[85%]">
-                    <p className="text-sm text-on-surface leading-relaxed">
-                      Hola. Soy Kiora AI, tu asistente operativo. ¿En qué puedo ayudarte a optimizar tu negocio hoy?
-                    </p>
+            <div className="flex-1 overflow-y-auto p-6 space-y-5 bg-surface-container-lowest/50">
+              {messages.length === 0 && !isLoading && (
+                <>
+                  {/* System welcome */}
+                  <div className="flex gap-3">
+                    <div className="w-8 h-8 rounded-full bg-surface-container-high border border-outline-variant/30 flex items-center justify-center shrink-0">
+                      <span className="material-symbols-outlined text-[16px] text-on-surface">auto_awesome</span>
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <div className="bg-surface border border-outline-variant/30 rounded-2xl rounded-tl-sm p-3 shadow-sm max-w-[85%]">
+                        <p className="text-sm text-on-surface leading-relaxed">
+                          Hola. Soy Kiora AI, tu asistente operativo. ¿En qué puedo ayudarte a optimizar tu negocio hoy?
+                        </p>
+                      </div>
+                      <span className="text-[10px] text-on-surface-variant/60 ml-1">Justo ahora</span>
+                    </div>
                   </div>
-                  <span className="text-[10px] text-on-surface-variant/60 ml-1">Justo ahora</span>
+
+                  {/* Suggested prompts */}
+                  <div className="flex flex-col gap-2 pt-2">
+                    <button
+                      onClick={() => handleSuggestion('Analizar ventas de hoy')}
+                      className="text-left px-4 py-3 rounded-xl border border-outline-variant/30 text-xs text-on-surface-variant hover:bg-surface-container hover:text-on-surface hover:border-outline-variant transition-colors flex items-center justify-between group shadow-sm"
+                    >
+                      Analizar ventas de hoy
+                      <span className="material-symbols-outlined text-[14px] opacity-0 group-hover:opacity-100 transition-opacity">arrow_forward</span>
+                    </button>
+                    <button
+                      onClick={() => handleSuggestion('Sugerir pedidos de inventario')}
+                      className="text-left px-4 py-3 rounded-xl border border-outline-variant/30 text-xs text-on-surface-variant hover:bg-surface-container hover:text-on-surface hover:border-outline-variant transition-colors flex items-center justify-between group shadow-sm"
+                    >
+                      Sugerir pedidos de inventario
+                      <span className="material-symbols-outlined text-[14px] opacity-0 group-hover:opacity-100 transition-opacity">arrow_forward</span>
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* Messages */}
+              {messages.map((msg, i) => (
+                <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                  {msg.role === 'assistant' && (
+                    <div className="w-8 h-8 rounded-full bg-surface-container-high border border-outline-variant/30 flex items-center justify-center shrink-0">
+                      <span className="material-symbols-outlined text-[16px] text-on-surface">auto_awesome</span>
+                    </div>
+                  )}
+                  <div className={`flex flex-col gap-1.5 ${msg.role === 'user' ? 'items-end' : ''}`}>
+                    <div className={`rounded-2xl p-3 shadow-sm max-w-[90%] ${
+                      msg.role === 'user'
+                        ? 'bg-primary text-on-primary rounded-tr-sm'
+                        : 'bg-surface border border-outline-variant/30 rounded-tl-sm'
+                    }`}>
+                      {msg.role === 'user' ? (
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                      ) : (
+                        <div className="text-sm leading-relaxed w-full">
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                              h1: ({node, ...props}) => <h1 className="text-lg font-bold mt-4 mb-2 text-on-surface" {...props} />,
+                              h2: ({node, ...props}) => <h2 className="text-base font-bold mt-3 mb-2 text-on-surface" {...props} />,
+                              h3: ({node, ...props}) => <h3 className="text-sm font-bold mt-2 mb-1 text-on-surface" {...props} />,
+                              p: ({node, ...props}) => <p className="mb-2 last:mb-0 whitespace-pre-wrap text-on-surface-variant" {...props} />,
+                              ul: ({node, ...props}) => <ul className="list-disc pl-5 mb-2 space-y-1 text-on-surface-variant" {...props} />,
+                              ol: ({node, ...props}) => <ol className="list-decimal pl-5 mb-2 space-y-1 text-on-surface-variant" {...props} />,
+                              li: ({node, ...props}) => <li className="" {...props} />,
+                              table: ({node, ...props}) => (
+                                <div className="overflow-x-auto my-3 border border-outline-variant/30 rounded-lg">
+                                  <table className="w-full text-left border-collapse text-[11px] md:text-xs" {...props} />
+                                </div>
+                              ),
+                              thead: ({node, ...props}) => <thead className="bg-surface-container-highest border-b border-outline-variant/30" {...props} />,
+                              th: ({node, ...props}) => <th className="p-2 font-semibold text-on-surface" {...props} />,
+                              td: ({node, ...props}) => <td className="p-2 border-b border-outline-variant/10 text-on-surface-variant" {...props} />,
+                              strong: ({node, ...props}) => <strong className="font-bold text-on-surface" {...props} />,
+                              em: ({node, ...props}) => <em className="italic" {...props} />,
+                              hr: ({node, ...props}) => <hr className="my-4 border-outline-variant/30" {...props} />,
+                              code: ({node, inline, className, children, ...props}: any) => inline 
+                                ? <code className="bg-surface-container-high px-1 py-0.5 rounded text-[11px] text-primary font-mono" {...props}>{children}</code>
+                                : <pre className="block bg-surface-container-highest p-2 rounded-lg text-[11px] overflow-x-auto mb-2 font-mono"><code {...props}>{children}</code></pre>,
+                            }}
+                          >
+                            {msg.content}
+                          </ReactMarkdown>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-              
-              {/* Suggested prompts */}
-              <div className="flex flex-col gap-2 pt-4">
-                <button className="text-left px-4 py-3 rounded-xl border border-outline-variant/30 text-xs text-on-surface-variant hover:bg-surface-container hover:text-on-surface hover:border-outline-variant transition-colors flex items-center justify-between group shadow-sm">
-                  Analizar ventas de hoy
-                  <span className="material-symbols-outlined text-[14px] opacity-0 group-hover:opacity-100 transition-opacity">arrow_forward</span>
-                </button>
-                <button className="text-left px-4 py-3 rounded-xl border border-outline-variant/30 text-xs text-on-surface-variant hover:bg-surface-container hover:text-on-surface hover:border-outline-variant transition-colors flex items-center justify-between group shadow-sm">
-                  Sugerir pedidos de inventario
-                  <span className="material-symbols-outlined text-[14px] opacity-0 group-hover:opacity-100 transition-opacity">arrow_forward</span>
-                </button>
-              </div>
+              ))}
+
+              {/* Loading indicator */}
+              {isLoading && (
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 rounded-full bg-surface-container-high border border-outline-variant/30 flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-[16px] text-on-surface">auto_awesome</span>
+                  </div>
+                  <div className="bg-surface border border-outline-variant/30 rounded-2xl rounded-tl-sm p-4 shadow-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-on-surface-variant/40 animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                      <div className="w-2 h-2 rounded-full bg-on-surface-variant/40 animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                      <div className="w-2 h-2 rounded-full bg-on-surface-variant/40 animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div ref={chatEndRef} />
             </div>
 
             {/* Input Area */}
-            <div className="p-5 border-t border-outline-variant/20 bg-surface">
-              <div className="relative flex items-center">
-                <input 
-                  type="text" 
-                  placeholder="Escribe un comando o pregunta..." 
-                  className="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-[20px] pl-5 pr-14 py-3.5 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-on-surface/40 focus:ring-1 focus:ring-on-surface/40 transition-all shadow-sm"
+            <div className="p-5 border-t border-outline-variant/20 bg-surface shrink-0">
+              <form onSubmit={handleSubmit} className="relative flex items-center">
+                <input
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  placeholder="Escribe un comando o pregunta..."
+                  disabled={isLoading}
+                  className="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-[20px] pl-5 pr-14 py-3.5 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-on-surface/40 focus:ring-1 focus:ring-on-surface/40 transition-all shadow-sm disabled:opacity-50"
                 />
-                <button className="absolute right-2 w-8 h-8 rounded-full bg-on-surface text-surface flex items-center justify-center hover:opacity-90 transition-opacity">
+                <button
+                  type="submit"
+                  disabled={isLoading || !inputValue.trim()}
+                  className="absolute right-2 w-8 h-8 rounded-full bg-on-surface text-surface flex items-center justify-center hover:opacity-90 transition-opacity disabled:opacity-30"
+                >
                   <span className="material-symbols-outlined text-[16px]">arrow_upward</span>
                 </button>
-              </div>
+              </form>
               <p className="text-[9px] text-center text-on-surface-variant/50 mt-3">
-                Kiora AI puede cometer errores. Verifica la información.
+                Kiora AI puede cometer errores. Verifica la información importante.
               </p>
             </div>
           </div>
