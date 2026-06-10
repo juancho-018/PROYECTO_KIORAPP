@@ -31,18 +31,28 @@ export const AdminSubNav: React.FC<AdminSubNavProps> = ({ activeId, onItemClick,
 
   const sendMessage = useCallback(async (text: string) => {
     const userMsg: ChatMessage = { role: 'user', content: text };
-    const updated = [...messages, userMsg];
-    setMessages(updated);
+    const assistantMsgIndex = messages.length + 1; // It will be placed after userMsg
+    
+    setMessages(prev => [...prev, userMsg, { role: 'assistant', content: '' }]);
     setInputValue('');
     setIsLoading(true);
 
     try {
-      const result = await aiService.ask(text, messages);
-      setMessages(prev => [...prev, userMsg, { role: 'assistant', content: result.response }]);
+      await aiService.askStream(text, messages, (chunk) => {
+        setIsLoading(false); // Stop loading animation once first chunk arrives
+        setMessages(prev => {
+          const newMessages = [...prev];
+          newMessages[assistantMsgIndex].content += chunk;
+          return newMessages;
+        });
+      });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al contactar al asistente';
-      setMessages(prev => [...prev, userMsg, { role: 'assistant', content: `⚠️ ${msg}` }]);
-    } finally {
+      setMessages(prev => {
+        const newMessages = [...prev];
+        newMessages[assistantMsgIndex].content = `⚠️ ${msg}`;
+        return newMessages;
+      });
       setIsLoading(false);
     }
   }, [messages]);

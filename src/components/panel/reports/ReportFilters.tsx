@@ -120,6 +120,17 @@ export const ReportFilters: React.FC<ReportFiltersProps> = ({
                   ))}
                 </SelectContent>
               </Select>
+              
+              <div className="flex-1 flex items-center bg-surface-container-low rounded-lg px-3 border border-outline-variant/50">
+                <span className="label-sm text-on-surface-variant mr-1" title="Filtrar por ID de Sesión de Caja">Sesión</span>
+                <Input
+                  type="number"
+                  placeholder="ID"
+                  value={filters.sesion_id || ''}
+                  onChange={e => setFilters({ ...filters, sesion_id: e.target.value ? Number(e.target.value) : undefined })}
+                  className="bg-transparent border-none p-0 font-semibold text-on-surface focus-visible:ring-0 shadow-none h-9 w-16"
+                />
+              </div>
             </div>
           </div>
         </div>

@@ -3,6 +3,7 @@ import { authService, getImageUrl } from '@/config/setup';
 import type { Product } from '@/models/Product';
 import { ProductDrawer } from './ProductDrawer';
 import { MovementDetailModal } from '@/features/inventory/components/MovementDetailModal';
+import { KardexDrawer } from '@/features/inventory/components/KardexDrawer';
 import { useProductManager } from '@/hooks/useProductManager';
 import { useAppStore } from '@/store/useAppStore';
 import { useScrollLock } from '@/hooks/useScrollLock';
@@ -10,8 +11,9 @@ import { useScrollLock } from '@/hooks/useScrollLock';
 export function ProductsSection() {
   const isAdmin = authService.isAdmin();
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [kardexProduct, setKardexProduct] = useState<Product | null>(null);
   const [visibleCount, setVisibleCount] = useState(15);
-  const observerTarget = useRef<HTMLDivElement>(null);
+  const [observerTarget, setObserverTarget] = useState<HTMLDivElement | null>(null);
 
   const {
     categories, isLoading,
@@ -38,6 +40,7 @@ export function ProductsSection() {
   }, [filteredProducts.length]);
 
   useEffect(() => {
+    if (!observerTarget) return;
     const observer = new IntersectionObserver(
       entries => {
         if (entries[0].isIntersecting) {
@@ -46,14 +49,12 @@ export function ProductsSection() {
       },
       { threshold: 0.1 }
     );
-    if (observerTarget.current) {
-      observer.observe(observerTarget.current);
-    }
+    observer.observe(observerTarget);
     return () => observer.disconnect();
-  }, []);
+  }, [observerTarget]);
 
   // Lock body scroll when any modal/drawer is open
-  useScrollLock(isDrawerOpen || !!productToDelete || !!detailMovement);
+  useScrollLock(isDrawerOpen || !!productToDelete || !!detailMovement || !!kardexProduct);
 
   return (
     <div className="flex-1 flex flex-col min-h-screen min-w-0">
@@ -269,6 +270,9 @@ export function ProductsSection() {
                         </div>
                       </div>
                       <div className="flex flex-col gap-1 shrink-0">
+                        <button onClick={() => setKardexProduct(p)} className="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-secondary/10 rounded-md transition-colors" title="Ver Kardex y Lotes">
+                          <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>history</span>
+                        </button>
                         <button onClick={() => { setSelectedProduct(p); setIsDrawerOpen(true); }} className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-md transition-colors" title="Editar">
                           <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>edit</span>
                         </button>
@@ -413,6 +417,11 @@ export function ProductsSection() {
                         <td className="px-6 py-4 text-right">
                           <div className="flex justify-end gap-1">
                             <button
+                              onClick={() => setKardexProduct(p)}
+                              className="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-secondary/10 rounded-md transition-colors" title="Ver Kardex y Lotes">
+                              <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>history</span>
+                            </button>
+                            <button
                               onClick={() => { setSelectedProduct(p); setIsDrawerOpen(true); }}
                               className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-md transition-colors" title="Editar">
                               <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>edit</span>
@@ -436,13 +445,19 @@ export function ProductsSection() {
 
           {/* ─── Infinite Scroll Observer ─── */}
           {visibleCount < filteredProducts.length && (
-            <div ref={observerTarget} className="p-8 flex justify-center items-center">
+            <div ref={setObserverTarget} className="p-8 flex justify-center items-center">
               <div className="w-6 h-6 border-2 border-primary/20 border-t-primary rounded-full animate-spin"></div>
             </div>
           )}
         </div>
 
       </main>
+
+      <KardexDrawer 
+        isOpen={!!kardexProduct} 
+        product={kardexProduct} 
+        onClose={() => setKardexProduct(null)} 
+      />
 
       {/* Drawers y Modales subyacentes */}
       <ProductDrawer 

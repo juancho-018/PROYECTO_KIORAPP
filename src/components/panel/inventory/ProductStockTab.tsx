@@ -45,12 +45,29 @@ export const ProductStockTab: React.FC<ProductStockTabProps> = ({
 
   const [suppliers, setSuppliers] = React.useState<Supplier[]>([]);
   const [isAbastecimiento, setIsAbastecimiento] = React.useState(false);
+  const [defaultProvider, setDefaultProvider] = React.useState<number | undefined>();
 
   React.useEffect(() => {
     inventoryService.getSuppliers(1, 1000).then(res => {
       setSuppliers(res.data || []);
     }).catch(() => {});
   }, []);
+
+  React.useEffect(() => {
+    if (product.cod_prod) {
+      inventoryService.getSuministraByProduct(product.cod_prod).then(res => {
+        if (res) {
+          setDefaultProvider(res.fk_cod_prov);
+          setIsAbastecimiento(true);
+          setMovForm(f => ({ ...f, fk_cod_prov: res.fk_cod_prov }));
+        } else {
+          setDefaultProvider(undefined);
+          setIsAbastecimiento(false);
+          setMovForm(f => ({ ...f, fk_cod_prov: undefined }));
+        }
+      }).catch(() => {});
+    }
+  }, [product.cod_prod]);
 
   const filteredMovements = useMemo(() => {
     let result = movements;
@@ -117,8 +134,8 @@ export const ProductStockTab: React.FC<ProductStockTabProps> = ({
       fecha_vencimiento: finalType === 'entrada' && movForm.fecha_vencimiento ? movForm.fecha_vencimiento : undefined
     });
 
-    setMovForm({ tipo_mov: 'entrada', cantidad: 1, desc_mov: '', fk_cod_prov: undefined, stock_minimo: product.stock_minimo || 5, numero_lote: '', fecha_vencimiento: '' });
-    setIsAbastecimiento(false);
+    setMovForm({ tipo_mov: 'entrada', cantidad: 1, desc_mov: '', fk_cod_prov: defaultProvider, stock_minimo: product.stock_minimo || 5, numero_lote: '', fecha_vencimiento: '' });
+    setIsAbastecimiento(!!defaultProvider);
   };
 
   return (
@@ -134,6 +151,7 @@ export const ProductStockTab: React.FC<ProductStockTabProps> = ({
               onChange={e => {
                 setMovForm(f => ({ ...f, tipo_mov: e.target.value as 'entrada' | 'salida' | 'ajuste' }));
                 if (e.target.value !== 'entrada') setIsAbastecimiento(false);
+                else setIsAbastecimiento(!!defaultProvider);
               }}
               className="w-full rounded-lg border border-outline-variant/50 bg-surface px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
             >
@@ -184,7 +202,9 @@ export const ProductStockTab: React.FC<ProductStockTabProps> = ({
         {isAbastecimiento && movForm.tipo_mov === 'entrada' ? (
           <div className="grid grid-cols-2 gap-3 p-3 bg-surface-container-low rounded-lg border border-outline-variant/20">
             <div className="space-y-1.5">
-              <label className="label-sm text-on-surface-variant">Proveedor *</label>
+              <label className="label-sm text-on-surface-variant">
+                Proveedor * {defaultProvider && <span className="text-primary text-xs font-normal ml-1">(Predeterminado)</span>}
+              </label>
               <select
                 required
                 value={movForm.fk_cod_prov || ''}

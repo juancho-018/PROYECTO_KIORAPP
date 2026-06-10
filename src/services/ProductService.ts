@@ -10,6 +10,7 @@ export interface CreateProductDto {
   stock_actual?: number;
   stock_minimo?: number;
   fk_cod_cats?: number[];
+  fk_cod_prov?: number;
   imagen?: File;
   alerta_stock_critico?: boolean;
   /** Fecha de vencimiento del producto (ISO yyyy-mm-dd o completo). */

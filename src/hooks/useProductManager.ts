@@ -66,7 +66,15 @@ export function useProductManager() {
         alertService.showToast('success', 'Producto actualizado');
         pushAppNotification('info', 'Producto Actualizado', `Se han modificado los detalles del producto.`, { category: 'inventory', toast: false });
       } else {
-        await productService.createProduct(dto);
+        const newProduct = await productService.createProduct(dto);
+        if (dto.fk_cod_prov && newProduct.cod_prod) {
+          await inventoryService.upsertSuministra({
+            fk_cod_prov: dto.fk_cod_prov,
+            cod_prod: newProduct.cod_prod,
+            stock_minimo: dto.stock_minimo || 0,
+            stock: dto.stock_actual || 0
+          });
+        }
         alertService.showToast('success', 'Producto creado');
         pushAppNotification('success', 'Nuevo Producto', `Se ha añadido un nuevo producto al catálogo.`, { category: 'inventory', toast: false });
       }

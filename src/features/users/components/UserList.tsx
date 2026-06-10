@@ -12,6 +12,7 @@ interface UserListProps {
   onEditUser: (user: User) => void;
   onToggleBlock: (user: User) => void;
   onResetPassword: (user: User) => void;
+  onDeleteUser: (user: User) => void;
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
@@ -33,6 +34,7 @@ export const UserList: React.FC<UserListProps> = ({
   onEditUser,
   onToggleBlock,
   onResetPassword,
+  onDeleteUser,
   currentPage,
   totalPages,
   onPageChange
@@ -146,6 +148,14 @@ export const UserList: React.FC<UserListProps> = ({
                         title="Editar"
                       >
                         <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>edit</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDeleteUser(u)}
+                        className="rounded-md p-1.5 text-on-surface-variant hover:bg-surface hover:text-error transition-all"
+                        title="Eliminar"
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete</span>
                       </button>
                     </div>
                   </div>

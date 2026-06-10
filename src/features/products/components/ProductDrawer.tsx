@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import type { Product, Category } from '@/models/Product';
 import type { Movement } from '@/models/Inventory';
 import type { CreateProductDto } from '@/services/ProductService';
-import { alertService, getImageUrl } from '@/config/setup';
+import { alertService, getImageUrl, inventoryService } from '@/config/setup';
 import { pushAppNotification } from '@/lib/pushAppNotification';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { ProductStockTab } from '@/components/panel/inventory/ProductStockTab';
 import { processProductImage } from '@/utils/processProductImage';
+import type { Supplier } from '@/models/Inventory';
 
 interface ProductDrawerProps {
   isOpen: boolean;
@@ -32,6 +33,7 @@ const EMPTY_PRODUCT: CreateProductDto = {
   fk_cod_cats: [],
   fechaven_prod: undefined,
   codigo_barras: '',
+  fk_cod_prov: undefined,
 };
 
 function toInputDate(d?: string | null): string {
@@ -61,6 +63,15 @@ export function ProductDrawer({
 
   const [activeTab, setActiveTab] = useState<'info' | 'stock'>('info');
   const [savingMov, setSavingMov] = useState(false);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+
+  useEffect(() => {
+    if (isOpen) {
+      inventoryService.getSuppliers(1, 1000).then(res => {
+        setSuppliers(res.data || []);
+      }).catch(() => {});
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (product) {
@@ -74,6 +85,7 @@ export function ProductDrawer({
         stock_minimo: product.stock_minimo ?? ('' as unknown as number),
         fk_cod_cats: product.fk_cod_cats || [],
         fechaven_prod: toInputDate(product.fechaven_prod) || undefined,
+        fk_cod_prov: undefined, // We only allow linking a provider on creation (or it's not editable here if product exists, unless we load it)
       });
       setImagePreview(product.imagen_prod ? getImageUrl(product.imagen_prod) : null);
     } else {
@@ -106,6 +118,7 @@ export function ProductDrawer({
       stock_minimo: product.stock_minimo ?? ('' as unknown as number),
       fk_cod_cats: product.fk_cod_cats || [],
       fechaven_prod: toInputDate(product.fechaven_prod) || undefined,
+      fk_cod_prov: undefined,
     };
 
     const arraysEqual = (a: number[], b: number[]) => {
@@ -124,6 +137,7 @@ export function ProductDrawer({
       form.stock_actual !== initialFormState.stock_actual ||
       form.stock_minimo !== initialFormState.stock_minimo ||
       form.fechaven_prod !== initialFormState.fechaven_prod ||
+      form.fk_cod_prov !== initialFormState.fk_cod_prov ||
       !arraysEqual(form.fk_cod_cats || [], initialFormState.fk_cod_cats || []);
 
     const initialImagePreview = product.imagen_prod ? getImageUrl(product.imagen_prod) : null;
@@ -403,6 +417,23 @@ export function ProductDrawer({
                   />
                 </div>
               </div>
+
+              {!product && (
+                <div className="space-y-1.5">
+                  <label className="label-sm text-on-surface-variant">Proveedor (Opcional)</label>
+                  <select
+                    value={form.fk_cod_prov || ''}
+                    onChange={e => setForm(f => ({ ...f, fk_cod_prov: e.target.value ? Number(e.target.value) : undefined }))}
+                    className="w-full rounded-xl border border-outline-variant/50 bg-surface px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-primary/30 focus:ring-4 focus:ring-primary/5 transition-all"
+                  >
+                    <option value="">Ninguno</option>
+                    {suppliers.map(s => (
+                      <option key={s.cod_prov} value={s.cod_prov}>{s.nom_prov}</option>
+                    ))}
+                  </select>
+                  <p className="label-sm text-on-surface-variant/60">Si seleccionas uno, el producto quedará vinculado a él automáticamente.</p>
+                </div>
+              )}
             </div>
           </form>
         ) : (

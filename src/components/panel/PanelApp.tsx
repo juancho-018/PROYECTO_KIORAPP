@@ -25,6 +25,8 @@ import { ProfileDrawer } from '@/features/users/components/ProfileDrawer';
 import { SecurityDrawer } from '@/features/users/components/SecurityDrawer';
 import { OrderDrawer } from '@/features/sales/components/OrderDrawer';
 import { StripeQRModal } from '@/features/sales/components/StripeQRModal';
+import { SessionModal } from '@/features/sales/components/SessionModal';
+import { useSessionStore } from '@/store/useSessionStore';
 
 const DashboardSection = lazy(() =>
   import('./DashboardSection').then((m) => ({ default: m.DashboardSection }))
@@ -88,10 +90,24 @@ export default function PanelApp() {
 
   const userMgmt = useUserManagement(isAdmin || false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [settingsView, setSettingsView] = useState<'main' | 'help' | 'terms' | 'privacy'>('main');
+  const [settingsView, setSettingsView] = useState<'main' | 'help' | 'terms' | 'privacy' | 'system'>('main');
   const [openOrderFromUrl, setOpenOrderFromUrl] = useState<number | undefined>();
 
-  const openPOS = useCallback(() => setIsOrderDrawerOpen(true), [setIsOrderDrawerOpen]);
+  const { currentSession, checkSession, openSessionModal } = useSessionStore();
+
+  const openPOS = useCallback(() => {
+    if (!useSessionStore.getState().currentSession) {
+      openSessionModal('OPEN');
+    } else {
+      setIsOrderDrawerOpen(true);
+    }
+  }, [setIsOrderDrawerOpen, openSessionModal]);
+
+  useEffect(() => {
+    if (user) {
+      checkSession();
+    }
+  }, [user, checkSession]);
 
   usePanelUrlSync(activeTab, setActiveTab, setOpenOrderFromUrl, openPOS);
   useRealTimeUpdates();
@@ -177,6 +193,7 @@ export default function PanelApp() {
                   onEditUser={userMgmt.handleOpenDrawer}
                   onToggleBlock={userMgmt.handleToggleBlock}
                   onResetPassword={userMgmt.handleOpenSecurity}
+                  onDeleteUser={userMgmt.setUserToDelete}
                   currentPage={userMgmt.currentPage}
                   totalPages={userMgmt.totalPages}
                   onPageChange={userMgmt.loadUsersList}
@@ -234,6 +251,41 @@ export default function PanelApp() {
         onClose={() => userMgmt.setIsSecurityOpen(false)}
       />
 
+      {/* Delete User Confirmation Modal */}
+      {userMgmt.userToDelete && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-inverse-surface/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-surface rounded-xl w-full max-w-md shadow-lg overflow-hidden animate-in zoom-in-95 duration-300 border border-outline-variant/30">
+            <div className="p-6 sm:p-8 flex flex-col items-center text-center">
+              <div className="w-14 h-14 rounded-full bg-error-container/30 text-error flex items-center justify-center mb-5">
+                <span className="material-symbols-outlined text-3xl">delete_forever</span>
+              </div>
+              <h3 className="headline-sm text-on-surface mb-2">¿Eliminar usuario?</h3>
+              <p className="body-md text-on-surface-variant mb-6">
+                Estás a punto de eliminar a <span className="font-semibold text-on-surface">{userMgmt.userToDelete.nom_usu || 'este usuario'}</span>. Esta acción lo marcará como inactivo y no podrá volver a iniciar sesión.
+              </p>
+              <div className="flex w-full gap-3">
+                <button
+                  onClick={() => userMgmt.setUserToDelete(null)}
+                  className="flex-1 px-4 py-2.5 rounded-lg border border-outline-variant/50 text-on-surface label-md hover:bg-surface-container-low transition-colors active:scale-[0.98]">
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => {
+                    if (userMgmt.userToDelete?.id_usu) {
+                      userMgmt.handleDeleteUser(userMgmt.userToDelete.id_usu);
+                    }
+                    userMgmt.setUserToDelete(null);
+                  }}
+                  className="flex-1 px-4 py-2.5 rounded-lg bg-error text-on-error label-md hover:opacity-90 transition-opacity shadow-sm active:scale-[0.98]">
+                  Sí, eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <SessionModal />
       <OrderDrawer />
 
       <StripeQRModal

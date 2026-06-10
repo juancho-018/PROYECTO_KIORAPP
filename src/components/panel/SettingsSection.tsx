@@ -3,10 +3,11 @@ import { useAppStore } from '@/store/useAppStore';
 import { alertService } from '@/config/setup';
 import HelpCenter from '@/components/help/HelpCenter';
 import { LegalSection } from './LegalSection';
+import { SystemSettingsForm } from './SystemSettingsForm';
 
 interface SettingsSectionProps {
-  settingsView: 'main' | 'help' | 'terms' | 'privacy';
-  setSettingsView: (view: 'main' | 'help' | 'terms' | 'privacy') => void;
+  settingsView: 'main' | 'help' | 'terms' | 'privacy' | 'system';
+  setSettingsView: (view: 'main' | 'help' | 'terms' | 'privacy' | 'system') => void;
   onOpenProfile: () => void;
 }
 
@@ -27,6 +28,15 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
           color: 'text-primary-container',
           hover: 'hover:border-primary/30 hover:shadow-primary/10',
           onClick: onOpenProfile,
+        },
+        {
+          label: 'Sistema',
+          desc: 'Horarios de caja y alertas.',
+          icon: 'settings',
+          bg: 'bg-secondary-container/30',
+          color: 'text-secondary',
+          hover: 'hover:border-secondary/30 hover:shadow-secondary/10',
+          onClick: () => setSettingsView('system'),
         },
         {
           label: 'Idioma',
@@ -137,6 +147,14 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
             Volver
           </button>
           <HelpCenter hideBackButton={true} />
+        </div>
+      ) : settingsView === 'system' ? (
+        <div className="animate-in fade-in duration-500">
+          <button onClick={() => setSettingsView('main')} className="mb-5 flex items-center gap-1.5 label-sm text-on-surface-variant hover:text-primary transition-colors">
+            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>arrow_back</span>
+            Volver
+          </button>
+          <SystemSettingsForm />
         </div>
       ) : (
         <div className="animate-in fade-in duration-500">

@@ -4,6 +4,7 @@ import type { Product } from '@/models/Product';
 import { authService, API_URL } from '@/config/setup';
 import { useInventoryStore } from '@/store/useInventoryStore';
 import { useAppStore } from '@/store/useAppStore';
+import { useSessionStore } from '@/store/useSessionStore';
 import { getInitials } from '@/utils/userUtils';
 import { useNotificationStore, type AppNotificationCategory } from '@/store/useNotificationStore';
 
@@ -44,43 +45,7 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({ user, onLogout, onOpen
     }
   }, []);
 
-  const [businessState, setBusinessState] = useState<'open' | 'closed'>('open');
-  const [isToggling, setIsToggling] = useState(false);
-
-  useEffect(() => {
-    const checkState = async () => {
-      try {
-        const token = authService.getToken();
-        const res = await fetch(`${API_URL}/ai/business-state`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
-        const data = await res.json();
-        setBusinessState(data.state || 'open');
-      } catch (e) {
-        console.error('Error fetching business state', e);
-      }
-    };
-    checkState();
-  }, []);
-
-  const toggleBusinessState = async () => {
-    setIsToggling(true);
-    try {
-      const endpoint = businessState === 'open' ? '/ai/close-business' : '/ai/open-business';
-      const token = authService.getToken();
-      const res = await fetch(`${API_URL}${endpoint}`, {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      if (res.ok) {
-        setBusinessState(businessState === 'open' ? 'closed' : 'open');
-      }
-    } catch (e) {
-      console.error('Error toggling business state', e);
-    } finally {
-      setIsToggling(false);
-    }
-  };
+  const { currentSession, openSessionModal } = useSessionStore();
 
   const { lowStockItems, fetchLowStock } = useInventoryStore();
   const notifications = useNotificationStore((s) => s.notifications);
@@ -177,22 +142,21 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({ user, onLogout, onOpen
             </span>
           </button>
 
-          {/* Business State Toggle */}
+          {/* Cash Session State */}
           <button
             type="button"
-            disabled={isToggling}
-            onClick={toggleBusinessState}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all active:scale-[0.97] disabled:opacity-50 ${
-              businessState === 'open' 
+            onClick={() => currentSession ? openSessionModal('CLOSE') : openSessionModal('OPEN')}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all active:scale-[0.97] ${
+              !currentSession 
                 ? 'bg-error-container text-on-error-container hover:bg-error-container/80'
                 : 'bg-primary text-on-primary hover:bg-primary/90'
             }`}
           >
             <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>
-              {businessState === 'open' ? 'lock' : 'lock_open'}
+              {!currentSession ? 'lock' : 'point_of_sale'}
             </span>
             <span className="hidden sm:inline">
-              {businessState === 'open' ? 'Cerrar Negocio' : 'Abrir Negocio'}
+              {!currentSession ? 'Caja Cerrada' : 'Cerrar Caja'}
             </span>
           </button>
 

@@ -13,6 +13,7 @@ export interface ReportFilters {
   reportType: 'ventas_detalladas' | 'mas_vendidos' | 'menos_vendidos';
   topN?: number;
   category?: number;
+  sesion_id?: number;
 }
 
 export interface DetailedSalesReport {
@@ -45,8 +46,13 @@ export class ReportService {
   // Fetch all orders within a range to process locally
   // We now use the /export/full endpoint which provides denormalized items and proper date filtering
   private async fetchOrdersWithItems(filters: ReportFilters): Promise<Order[]> {
+    let query = `/orders/export/full?desde=${filters.startDate}&hasta=${filters.endDate}`;
+    if (filters.sesion_id) {
+      query += `&sesion_id=${filters.sesion_id}`;
+    }
+    
     const res = await this.httpClient.get<{ dataset: any[] }>(
-      `/orders/export/full?desde=${filters.startDate}&hasta=${filters.endDate}`,
+      query,
       this.getAuthHeaders()
     );
 

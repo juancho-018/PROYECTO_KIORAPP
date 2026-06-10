@@ -21,6 +21,8 @@ export function useUserManagement(isAdmin: boolean) {
   const [resettingUser, setResettingUser] = useState<User | null>(null);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [newUser, setNewUser] = useState<RegisterUserDto>({
     nom_usu: '',
@@ -129,6 +131,19 @@ export function useUserManagement(isAdmin: boolean) {
     }
   }, [currentPage, loadUsersList]);
 
+  const handleDeleteUser = useCallback(async (id_usu: string | number) => {
+    try {
+      await userService.deleteUser(id_usu);
+      alertService.showToast('success', 'Usuario eliminado exitosamente');
+      pushAppNotification('info', 'Usuario Eliminado', `Se ha eliminado el usuario.`, { category: 'user', toast: false });
+      void loadUsersList(currentPage);
+    } catch (e) {
+      const msg = getErrorMessage(e, 'Error al eliminar usuario');
+      alertService.showToast('error', msg);
+      pushAppNotification('error', 'Usuario', msg, { category: 'user' });
+    }
+  }, [currentPage, loadUsersList]);
+
   const handleOpenSecurity = useCallback((u: User) => {
     setResettingUser(u);
     setIsSecurityOpen(true);
@@ -178,6 +193,9 @@ export function useUserManagement(isAdmin: boolean) {
     resettingUser,
     isResettingPassword,
     handleOpenSecurity,
-    handleConfirmPasswordReset
+    handleConfirmPasswordReset,
+    userToDelete,
+    setUserToDelete,
+    handleDeleteUser
   };
 }
