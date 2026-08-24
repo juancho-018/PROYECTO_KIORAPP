@@ -206,14 +206,19 @@ export function useSalesManager(isAdmin: boolean) {
     setReasonModal({ isOpen: true, type: 'cancel', orderId: id, reason: '' });
   };
 
-  // Redirigir PDFs locales al Backend
+  // Redirigir PDFs locales al Backend o a Factus
   const downloadInvoicePDF = async (invoice: Invoice) => {
     try {
-      alertService.showToast('info', 'Obteniendo factura del servidor...');
+      if (invoice.factus_public_url) {
+        alertService.showToast('info', 'Abriendo factura oficial de Factus...');
+        window.open(invoice.factus_public_url, '_blank');
+        return;
+      }
+      alertService.showToast('info', 'Factura electrónica no disponible, descargando recibo local...');
       await orderService.downloadReceipt(invoice.id_pedido);
-      alertService.showToast('success', 'Factura descargada');
+      alertService.showToast('success', 'Recibo descargado');
     } catch (e) {
-      alertService.showToast('error', 'Error al generar la factura');
+      alertService.showToast('error', 'Error al procesar la factura');
     }
   };
 
