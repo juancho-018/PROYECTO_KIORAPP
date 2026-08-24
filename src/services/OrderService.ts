@@ -399,7 +399,12 @@ export class OrderService {
       id_fact: f.id_fact ?? f.id,
       fecha_fact: f.fecha_fact ?? f.emitida_en,
       id_pedido: f.id_pedido ?? f.fk_id_vent,
-      total_fact: f.total_fact ?? f.montototal_vent
+      total_fact: f.total_fact ?? f.montototal_vent,
+      factus_invoice_number: f.factus_invoice_number,
+      factus_cufe: f.factus_cufe,
+      factus_public_url: f.factus_public_url,
+      factus_qr_link: f.factus_qr_link,
+      factus_status: f.factus_status
     };
   }
 

@@ -38,6 +38,11 @@ export interface Invoice {
   id_usu: number;
   cantidad_vent: number;
   precio_prod: number;
+  factus_invoice_number?: string;
+  factus_cufe?: string;
+  factus_public_url?: string;
+  factus_qr_link?: string;
+  factus_status?: string;
 }
 
 export interface PaginatedOrders {
