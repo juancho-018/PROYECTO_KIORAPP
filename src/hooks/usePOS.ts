@@ -271,7 +271,7 @@ export function usePOS(user: User | null) {
                 checkoutError,
                 'No se pudo iniciar la sesión de pago con tarjeta. Reintenta o usa efectivo.'
               );
-              pushAppNotification('error', 'Error al pagar con Stripe', msg, { category: 'payment' });
+              pushAppNotification('error', 'Error al pagar con Wompi', msg, { category: 'payment' });
               try {
                 await orderService.deleteOrder(order.id_vent!);
               } catch {

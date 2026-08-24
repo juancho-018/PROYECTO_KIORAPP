@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { sessionService, SessionData } from '@/services/sessionService';
+import { sessionService, type SessionData } from '@/services/sessionService';
 import { userService } from '@/config/setup';
 import type { User } from '@/models/User';
 import jsPDF from 'jspdf';

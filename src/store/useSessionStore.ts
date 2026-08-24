@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { SessionData, sessionService } from '@/services/sessionService';
+import { sessionService, type SessionData } from '@/services/sessionService';
 
 interface SessionState {
   currentSession: SessionData | null;

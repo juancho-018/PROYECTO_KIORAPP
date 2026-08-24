@@ -110,7 +110,15 @@ export default function PanelApp() {
     }
   }, [user, checkSession]);
 
-  usePanelUrlSync(activeTab, setActiveTab, setOpenOrderFromUrl, openPOS);
+  usePanelUrlSync(activeTab, setActiveTab, setOpenOrderFromUrl, openPOS, (status, orderId) => {
+    if (status === 'success' && orderId) {
+      alertService.showSuccess('Pago confirmado', `Se completó el pago del ticket #${orderId} exitosamente.`);
+      resetCart();
+      orderService.downloadReceipt(Number(orderId)).catch(() => {});
+    } else if (status === 'cancel') {
+      alertService.showWarning('Pago cancelado', 'El proceso de pago fue interrumpido o declinado.');
+    }
+  });
   useRealTimeUpdates();
 
   useKeyboardShortcuts({
@@ -313,7 +321,7 @@ export default function PanelApp() {
         orderId={stripeQR.orderId}
         amount={stripeQR.amount}
         onClose={() => setStripeQR({ ...stripeQR, isOpen: false })}
-        onRetryStripe={async () => {
+        onRetry={async () => {
           const id = stripeQR.orderId;
           const { checkoutUrl } = await orderService.createCheckoutSession(id);
           if (!checkoutUrl) throw new Error('No se recibió URL de checkout.');
