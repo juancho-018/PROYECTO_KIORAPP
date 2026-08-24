@@ -5,7 +5,7 @@ import { useSalesStore } from '@/store/useSalesStore';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { pushAppNotification } from '@/lib/pushAppNotification';
 
-interface StripeQRModalProps {
+interface WompiModalProps {
   isOpen: boolean;
   onClose: () => void;
   checkoutUrl: string;
@@ -14,15 +14,18 @@ interface StripeQRModalProps {
   onSuccess: () => void;
   onCancel?: () => void;
   /** Vuelve a solicitar URL de checkout al mismo pedido (mismo orderId). */
-  onRetryStripe?: () => Promise<void>;
+  onRetry?: () => Promise<void>;
   /** Cierra el flujo de tarjeta y permite cobrar en efectivo (cancela orden pendiente en servidor). */
   onSwitchToCash?: () => void | Promise<void>;
 }
 
+// Compat: mantener nombre anterior como alias para no romper imports existentes
+export type StripeQRModalProps = WompiModalProps;
+
 const POLL_MS = 3000;
 const MAX_POLL_ERRORS = 3;
 
-export function StripeQRModal({
+export function WompiModal({
   isOpen,
   onClose,
   checkoutUrl,
@@ -30,14 +33,15 @@ export function StripeQRModal({
   amount,
   onSuccess,
   onCancel,
-  onRetryStripe,
+  onRetry,
   onSwitchToCash,
-}: StripeQRModalProps) {
+}: WompiModalProps) {
   const [polling, setPolling] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [retrying, setRetrying] = useState(false);
   const pollErrors = useRef(0);
   const minDisplayTime = useRef(Date.now());
+  const wompiWindow = useRef<Window | null>(null);
 
   const isPaidStatus = (status?: string) => {
     const normalized = String(status ?? '').toLowerCase();
@@ -69,7 +73,12 @@ export function StripeQRModal({
         if (isPaidStatus(order.estado) && Date.now() >= minDisplayTime.current) {
           clearInterval(interval);
           setPolling(false);
-          alertService.showToast('success', '¡Pago confirmado con éxito!');
+          
+          if (wompiWindow.current && !wompiWindow.current.closed) {
+            wompiWindow.current.close();
+          }
+
+          alertService.showSuccess('Pago confirmado', `Se completó el pago del ticket #${orderId} exitosamente.`);
           pushAppNotification('success', 'Pago confirmado', `Venta #${orderId} pagada correctamente.`, {
             category: 'payment',
             toast: false,
@@ -81,6 +90,11 @@ export function StripeQRModal({
         if (isFailedStatus(order.estado)) {
           clearInterval(interval);
           setPolling(false);
+          
+          if (wompiWindow.current && !wompiWindow.current.closed) {
+            wompiWindow.current.close();
+          }
+          
           const msg = 'El pago no se completó o la orden fue cancelada.';
           setPaymentError(msg);
           pushAppNotification('warning', 'Pago no completado', msg, { category: 'payment' });
@@ -103,7 +117,7 @@ export function StripeQRModal({
   }, [isOpen, orderId, checkoutUrl, onSuccess]);
 
   const handleRetryLink = async () => {
-    if (!onRetryStripe) {
+    if (!onRetry) {
       pushAppNotification('info', 'Reintentar', 'Cierra y vuelve a iniciar el cobro con tarjeta desde el carrito.', {
         category: 'payment',
       });
@@ -113,8 +127,8 @@ export function StripeQRModal({
     setPaymentError(null);
     pollErrors.current = 0;
     try {
-      await onRetryStripe();
-      pushAppNotification('success', 'Nuevo enlace de pago', 'Se generó otra sesión de Stripe para el mismo pedido.', {
+      await onRetry();
+      pushAppNotification('success', 'Nuevo enlace de pago', 'Se generó un nuevo enlace de Wompi para el mismo pedido.', {
         category: 'payment',
       });
     } catch (e) {
@@ -158,18 +172,32 @@ export function StripeQRModal({
       />
 
       <div className="relative w-full max-w-sm overflow-hidden rounded-[2.5rem] bg-white shadow-2xl animate-in zoom-in-95 duration-300">
-        <div className="h-2 w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600" />
+        {/* Barra superior verde Wompi */}
+        <div className="h-2 w-full bg-gradient-to-r from-[#00c853] via-[#00e676] to-[#69f0ae]" />
 
         <div className="p-8">
           <div className="mb-8 text-center">
-            <div className="mx-auto mb-4 flex h-14 w-14 rotate-3 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
-              <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+            {/* Logo Wompi */}
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#e8f5e9]">
+              <svg className="h-8 w-8" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M2 8.5C2 5.46 4.46 3 7.5 3h9C19.54 3 22 5.46 22 8.5v7c0 3.04-2.46 5.5-5.5 5.5h-9C4.46 21 2 18.54 2 15.5v-7z"
+                  fill="#00c853"
+                  opacity="0.15"
+                />
+                <path
+                  d="M7 12l3 3 7-7"
+                  stroke="#00c853"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             </div>
             <h2 className="text-2xl font-black tracking-tight text-slate-800">Escanea y Paga</h2>
             <p className="mt-2 text-sm font-medium text-slate-500">
-              Usa la cámara de tu celular para pagar con <span className="font-bold text-indigo-600">Stripe</span>
+              Usa la cámara de tu celular para pagar con{' '}
+              <span className="font-bold text-[#00c853]">Wompi</span>
             </p>
           </div>
 
@@ -180,8 +208,8 @@ export function StripeQRModal({
             </div>
           )}
 
-          <div className="relative mb-8 flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-slate-200 bg-slate-50 p-6 transition-colors group-hover:border-blue-200">
-            <div className="mb-4 rounded-2xl bg-white p-4 shadow-xl shadow-blue-500/10 transition-transform duration-500 group-hover:scale-105">
+          <div className="relative mb-8 flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-slate-200 bg-slate-50 p-6 transition-colors group-hover:border-[#00c853]/30">
+            <div className="mb-4 rounded-2xl bg-white p-4 shadow-xl shadow-[#00c853]/10 transition-transform duration-500 group-hover:scale-105">
               <QRCodeSVG value={checkoutUrl} size={200} level="H" includeMargin={false} />
             </div>
 
@@ -192,7 +220,7 @@ export function StripeQRModal({
 
             {polling && !paymentError && (
               <div className="absolute -bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full border border-slate-100 bg-white px-4 py-1.5 shadow-lg">
-                <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+                <div className="h-2 w-2 animate-pulse rounded-full bg-[#00c853]" />
                 <span className="text-[10px] font-black uppercase tracking-wider text-slate-600">
                   Esperando pago...
                 </span>
@@ -201,24 +229,46 @@ export function StripeQRModal({
           </div>
 
           <div className="space-y-3">
-            <a
-              href={checkoutUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 py-4 text-sm font-bold text-white shadow-xl shadow-slate-200 transition-all hover:bg-slate-800 active:scale-95"
+            <button
+              type="button"
+              onClick={async () => {
+                if (checkoutUrl) {
+                  if (!(window as any).WidgetCheckout) {
+                    await new Promise((resolve) => {
+                      const script = document.createElement('script');
+                      script.src = 'https://checkout.wompi.co/widget.js';
+                      script.onload = resolve;
+                      document.body.appendChild(script);
+                    });
+                  }
+                  
+                  const params = new URL(checkoutUrl).searchParams;
+                  const checkout = new (window as any).WidgetCheckout({
+                    currency: params.get('currency'),
+                    amountInCents: parseInt(params.get('amount-in-cents') || '0', 10),
+                    reference: params.get('reference'),
+                    publicKey: params.get('public-key'),
+                    signature: { integrity: params.get('signature:integrity') }
+                  });
+                  checkout.open((result: any) => {
+                    console.log('Widget checkout result:', result);
+                  });
+                }
+              }}
+              className="w-full py-4 text-sm font-black uppercase tracking-widest text-white bg-[#00c853] rounded-2xl transition-all hover:bg-[#00b248] shadow-lg shadow-[#00c853]/30 hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
             >
               Ir a la pasarela
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
               </svg>
-            </a>
+            </button>
 
-            {(paymentError || onRetryStripe) && (
+            {(paymentError || onRetry) && (
               <button
                 type="button"
                 disabled={retrying}
                 onClick={() => void handleRetryLink()}
-                className="w-full rounded-2xl border border-indigo-200 bg-indigo-50 py-3 text-xs font-black uppercase tracking-widest text-indigo-700 transition-colors hover:bg-indigo-100 disabled:opacity-50"
+                className="w-full rounded-2xl border border-[#00c853]/30 bg-[#e8f5e9] py-3 text-xs font-black uppercase tracking-widest text-[#00b248] transition-colors hover:bg-[#c8e6c9] disabled:opacity-50"
               >
                 {retrying ? 'Generando…' : 'Reintentar pago (nuevo enlace)'}
               </button>
@@ -273,13 +323,16 @@ export function StripeQRModal({
 
         <div className="border-t border-slate-100 bg-slate-50 p-4">
           <p className="flex items-center justify-center gap-1.5 text-center text-[9px] font-bold uppercase tracking-[0.1em] text-slate-400">
-            <svg className="h-3 w-3 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="h-3 w-3 text-[#00c853]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
             </svg>
-            Procesamiento seguro por Stripe
+            Procesamiento seguro por Wompi
           </p>
         </div>
       </div>
     </div>
   );
 }
+
+// Alias de compatibilidad para imports existentes
+export { WompiModal as StripeQRModal };

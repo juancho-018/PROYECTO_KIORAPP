@@ -20,7 +20,8 @@ export function usePanelUrlSync(
   activeTab: string,
   setActiveTab: (tab: string) => void,
   setOpenOrderFromUrl: (id: number | undefined) => void,
-  openPOS: () => void
+  openPOS: () => void,
+  onCheckoutReturn?: (status: string, orderId?: string) => void
 ): void {
   const hasAppliedInitial = useRef(false);
 
@@ -55,8 +56,10 @@ export function usePanelUrlSync(
     const status = params.get('status');
     if (status === 'success') {
       trackPanelEvent('return_from_checkout', { outcome: 'success' });
+      if (onCheckoutReturn) onCheckoutReturn('success', orderRaw || undefined);
     } else if (status === 'cancel') {
       trackPanelEvent('return_from_checkout', { outcome: 'cancel' });
+      if (onCheckoutReturn) onCheckoutReturn('cancel', orderRaw || undefined);
     }
 
     const view = params.get('view');

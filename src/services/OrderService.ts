@@ -84,8 +84,7 @@ export class OrderService {
     const res = await this.httpClient.post<any>(
       `/orders/checkout/${orderId}`,
       {
-        success_url: `${window.location.origin}/panel?tab=ventas&status=success&order_id=${orderId}`,
-        cancel_url: `${window.location.origin}/panel?tab=ventas&status=cancel`,
+        redirect_url: `${window.location.origin}/panel?tab=ventas&status=success&order_id=${orderId}`,
       },
       { headers: this.getAuthHeaders() }
     );
@@ -299,35 +298,97 @@ export class OrderService {
       
       // Fallback local: Generar el PDF en el cliente si el microservicio falla o no está disponible
       const order = await this.getOrderById(orderId);
+      // Generate a professional 80mm thermal receipt
+      const margin = 5;
+      const pageWidth = 80;
+      
+      // Calculate dynamic height based on items
+      const itemsCount = (order.items || []).length;
+      const calculatedHeight = 90 + (itemsCount * 6) + 30; // base header + items + footer
+      const pageHeight = Math.max(150, calculatedHeight);
+
       const doc = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
-        format: [80, 200]
+        format: [pageWidth, pageHeight]
       });
 
-      doc.setFontSize(16);
+      // --- HEADER ---
       doc.setFont('helvetica', 'bold');
-      doc.text('KIORA', 40, 15, { align: 'center' });
-
+      doc.setFontSize(18);
+      doc.text('KIORA', pageWidth / 2, 12, { align: 'center' });
+      
+      doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
-      doc.text(`Recibo de Compra #${order.id_vent}`, 5, 32);
-      doc.text(`Fecha: ${order.fecha_vent ? new Date(order.fecha_vent).toLocaleString('es-CO') : '—'}`, 5, 37);
+      doc.text('NIT: 900.000.000-1', pageWidth / 2, 17, { align: 'center' });
+      doc.text('Tel: +57 300 000 0000', pageWidth / 2, 21, { align: 'center' });
+      
+      const drawDashedLine = (yPos: number) => {
+        doc.setLineDashPattern([1, 1], 0);
+        doc.setLineWidth(0.5);
+        doc.line(margin, yPos, pageWidth - margin, yPos);
+        doc.setLineDashPattern([], 0); // reset
+      };
 
-      let y = 45;
+      drawDashedLine(26);
+
+      // --- ORDER INFO ---
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.text(`RECIBO DE COMPRA #${order.id_vent}`, pageWidth / 2, 32, { align: 'center' });
+      
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      const dateStr = order.fecha_vent ? new Date(order.fecha_vent).toLocaleString('es-CO') : new Date().toLocaleString('es-CO');
+      doc.text(`Fecha: ${dateStr}`, margin, 39);
+      
+      drawDashedLine(44);
+
+      // --- ITEMS TABLE HEADER ---
+      doc.setFont('helvetica', 'bold');
       doc.setFontSize(8);
+      doc.text('CANT', margin, 50);
+      doc.text('DESCRIPCIÓN', margin + 12, 50);
+      doc.text('TOTAL', pageWidth - margin, 50, { align: 'right' });
+      
+      drawDashedLine(54);
+
+      // --- ITEMS LIST ---
+      let y = 60;
+      doc.setFont('helvetica', 'normal');
       (order.items || []).forEach(item => {
-        doc.text((item.nom_prod || 'Producto').substring(0, 15), 5, y);
-        doc.text(item.cantidad?.toString() || '1', 45, y);
-        doc.text(`$${Number(item.precio_unit).toLocaleString('es-CO')}`, 55, y);
-        y += 5;
+        const qty = item.cantidad?.toString() || '1';
+        const price = Number(item.precio_unit);
+        const subtotal = Number(qty) * price;
+        const name = (item.nom_prod || 'Producto').substring(0, 18); // truncate to fit
+        
+        doc.text(qty, margin + 2, y, { align: 'center' });
+        doc.text(name, margin + 12, y);
+        doc.text(`$${subtotal.toLocaleString('es-CO')}`, pageWidth - margin, y, { align: 'right' });
+        
+        y += 6;
       });
 
-      y += 10;
-      doc.setFontSize(10);
-      doc.text('TOTAL:', 5, y);
-      doc.text(`$${Number(order.montofinal_vent).toLocaleString('es-CO')}`, 75, y, { align: 'right' });
+      drawDashedLine(y);
 
-      doc.save(`ticket_${order.id_vent}.pdf`);
+      // --- TOTAL ---
+      y += 6;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.text('TOTAL:', margin, y);
+      doc.text(`$${Number(order.montofinal_vent).toLocaleString('es-CO')}`, pageWidth - margin, y, { align: 'right' });
+
+      // --- FOOTER ---
+      y += 12;
+      drawDashedLine(y);
+      y += 6;
+      
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.text('¡Gracias por tu compra!', pageWidth / 2, y, { align: 'center' });
+      doc.text('kiora.com.co', pageWidth / 2, y + 5, { align: 'center' });
+
+      doc.save(`ticket_kiora_${order.id_vent}.pdf`);
     }
   }
 
