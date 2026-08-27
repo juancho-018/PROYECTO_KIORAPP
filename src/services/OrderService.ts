@@ -296,97 +296,166 @@ export class OrderService {
     } catch (e) {
       console.warn('Fallo al descargar recibo del backend, usando fallback local jsPDF:', e);
       
-      // Fallback local: Generar el PDF en el cliente si el microservicio falla o no está disponible
+      // Fallback local: Generar el PDF en el cliente (formato A4)
       const order = await this.getOrderById(orderId);
-      // Generate a professional 80mm thermal receipt
-      const margin = 5;
-      const pageWidth = 80;
       
-      // Calculate dynamic height based on items
-      const itemsCount = (order.items || []).length;
-      const calculatedHeight = 90 + (itemsCount * 6) + 30; // base header + items + footer
-      const pageHeight = Math.max(150, calculatedHeight);
-
+      const pageWidth = 210; // A4 mm
+      const margin = 20;
+      
       const doc = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
-        format: [pageWidth, pageHeight]
+        format: 'a4'
       });
 
+      const primaryColor: [number, number, number] = [236, 19, 30]; // #ec131e Kiora Red
+      const darkColor: [number, number, number] = [26, 26, 26];
+      const grayColor: [number, number, number] = [107, 114, 128];
+      const lightBg: [number, number, number] = [249, 250, 251];
+
       // --- HEADER ---
+      doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+      doc.rect(0, 0, pageWidth, 6, 'F');
+
+      doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(18);
-      doc.text('KIORA', pageWidth / 2, 12, { align: 'center' });
-      
+      doc.setFontSize(26);
+      doc.text('KIORA', margin, 24);
+
+      doc.setTextColor(grayColor[0], grayColor[1], grayColor[2]);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
-      doc.text('NIT: 900.000.000-1', pageWidth / 2, 17, { align: 'center' });
-      doc.text('Tel: +57 300 000 0000', pageWidth / 2, 21, { align: 'center' });
+      doc.text('Micro-Market', margin, 34);
+
+      // Línea separadora header
+      doc.setDrawColor(229, 231, 235);
+      doc.setLineWidth(0.3);
+      doc.line(margin, 42, pageWidth - margin, 42);
+
+      // --- INFO SECTION ---
+      let y = 52;
       
-      const drawDashedLine = (yPos: number) => {
-        doc.setLineDashPattern([1, 1], 0);
-        doc.setLineWidth(0.5);
-        doc.line(margin, yPos, pageWidth - margin, yPos);
-        doc.setLineDashPattern([], 0); // reset
-      };
-
-      drawDashedLine(26);
-
-      // --- ORDER INFO ---
+      // Izquierda (Empresa)
+      doc.setTextColor(darkColor[0], darkColor[1], darkColor[2]);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(10);
-      doc.text(`RECIBO DE COMPRA #${order.id_vent}`, pageWidth / 2, 32, { align: 'center' });
+      doc.text('FACTURA / RECIBO', margin, y);
       
+      doc.setTextColor(grayColor[0], grayColor[1], grayColor[2]);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
-      const dateStr = order.fecha_vent ? new Date(order.fecha_vent).toLocaleString('es-CO') : new Date().toLocaleString('es-CO');
-      doc.text(`Fecha: ${dateStr}`, margin, 39);
-      
-      drawDashedLine(44);
+      doc.text('NIT: 901.XXX.XXX-X', margin, y + 6);
+      doc.text('Kiora Micro-Market S.A.S.', margin, y + 11);
+      doc.text('Bogotá, Colombia', margin, y + 16);
+      doc.text('kiora.app', margin, y + 21);
 
-      // --- ITEMS TABLE HEADER ---
+      // Derecha (Recibo info)
+      const rightCol = pageWidth / 2 + 10;
+      
+      doc.text('No. Recibo:', rightCol, y);
+      doc.setTextColor(darkColor[0], darkColor[1], darkColor[2]);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8);
-      doc.text('CANT', margin, 50);
-      doc.text('DESCRIPCIÓN', margin + 12, 50);
-      doc.text('TOTAL', pageWidth - margin, 50, { align: 'right' });
-      
-      drawDashedLine(54);
+      doc.text(`#${String(order.id_vent || '-').padStart(6, '0')}`, rightCol + 25, y);
 
-      // --- ITEMS LIST ---
-      let y = 60;
+      doc.setTextColor(grayColor[0], grayColor[1], grayColor[2]);
       doc.setFont('helvetica', 'normal');
-      (order.items || []).forEach(item => {
+      doc.text('Fecha:', rightCol, y + 6);
+      doc.setTextColor(darkColor[0], darkColor[1], darkColor[2]);
+      doc.setFont('helvetica', 'bold');
+      const dateStr = order.fecha_vent ? new Date(order.fecha_vent).toLocaleString('es-CO') : new Date().toLocaleString('es-CO');
+      doc.text(dateStr, rightCol + 25, y + 6);
+
+      doc.setTextColor(grayColor[0], grayColor[1], grayColor[2]);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Método Pago:', rightCol, y + 12);
+      doc.setTextColor(darkColor[0], darkColor[1], darkColor[2]);
+      doc.setFont('helvetica', 'bold');
+      doc.text((order.metodopago_usu || 'Efectivo').toUpperCase(), rightCol + 25, y + 12);
+
+      doc.setTextColor(grayColor[0], grayColor[1], grayColor[2]);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Estado:', rightCol, y + 18);
+      doc.setTextColor(5, 150, 105); // Verde
+      doc.setFont('helvetica', 'bold');
+      doc.text('PAGADO', rightCol + 25, y + 18);
+
+      y += 35;
+
+      // --- ITEMS TABLE ---
+      const contentWidth = pageWidth - (margin * 2);
+      
+      // Header fondo
+      doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+      doc.roundedRect(margin, y, contentWidth, 8, 1, 1, 'F');
+      
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.text('PRODUCTO', margin + 4, y + 5.5);
+      doc.text('CANT', margin + 90, y + 5.5, { align: 'center' });
+      doc.text('PRECIO', margin + 125, y + 5.5, { align: 'right' });
+      doc.text('SUBTOTAL', pageWidth - margin - 4, y + 5.5, { align: 'right' });
+
+      y += 10;
+
+      // Rows
+      (order.items || []).forEach((item, idx) => {
         const qty = item.cantidad?.toString() || '1';
         const price = Number(item.precio_unit);
         const subtotal = Number(qty) * price;
-        const name = (item.nom_prod || 'Producto').substring(0, 18); // truncate to fit
-        
-        doc.text(qty, margin + 2, y, { align: 'center' });
-        doc.text(name, margin + 12, y);
-        doc.text(`$${subtotal.toLocaleString('es-CO')}`, pageWidth - margin, y, { align: 'right' });
-        
-        y += 6;
+        const name = item.nom_prod || `Item #${item.cod_prod || '?'}`;
+
+        // Row background alternating
+        if (idx % 2 === 0) {
+          doc.setFillColor(lightBg[0], lightBg[1], lightBg[2]);
+          doc.rect(margin, y, contentWidth, 8, 'F');
+        }
+
+        doc.setTextColor(darkColor[0], darkColor[1], darkColor[2]);
+        doc.setFont('helvetica', 'normal');
+        doc.text(name, margin + 4, y + 5.5);
+        doc.text(qty, margin + 90, y + 5.5, { align: 'center' });
+        doc.text(`$${price.toLocaleString('es-CO')}`, margin + 125, y + 5.5, { align: 'right' });
+        doc.text(`$${subtotal.toLocaleString('es-CO')}`, pageWidth - margin - 4, y + 5.5, { align: 'right' });
+
+        y += 8;
       });
 
-      drawDashedLine(y);
-
-      // --- TOTAL ---
       y += 6;
+
+      // --- TOTALS ---
+      const totalsY = y;
+      
+      // Box de total
+      doc.setFillColor(lightBg[0], lightBg[1], lightBg[2]);
+      doc.roundedRect(pageWidth - margin - 65, totalsY, 65, 22, 2, 2, 'F');
+      
+      doc.setTextColor(grayColor[0], grayColor[1], grayColor[2]);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Subtotal:', pageWidth - margin - 61, totalsY + 6);
+      doc.setTextColor(darkColor[0], darkColor[1], darkColor[2]);
+      doc.text(`$${Number(order.montofinal_vent).toLocaleString('es-CO')}`, pageWidth - margin - 4, totalsY + 6, { align: 'right' });
+
+      doc.setDrawColor(229, 231, 235);
+      doc.line(pageWidth - margin - 61, totalsY + 10, pageWidth - margin - 4, totalsY + 10);
+
+      doc.setTextColor(darkColor[0], darkColor[1], darkColor[2]);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(12);
-      doc.text('TOTAL:', margin, y);
-      doc.text(`$${Number(order.montofinal_vent).toLocaleString('es-CO')}`, pageWidth - margin, y, { align: 'right' });
+      doc.setFontSize(11);
+      doc.text('TOTAL:', pageWidth - margin - 61, totalsY + 17);
+      doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+      doc.text(`$${Number(order.montofinal_vent).toLocaleString('es-CO')}`, pageWidth - margin - 4, totalsY + 17, { align: 'right' });
 
       // --- FOOTER ---
-      y += 12;
-      drawDashedLine(y);
-      y += 6;
+      const footerY = doc.internal.pageSize.getHeight() - 15;
+      doc.setDrawColor(229, 231, 235);
+      doc.line(margin, footerY - 5, pageWidth - margin, footerY - 5);
       
+      doc.setTextColor(grayColor[0], grayColor[1], grayColor[2]);
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      doc.text('¡Gracias por tu compra!', pageWidth / 2, y, { align: 'center' });
-      doc.text('kiora.com.co', pageWidth / 2, y + 5, { align: 'center' });
+      doc.setFontSize(8);
+      doc.text('Kiora Micro-Market — Sistema de Venta Automatizada 24/7', margin, footerY);
+      doc.text('Gracias por su compra', pageWidth - margin, footerY, { align: 'right' });
 
       doc.save(`ticket_kiora_${order.id_vent}.pdf`);
     }

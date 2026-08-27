@@ -317,12 +317,29 @@ export function SalesSection({
                 invoices.filter(i => searchInvoiceId ? String(i.id_fact).includes(searchInvoiceId) : true).map(invoice => (
                   <div key={invoice.id_fact} className="bg-surface rounded-xl border border-outline-variant/30 p-4 flex items-center gap-3">
                     <div className="flex-1 min-w-0">
-                      <p className="label-md text-on-surface">FAC-{invoice.id_fact}</p>
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="label-md text-on-surface">FAC-{invoice.id_fact}</p>
+                        {invoice.factus_public_url ? (
+                          <span className="px-2 py-0.5 rounded-md text-[9px] font-semibold border bg-tertiary/10 text-tertiary border-tertiary/20">Validada DIAN</span>
+                        ) : invoice.factus_status === 'failed' ? (
+                          <span className="px-2 py-0.5 rounded-md text-[9px] font-semibold border bg-error/10 text-error border-error/20">Fallo</span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-md text-[9px] font-semibold border bg-surface-container-highest text-on-surface-variant border-outline-variant/30 flex items-center gap-1">
+                            <span className="material-symbols-outlined animate-spin" style={{ fontSize: '10px' }}>sync</span>
+                            Procesando
+                          </span>
+                        )}
+                      </div>
                       <p className="label-sm text-on-surface-variant">Pedido #{invoice.id_pedido} · {new Date(invoice.fecha_fact).toLocaleDateString('es-CO')}</p>
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-base font-bold text-tertiary">${safePrice(invoice.total_fact).toLocaleString('es-CO')}</p>
-                      <button onClick={() => downloadInvoicePDF(invoice)} className="label-sm text-primary hover:underline mt-1 block">↓ PDF</button>
+                      <button onClick={() => downloadInvoicePDF(invoice)} className={`label-sm mt-2 flex items-center gap-1 justify-end w-full ${
+                        invoice.factus_public_url ? 'text-tertiary hover:underline' : 'text-primary hover:underline'
+                      }`}>
+                        <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>{invoice.factus_public_url ? 'receipt_long' : 'download'}</span>
+                        {invoice.factus_public_url ? 'DIAN' : 'Local'}
+                      </button>
                     </div>
                   </div>
                 ))
@@ -345,9 +362,10 @@ export function SalesSection({
                     <th className="px-5 py-4 text-left label-sm text-on-surface-variant font-semibold">
                       {subTab === 'facturas' ? 'Fecha Emisión' : 'Ref'}
                     </th>
-                    <th className="px-5 py-4 text-right label-sm text-on-surface-variant font-semibold">
+                    <th className="px-5 py-4 text-left label-sm text-on-surface-variant font-semibold">
                       {subTab === 'facturas' ? 'Total' : 'Importe'}
                     </th>
+                    {subTab === 'facturas' && <th className="px-5 py-4 text-center label-sm text-on-surface-variant font-semibold">Estado DIAN</th>}
                     {subTab !== 'facturas' && <th className="px-5 py-4 text-center label-sm text-on-surface-variant font-semibold">Estado</th>}
                     <th className="px-5 py-4 text-left label-sm text-on-surface-variant font-semibold w-16">Acciones</th>
                   </tr>
@@ -411,16 +429,40 @@ export function SalesSection({
                           <td className="px-5 py-4 label-md text-on-surface">FAC-{invoice.id_fact}</td>
                           <td className="px-5 py-4 body-md text-on-surface-variant">#{invoice.id_pedido}</td>
                           <td className="px-5 py-4 label-md text-on-surface">{new Date(invoice.fecha_fact).toLocaleString('es-CO')}</td>
-                          <td className="px-5 py-4 text-right label-md text-tertiary">
+                          <td className="px-5 py-4 text-left label-md text-tertiary">
                             ${safePrice(invoice.total_fact).toLocaleString('es-CO')}
+                          </td>
+                          <td className="px-5 py-4 text-center">
+                            {invoice.factus_public_url ? (
+                              <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-semibold border bg-tertiary/10 text-tertiary border-tertiary/20">
+                                <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>check_circle</span>
+                                Validada
+                              </span>
+                            ) : invoice.factus_status === 'failed' ? (
+                              <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-semibold border bg-error/10 text-error border-error/20">
+                                <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>error</span>
+                                Error
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-semibold border bg-surface-container-highest text-on-surface-variant border-outline-variant/30">
+                                <span className="material-symbols-outlined animate-spin" style={{ fontSize: '12px' }}>sync</span>
+                                Procesando...
+                              </span>
+                            )}
                           </td>
                           <td className="px-5 py-4 text-center">
                             <button
                               onClick={() => downloadInvoicePDF(invoice)}
-                              className="label-sm text-on-surface-variant hover:text-primary bg-surface-container-high px-3 py-1.5 rounded-lg border border-outline-variant/30 transition-all inline-flex items-center gap-1"
+                              className={`label-sm px-3 py-1.5 rounded-lg border transition-all inline-flex items-center gap-1 ${
+                                invoice.factus_public_url 
+                                  ? 'bg-tertiary/10 text-tertiary border-tertiary/30 hover:bg-tertiary/20'
+                                  : 'bg-surface-container-high text-on-surface-variant border-outline-variant/30 hover:text-primary'
+                              }`}
                             >
-                              <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>download</span>
-                              Descargar
+                              <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>
+                                {invoice.factus_public_url ? 'receipt_long' : 'download'}
+                              </span>
+                              {invoice.factus_public_url ? 'Factura DIAN' : 'Recibo Local'}
                             </button>
                           </td>
                         </tr>

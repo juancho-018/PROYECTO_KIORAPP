@@ -12,6 +12,7 @@ import { NotificationService } from "../services/NotificationService";
 import { IncidentService } from "../services/IncidentService";
 import { ReportService } from "../services/ReportService";
 import { AiService } from "../services/AiService";
+import { StoreService } from "../services/StoreService";
 
 // URL leída desde .env (prefijo PUBLIC_ requerido por Astro para exponerla al cliente)
 export const API_URL: string =
@@ -52,6 +53,7 @@ export const maintenanceService = new MaintenanceService(httpClient, authService
 export const incidentService = new IncidentService(httpClient, authService);
 export const reportService = new ReportService(httpClient, authService, productService);
 export const aiService = new AiService(httpClient);
+export const storeService = new StoreService(API_URL.replace(/\/api$/, ''), () => authService.getToken());
 export const notificationService = new NotificationService();
 
 // AlertService requiere NotificationService para integraciones

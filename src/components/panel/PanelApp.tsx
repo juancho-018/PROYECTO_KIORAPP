@@ -56,6 +56,9 @@ const ActivitySection = lazy(() =>
 const UserList = lazy(() =>
   import('@/features/users/components/UserList').then((m) => ({ default: m.UserList }))
 );
+const EstructuraSection = lazy(() =>
+  import('./EstructuraSection').then((m) => ({ default: m.EstructuraSection }))
+);
 
 
 function PanelSectionFallback() {
@@ -67,7 +70,7 @@ function PanelSectionFallback() {
   );
 }
 
-const ADMIN_ONLY_TABS = new Set(['usuarios', 'reportes', 'mantenimiento', 'actividad']);
+const ADMIN_ONLY_TABS = new Set(['usuarios', 'reportes', 'mantenimiento', 'actividad', 'estructura']);
 
 function PanelLoadingShell({ message = 'Cargando sesión…' }: { message?: string }) {
   return (
@@ -242,6 +245,8 @@ export default function PanelApp() {
                 <MaintenanceSection />
               ) : activeTab === 'actividad' && isAdmin ? (
                 <ActivitySection />
+              ) : activeTab === 'estructura' && isAdmin ? (
+                <EstructuraSection />
               ) : activeTab === 'reportes' && isAdmin ? (
                 <ReportsSection />
               ) : activeTab === 'ajustes' ? (
