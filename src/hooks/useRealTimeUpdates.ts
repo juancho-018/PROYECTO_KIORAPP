@@ -15,8 +15,8 @@ export function useRealTimeUpdates() {
   const notifyStockChange = useInventoryStore((state) => state.notifyStockChange);
 
   useEffect(() => {
-    // La URL del WebSocket es el base del API Gateway (sin /api)
-    const socketUrl = API_URL.replace('/api', '');
+    // La URL del WebSocket es el base del API Gateway (sin /api/v1)
+    const socketUrl = API_URL.replace('/api/v1', '');
     const socket = io(socketUrl, {
       transports: ['websocket'],
       reconnectionAttempts: 5,

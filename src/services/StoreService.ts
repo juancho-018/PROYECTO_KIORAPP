@@ -46,14 +46,14 @@ export class StoreService {
   // ── Regionales ─────────────────────────────────────────────────────────────
 
   async getRegionales(): Promise<Regional[]> {
-    const res = await fetch(`${this.baseUrl}/api/stores/regiones`, { headers: this.headers });
+    const res = await fetch(`${this.baseUrl}/stores/regiones`, { headers: this.headers });
     if (!res.ok) throw new Error('Error al cargar regionales');
     const { data } = await res.json();
     return data;
   }
 
   async createRegional(nombre: string): Promise<Regional> {
-    const res = await fetch(`${this.baseUrl}/api/stores/regiones`, {
+    const res = await fetch(`${this.baseUrl}/stores/regiones`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify({ nombre }),
@@ -64,7 +64,7 @@ export class StoreService {
   }
 
   async updateRegional(id: number, nombre: string): Promise<Regional> {
-    const res = await fetch(`${this.baseUrl}/api/stores/regiones/${id}`, {
+    const res = await fetch(`${this.baseUrl}/stores/regiones/${id}`, {
       method: 'PUT',
       headers: this.headers,
       body: JSON.stringify({ nombre }),
@@ -75,7 +75,7 @@ export class StoreService {
   }
 
   async deleteRegional(id: number): Promise<void> {
-    const res = await fetch(`${this.baseUrl}/api/stores/regiones/${id}`, {
+    const res = await fetch(`${this.baseUrl}/stores/regiones/${id}`, {
       method: 'DELETE',
       headers: this.headers,
     });
@@ -89,8 +89,8 @@ export class StoreService {
 
   async getCiudades(regionalId?: number): Promise<Ciudad[]> {
     const url = regionalId 
-        ? `${this.baseUrl}/api/stores/ciudades?regional_id=${regionalId}`
-        : `${this.baseUrl}/api/stores/ciudades`;
+        ? `${this.baseUrl}/stores/ciudades?regional_id=${regionalId}`
+        : `${this.baseUrl}/stores/ciudades`;
     const res = await fetch(url, { headers: this.headers });
     if (!res.ok) throw new Error('Error al cargar ciudades');
     const { data } = await res.json();
@@ -98,7 +98,7 @@ export class StoreService {
   }
 
   async createCiudad(nombre: string, fk_regional_id: number): Promise<Ciudad> {
-    const res = await fetch(`${this.baseUrl}/api/stores/ciudades`, {
+    const res = await fetch(`${this.baseUrl}/stores/ciudades`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify({ nombre, fk_regional_id }),
@@ -109,7 +109,7 @@ export class StoreService {
   }
 
   async updateCiudad(id: number, payload: { nombre?: string, fk_regional_id?: number }): Promise<Ciudad> {
-    const res = await fetch(`${this.baseUrl}/api/stores/ciudades/${id}`, {
+    const res = await fetch(`${this.baseUrl}/stores/ciudades/${id}`, {
       method: 'PUT',
       headers: this.headers,
       body: JSON.stringify(payload),
@@ -120,7 +120,7 @@ export class StoreService {
   }
 
   async deleteCiudad(id: number): Promise<void> {
-    const res = await fetch(`${this.baseUrl}/api/stores/ciudades/${id}`, {
+    const res = await fetch(`${this.baseUrl}/stores/ciudades/${id}`, {
       method: 'DELETE',
       headers: this.headers,
     });
@@ -134,8 +134,8 @@ export class StoreService {
 
   async getStores(activas = false): Promise<Tienda[]> {
     const url = activas 
-        ? `${this.baseUrl}/api/stores?activas=true`
-        : `${this.baseUrl}/api/stores`;
+        ? `${this.baseUrl}/stores?activas=true`
+        : `${this.baseUrl}/stores`;
     const res = await fetch(url, { headers: this.headers });
     if (!res.ok) throw new Error('Error al cargar tiendas');
     const { data } = await res.json();
@@ -143,7 +143,7 @@ export class StoreService {
   }
 
   async createStore(payload: Partial<Tienda>): Promise<Tienda> {
-    const res = await fetch(`${this.baseUrl}/api/stores`, {
+    const res = await fetch(`${this.baseUrl}/stores`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(payload),
@@ -154,7 +154,7 @@ export class StoreService {
   }
 
   async updateStore(id: number, payload: Partial<Tienda>): Promise<Tienda> {
-    const res = await fetch(`${this.baseUrl}/api/stores/${id}`, {
+    const res = await fetch(`${this.baseUrl}/stores/${id}`, {
       method: 'PUT',
       headers: this.headers,
       body: JSON.stringify(payload),

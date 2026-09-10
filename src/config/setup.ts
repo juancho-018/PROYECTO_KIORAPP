@@ -17,7 +17,7 @@ import { StoreService } from "../services/StoreService";
 // URL leída desde .env (prefijo PUBLIC_ requerido por Astro para exponerla al cliente)
 export const API_URL: string =
   (import.meta.env.PUBLIC_API_URL as string | undefined) ??
-  (import.meta.env.DEV ? "http://localhost:3000/api" : "/api");
+  (import.meta.env.DEV ? "http://localhost:3000/api/v1" : "/api/v1");
 
 export const API_KEY: string =
   (import.meta.env.PUBLIC_KIORA_API_KEY as string | undefined) ?? "";
@@ -53,7 +53,7 @@ export const maintenanceService = new MaintenanceService(httpClient, authService
 export const incidentService = new IncidentService(httpClient, authService);
 export const reportService = new ReportService(httpClient, authService, productService);
 export const aiService = new AiService(httpClient);
-export const storeService = new StoreService(API_URL.replace(/\/api$/, ''), () => authService.getToken());
+export const storeService = new StoreService(API_URL, () => authService.getToken());
 export const notificationService = new NotificationService();
 
 // AlertService requiere NotificationService para integraciones
