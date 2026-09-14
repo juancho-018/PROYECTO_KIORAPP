@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { RegionalesPage } from './RegionalesPage';
-import { CiudadesPage } from './CiudadesPage';
-import { CentrosOperacionPage } from './CentrosOperacionPage';
+import { RegionalesPage } from './estructura/RegionalesPage';
+import { CiudadesPage } from './estructura/CiudadesPage';
+import { CentrosOperacionPage } from './estructura/CentrosOperacionPage';
 
 type Tab = 'regionales' | 'ciudades' | 'tiendas';
 
