@@ -8,6 +8,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import Fuse from 'fuse.js';
 import { useScrollLock } from '@/hooks/useScrollLock';
 import { SaleSuccessOverlay } from './SaleSuccessOverlay';
+import { BarcodeScannerModal } from '@/components/ui/BarcodeScannerModal';
 
 export function OrderDrawer() {
   const {
@@ -32,6 +33,7 @@ export function OrderDrawer() {
   const [rfidState, setRfidState] = useState<'idle' | 'waiting' | 'approved' | 'error'>('idle');
   const rfidInputRef = useRef<HTMLInputElement>(null);
   const [rfidBuffer, setRfidBuffer] = useState('');
+  const [isBarcodeModalOpen, setIsBarcodeModalOpen] = useState(false);
 
   // Ref al input de búsqueda para leer el valor inmediato (sin depender del estado React).
   // Los lectores de barras físicos envían caracteres muy rápido + Enter casi simultáneamente,
@@ -139,58 +141,67 @@ export function OrderDrawer() {
           {/* ── Product Selector ── */}
           <div className="flex-none h-[65vh] md:h-auto md:flex-1 flex flex-col border-b md:border-b-0 md:border-r border-outline-variant/30 bg-surface min-h-0 min-w-0">
             <div className="p-3 sm:p-4 border-b border-outline-variant/30 space-y-3 shrink-0">
-              <div className="relative">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50 pointer-events-none" style={{ fontSize: '18px' }}>search</span>
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  placeholder="Buscar producto o escanear código de barras..."
-                  value={prodSearch}
-                  onChange={(e) => setProdSearch(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      // Leemos el valor DIRECTAMENTE del DOM para evitar el problema de closure
-                      // stale con lectores de barras (envían chars + Enter casi simultáneamente).
-                      const rawValue = searchInputRef.current?.value?.trim() ?? prodSearch.trim();
-                      if (!rawValue) return;
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50 pointer-events-none" style={{ fontSize: '18px' }}>search</span>
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    placeholder="Buscar producto o escanear..."
+                    value={prodSearch}
+                    onChange={(e) => setProdSearch(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        // Leemos el valor DIRECTAMENTE del DOM para evitar el problema de closure
+                        // stale con lectores de barras (envían chars + Enter casi simultáneamente).
+                        const rawValue = searchInputRef.current?.value?.trim() ?? prodSearch.trim();
+                        if (!rawValue) return;
 
-                      // 1. Coincidencia exacta por código de barras
-                      const barcodeMatch = allProducts.find(p =>
-                        p.codigo_barras && p.codigo_barras.trim() === rawValue
-                      );
-                      if (barcodeMatch) {
-                        if ((barcodeMatch.stock_actual || 0) > 0) {
-                          addToCart(barcodeMatch);
-                        }
-                        setProdSearch('');
-                        return;
-                      }
-
-                      // 2. Coincidencia exacta por cod_prod numérico
-                      const numericId = Number(rawValue);
-                      if (!isNaN(numericId) && numericId > 0) {
-                        const idMatch = allProducts.find(p => p.cod_prod === numericId);
-                        if (idMatch) {
-                          if ((idMatch.stock_actual || 0) > 0) {
-                            addToCart(idMatch);
+                        // 1. Coincidencia exacta por código de barras
+                        const barcodeMatch = allProducts.find(p =>
+                          p.codigo_barras && p.codigo_barras.trim() === rawValue
+                        );
+                        if (barcodeMatch) {
+                          if ((barcodeMatch.stock_actual || 0) > 0) {
+                            addToCart(barcodeMatch);
                           }
                           setProdSearch('');
                           return;
                         }
-                      }
 
-                      // 3. Si hay exactamente un resultado filtrado, agregarlo
-                      if (filteredProducts.length === 1) {
-                        const only = filteredProducts[0];
-                        if ((only.stock_actual || 0) > 0) {
-                          addToCart(only);
+                        // 2. Coincidencia exacta por cod_prod numérico
+                        const numericId = Number(rawValue);
+                        if (!isNaN(numericId) && numericId > 0) {
+                          const idMatch = allProducts.find(p => p.cod_prod === numericId);
+                          if (idMatch) {
+                            if ((idMatch.stock_actual || 0) > 0) {
+                              addToCart(idMatch);
+                            }
+                            setProdSearch('');
+                            return;
+                          }
                         }
-                        setProdSearch('');
+
+                        // 3. Si hay exactamente un resultado filtrado, agregarlo
+                        if (filteredProducts.length === 1) {
+                          const only = filteredProducts[0];
+                          if ((only.stock_actual || 0) > 0) {
+                            addToCart(only);
+                          }
+                          setProdSearch('');
+                        }
                       }
-                    }
-                  }}
-                  className="w-full rounded-lg border border-outline-variant/50 bg-surface-container-low py-2.5 pl-9 pr-3 label-md text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                />
+                    }}
+                    className="w-full rounded-lg border border-outline-variant/50 bg-surface-container-low py-2.5 pl-9 pr-3 label-md text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  />
+                </div>
+                <button
+                  onClick={() => setIsBarcodeModalOpen(true)}
+                  className="rounded-lg border border-outline-variant/50 bg-surface p-2.5 text-on-surface-variant hover:bg-surface-container-high transition-all active:scale-95 flex-shrink-0 flex items-center justify-center h-full"
+                  title="Escanear Código de Barras con Cámara"
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>barcode_scanner</span>
+                </button>
               </div>
               <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
                 <button
@@ -514,6 +525,20 @@ export function OrderDrawer() {
           </div>
         </div>
       )}
+      <BarcodeScannerModal
+        isOpen={isBarcodeModalOpen}
+        onClose={() => setIsBarcodeModalOpen(false)}
+        onScan={(code) => {
+          setIsBarcodeModalOpen(false);
+          const barcodeMatch = allProducts.find(p => p.codigo_barras && p.codigo_barras.trim() === code);
+          if (barcodeMatch && (barcodeMatch.stock_actual || 0) > 0) {
+            addToCart(barcodeMatch);
+          } else {
+            // No existe o no tiene stock, puedes ponerlo en el input de búsqueda para que vea por qué no se agregó
+            setProdSearch(code);
+          }
+        }}
+      />
     </div>
   );
 }

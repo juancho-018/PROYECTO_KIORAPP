@@ -15,7 +15,10 @@ services:
       - "8080:80"
     networks:
       - kiora-public-net
+      - kiora-backend-net
 
 networks:
   kiora-public-net:
+    external: true
+  kiora-backend-net:
     external: true

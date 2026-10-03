@@ -8,9 +8,11 @@ import { useProductManager } from '@/hooks/useProductManager';
 import { useAppStore } from '@/store/useAppStore';
 import { useScrollLock } from '@/hooks/useScrollLock';
 import { useProductTour } from '@/hooks/useProductTour';
+import { BarcodeScannerModal } from '@/components/ui/BarcodeScannerModal';
 
 export function ProductsSection() {
   const isAdmin = authService.isAdmin();
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [kardexProduct, setKardexProduct] = useState<Product | null>(null);
   const [visibleCount, setVisibleCount] = useState(15);
@@ -137,18 +139,28 @@ export function ProductsSection() {
           <div className="p-4 border-b border-outline-variant/30 bg-surface-container-lowest flex flex-col gap-4">
             {/* Row 1: Search + Toggle button */}
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-              <div className="relative w-full lg:flex-1 max-w-xl">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: '20px' }}>search</span>
+              <div className="relative w-full lg:flex-1 max-w-xl flex gap-2">
+                <div className="relative flex-1">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: '20px' }}>search</span>
+                  </div>
+                  <input
+                    type="text"
+                    value={pendingFilters.search}
+                    onChange={e => setPendingFilters(p => ({ ...p, search: e.target.value }))}
+                    onKeyDown={e => { if (e.key === 'Enter') handleApplyFilters(); }}
+                    className="block w-full pl-10 pr-3 py-2.5 border border-outline-variant/50 rounded-lg leading-5 bg-surface placeholder-on-surface-variant/70 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary sm:text-sm transition-colors text-on-surface"
+                    placeholder="Buscar por nombre, SKU o código..."
+                  />
                 </div>
-                <input
-                  type="text"
-                  value={pendingFilters.search}
-                  onChange={e => setPendingFilters(p => ({ ...p, search: e.target.value }))}
-                  onKeyDown={e => { if (e.key === 'Enter') handleApplyFilters(); }}
-                  className="block w-full pl-10 pr-3 py-2.5 border border-outline-variant/50 rounded-lg leading-5 bg-surface placeholder-on-surface-variant/70 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary sm:text-sm transition-colors text-on-surface"
-                  placeholder="Buscar por nombre, SKU o código..."
-                />
+                <button
+                  type="button"
+                  onClick={() => setIsScannerOpen(true)}
+                  className="flex items-center justify-center bg-surface border border-outline-variant/50 text-on-surface-variant hover:text-primary hover:bg-surface-container-low px-3 rounded-lg transition-colors"
+                  title="Escanear Código de Barras"
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>barcode_scanner</span>
+                </button>
               </div>
 
               <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full lg:w-auto">
@@ -549,6 +561,16 @@ export function ProductsSection() {
           </div>
         </div>
       )}
+
+      <BarcodeScannerModal
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+        onScan={(code) => {
+          setPendingFilters(p => ({ ...p, search: code }));
+          // Wait for state to update, then apply filter
+          setTimeout(() => handleApplyFilters(), 50);
+        }}
+      />
     </div>
   );
 }

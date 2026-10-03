@@ -82,7 +82,13 @@ export class FetchHttpClient implements IHttpClient {
     if (this.apiKey) {
       options.headers = {
         ...options.headers,
-        'x-api-key': this.apiKey
+        'x-api-key': this.apiKey,
+        'bypass-tunnel-reminder': 'true'
+      };
+    } else {
+      options.headers = {
+        ...options.headers,
+        'bypass-tunnel-reminder': 'true'
       };
     }
 
@@ -238,6 +244,7 @@ export class FetchHttpClient implements IHttpClient {
   async download(url: string, headers?: Record<string, string>): Promise<Blob> {
     const fullUrl = `${this.baseURL}${url}`;
     const reqHeaders: Record<string, string> = {
+      'bypass-tunnel-reminder': 'true',
       ...headers,
       ...(this.apiKey ? { 'x-api-key': this.apiKey } : {}),
     };
